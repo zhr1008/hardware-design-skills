@@ -8,7 +8,9 @@ import json
 from pathlib import Path, PurePosixPath
 import re
 import stat
+import struct
 import subprocess
+import zlib
 
 
 PRIVATE_NAMES = {
@@ -35,6 +37,10 @@ ENGINEERING_SUFFIXES = {
     ".fcstd", ".step", ".stp", ".stl", ".iges", ".igs", ".ms14",
     ".ms13", ".raw", ".asc", ".uvproj", ".uvprojx", ".ewp", ".eww", ".ioc",
 }
+PUBLICATION_DIAGRAM = "docs/architecture/hardware-design-skills.png"
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+MAX_DIAGRAM_BYTES = 8 * 1024 * 1024
+MAX_DIAGRAM_AXIS = 4096
 PATTERNS = {
     "absolute-home-path": re.compile(
         r"""(?ix)(?:[A-Z]:[/\\]+(?:users|documents[ ]and[ ]settings|home)[/\\]+
@@ -151,6 +157,52 @@ def content_findings(content: bytes):
             yield number, "authorization-or-url-secret"
 
 
+def valid_publication_diagram(content: bytes) -> bool:
+    """Accept the generated diagram's PNG format without ancillary data."""
+    if len(content) > MAX_DIAGRAM_BYTES or not content.startswith(PNG_SIGNATURE):
+        return False
+
+    offset = len(PNG_SIGNATURE)
+    scanline_bytes = height = 0
+    compressed = bytearray()
+    while offset + 12 <= len(content):
+        length, kind = struct.unpack_from(">I4s", content, offset)
+        end = offset + 12 + length
+        if end > len(content):
+            return False
+        crc = struct.unpack_from(">I", content, end - 4)[0]
+        if zlib.crc32(content[offset + 4:end - 4]) != crc:
+            return False
+        data = content[offset + 8:end - 4]
+
+        if offset == len(PNG_SIGNATURE):
+            if kind != b"IHDR" or length != 13:
+                return False
+            width, height, depth, color, compression, filters, interlace = struct.unpack(">IIBBBBB", data)
+            if (not 1 <= width <= MAX_DIAGRAM_AXIS or not 1 <= height <= MAX_DIAGRAM_AXIS
+                    or depth != 8 or color not in {2, 6} or (compression, filters, interlace) != (0, 0, 0)):
+                return False
+            scanline_bytes = 1 + width * (3 if color == 2 else 4)
+        elif kind == b"IDAT":
+            compressed.extend(data)
+        elif kind == b"IEND":
+            if length != 0 or end != len(content) or not compressed:
+                return False
+            expected = scanline_bytes * height
+            decoder = zlib.decompressobj()
+            try:
+                pixels = decoder.decompress(compressed, expected + 1)
+            except zlib.error:
+                return False
+            return (len(pixels) == expected and decoder.eof and not decoder.unused_data
+                    and not decoder.unconsumed_tail and all(value <= 4 for value in pixels[::scanline_bytes]))
+        else:
+            # The source renderer emits only IHDR, IDAT and IEND for this diagram.
+            return False
+        offset = end
+    return False
+
+
 def path_findings(name: str):
     path = PurePosixPath(name.casefold())
     if path.is_absolute() or ".." in path.parts or "\\" in name:
@@ -250,8 +302,12 @@ def scan(repo: Path, *, staged: bool, tree: str | None):
 
     checked = 0
     for name, raw in content:
-        findings.extend({"path": name, "line": line, "rule": rule}
-                        for line, rule in content_findings(raw))
+        if name == PUBLICATION_DIAGRAM:
+            if not valid_publication_diagram(raw):
+                findings.append({"path": name, "line": 0, "rule": "invalid-publication-diagram-png"})
+        else:
+            findings.extend({"path": name, "line": line, "rule": rule}
+                            for line, rule in content_findings(raw))
         checked += 1
     return checked, findings
 

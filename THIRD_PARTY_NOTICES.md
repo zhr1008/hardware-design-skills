@@ -11,4 +11,6 @@
 | `easyeda-agent` | [zhoushoujianwork/easyeda-agent v1.17.0](https://github.com/zhoushoujianwork/easyeda-agent/releases/tag/v1.17.0)，随技能的 MIT 许可与随包范围见其目录。编辑器扩展按上游安装。 |
 | `fictiv`、`lab-hardware-cad` | [K-Dense Scientific Agent Skills](https://github.com/K-Dense-AI/scientific-agent-skills)，MIT，保留技能来源信息。 |
 
+README 架构图中的线性图标来自 [Lucide](https://lucide.dev/license)。
+
 `hardware-solution`、`hardware-design-review`、`altium-pcb-review`、`autodesign` 和固件/台架组为本次公开包采用的独立实现，配置各自的宿主工具即可按相应工作流使用。另行获取的 Altium 解析器、商用 CAD/EDA、厂商接口、标准原文及通用技能插件遵循其发布方条款。私有工程和实际运行证据由使用者在自己的工作区管理。
