@@ -221,7 +221,7 @@ def path_findings(name: str):
 
 
 def git(repo: Path, *args: str, data: bytes | None = None) -> bytes:
-    result = subprocess.run(["git", "-C", str(repo), *args], input=data,
+    result = subprocess.run(["git", "--no-replace-objects", "-C", str(repo), *args], input=data,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
     return result.stdout
 
@@ -276,12 +276,15 @@ def scan(repo: Path, *, staged: bool, tree: str | None):
     entries = []
     for mode, oid, name, unmerged in git_entries(repo, tree):
         reasons = list(path_findings(name))
+        filename_findings = [f"filename-{rule}" for _, rule in content_findings(name.encode("utf-8"))]
+        reasons.extend(filename_findings)
         if unmerged:
             reasons.append("unmerged-index")
         if mode not in {"100644", "100755"}:
             reasons.append("symlink-or-submodule")
         if reasons:
-            findings.extend({"path": name, "line": 0, "rule": rule} for rule in reasons)
+            reported_name = "[redacted filename]" if filename_findings else name
+            findings.extend({"path": reported_name, "line": 0, "rule": rule} for rule in reasons)
         else:
             entries.append((name, oid))
     if not entries and not findings:

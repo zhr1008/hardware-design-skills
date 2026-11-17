@@ -14,7 +14,7 @@
 - 普通只读审查从现有保存文件开始。离线证据缺少所需现场事实时，先请求允许对指定工程进行 L1 只读桥接，说明缺少的数据。用户明确要求查看当前已打开的 Altium 工程或板卡时，请求已包含相应 L1 只读桥接，可直接确认活动项目和目标文档后读取。若用户限定离线，保持该范围。
 - 日常选型、查料、查库存或数量价可以直接使用 `components` 的 L1 查询。按用户给定的渠道、数量和物料规格收窄请求。修改本地库、上传 BOM 或进入账户内的实际采购流程时，按对应动作重新对照授权。
 - 从只读进入 L2 写入、构建或原生编译，或进入 L3 的现场写入、界面和其他高影响动作，分别核对具体授权，缺失时在执行前询问。已经明确要求对指定对象做该项操作时，沿用同一授权。活动项目发生切换时先核对对象身份。
-- Altium 桥接不足时，先核对工具目录、适用参数和已保存的替代证据。确需 UI 时请求独立的 L3 UI 授权，列出窗口、对象与拟执行的具体界面动作。获准后使用实际暴露的 Computer Use 入口，本机为 `mcp__cua_repl.js`。通过 `eda_agent` 的菜单、画布、对话框等操作驱动界面同样适用。界面查阅授权仅覆盖界面查阅，写入、保存和模态命令分别核对范围。
+- Altium 桥接不足时，先核对工具目录、适用参数和已保存的替代证据。确需 UI 时请求独立的 L3 UI 授权，列出窗口、对象与拟执行的具体界面动作。获准后使用宿主实际暴露的 Computer Use 入口，例如 Codex 的 `mcp__cua_repl.js`。通过 `eda_agent` 的菜单、画布、对话框等操作驱动界面同样适用。界面查阅授权仅覆盖界面查阅，写入、保存和模态命令分别核对范围。
 - 离线库因 `allowed_paths` 拒绝路径时，暂停该库上的动作，请用户确认要授权的目录，或指定已有允许目录中的副本。需要改服务器配置时须有该项授权并通过受支持的方式处理。确认前禁止用其他解析器、文件读写、桥接或 UI 继续访问该库，也禁止借目录拒绝改写原文件。恢复后核对解析后的绝对路径和库件身份，再按授权读查或写副本。
 
 ## 容易误判的操作
@@ -23,8 +23,14 @@
 
 - `altium.get_erc_violations` 默认 `compile=true`，会编译工程，可以采用打开态的未保存图纸，并可能刷新派生的 `.PrjPcbStructure`。仅查已打开且聚焦工程的缓存时，先只读确认工程身份，传 `compile=false` 并省略 `project_path`，再核返回路径和 `compiled`。即使禁用编译，传入一个尚未打开的 `project_path` 也可能触发打开工程。区分缓存与当前编辑态、未保存页和缺失文件。`eda_agent.proj_compile` 等无源写入的同工程非模态原生编译按 L2 处理。
 - `eda_agent.proj_get_nets`、`proj_get_connectivity` 和 `proj_get_connectivity_many` 的签名涉及编译，即使没有强制重编译也须核对 L2。`force_recompile=true` 包含保存未保存文档，按 L3。只有 L1 时可做 `proj_get_compile_freshness`、`proj_get_erc_violations`、`pcb_get_clearance_violations` 等定向查阅，按实际签名确认结果覆盖和新鲜度。
-- `eda_agent.design_review_snapshot` 的 `force_recompile`、`run_erc` 和 `run_drc` 默认关闭。明确请求 `sections` 中的 `erc` 或 `drc` 仍会分别触发检查，按其实际副作用定级。`force_recompile=true` 会调用 `SaveAll`、使编译缓存失效并重新编译，按 L3 处理。默认的 `design_stats`、`diff` 及默认附加的 `bom` 会调用 `SmartCompile`，缓存未命中时可能原生编译。只获 L1 时使用已确认的定向只读接口，或只选择已核实无上述副作用的 section 并显式关闭 `include_bom` 和三个触发开关。请求含可能正常编译的 section 时按 L2 核对授权。
+- `eda_agent.design_review_snapshot` 的 `force_recompile`、`run_erc` 和 `run_drc` 默认关闭。明确请求 `sections` 中的 `erc` 或 `drc` 仍会分别触发检查，按其实际副作用定级。`force_recompile=true` 会调用 `SaveAll`、使编译缓存失效并重新编译，按 L3 处理。默认集合的 `design_stats`、`nets`、`diff` 和默认附加的 `bom` 可能触发原生编译。只获 L1 时使用已确认的定向只读接口，或只选择已核实无上述副作用的 section 并显式关闭 `include_bom` 和三个触发开关。请求含可能正常编译的 section 时按 L2 核对授权。
 - `eda_agent.pcb_run_drc` 会打开阻塞桥接的模态对话框。使用 `allow_modal=true` 需要该项 L3 授权以及人在现场可处理对话框。`altium.run_drc` 会处理原生对话框，Altium 可能写入并打开报告、更新板上违规标记，也属于 L3。先检查已保存报告或用只读接口读取存量违规。执行后用桥接返回的 `ran` 或 `drc_triggered` 和可取得的原生报告确认检查确实执行，记录规则、结果范围及截断情况。仅返回零条不足以确认检查通过。
+- `altium.get_output_job_containers` 和 `altium.run_output_jobs` 省略 `outjob_path` 时按已打开工程的顺序选择第一个 OutJob。明确指定实际文件和容器，再核对返回路径。执行前核对容器输出位置、是否会覆盖、弹框或打开文档。只写到授权本地路径且可确认无前台副作用时按 L2，可能交互时先获 L3 批准。自动命名 PDF 或 Generated Files 容器可能返回 `output_verified: false`，按实际工件读回再验收。
+
+### 库盘点和布局预览的派生数据
+
+- `eda_agent.design_snapshot_inventory` 会把完整库盘点写入服务工作区的 `inventory.json`，即使返回结果经过筛选和限量。需盘点保存库时走有路径限制的离线库读取。经确认只会写入本机时，按 L2 核对目标目录、库范围和写入授权。
+- `eda_agent.design_live_snapshot` 会更新实时布局看板，布局、布线和应用结果的工具也可能自动发布板数据。运行前核对看板实际接收位置和访问范围。本机看板写入按 L2 或此次更高等级的设计动作处理，任何外发按 L3 先获批。只有本地读取或活动工程只读许可时，使用无发布副作用的离线盘点或定向查询。
 
 ### SPICE 与 SOLIDWORKS 前台和外发许可
 

@@ -50,7 +50,8 @@ does not have to infer them:
   `thickness_mm`, `quantity_pcbs`, and `quantity_assembled` (assembled cannot
   exceed PCB quantity), plus nonempty `surface_finish` and `assembly_sides`;
 - zero-valued checks: `unexplained_raw_disconnects`, `real_drc_errors`, and
-  `layout_check_failures`;
+  `layout_check_failures`. These require exact numeric zero; booleans and
+  nonzero values are invalid;
 - PASS checks: `circuit_gate`, `layout_gate`, `raw_connectivity`,
   `power_connectivity`, `visual_mechanical_review`, `dfm_review`,
   `sourcing_lock_current`, and `revision_reconciled`;
@@ -59,3 +60,11 @@ does not have to infer them:
 
 Assembly placement, final-price, and payment approvals normally remain pending
 at fabrication release. They are not transferred from one another.
+
+The builder reports the actual manifest status, including `BLOCKED` and
+`USER_REVIEW` when requested. A zero exit from the builder means the manifest
+was written. Use the validator to require `PASS` and check the artifact hashes.
+For a self-contained package, run the validator with
+`--confine-to-manifest-dir`. Artifacts must use package-relative paths without
+symbolic links or Windows reparse points. Final approval or upload still uses
+the frozen files and their hashes.

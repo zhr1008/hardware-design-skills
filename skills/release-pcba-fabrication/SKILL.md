@@ -35,6 +35,10 @@ drill, drill map/report, BOM, CPL, assembly drawings, stackup/impedance notes,
 and top/bottom renders. Preserve units, origin, side convention, rotation
 convention, DNP policy, polarity, and pin-1 evidence.
 
+For saved BOM and placement CSVs, run the [offline assembly check](references/assembly-check.md)
+to flag missing or repeated references, placement for DNP parts, and malformed
+placement fields. Bind its two hashes to the release revision.
+
 Inspect the generated files in an independent Gerber/assembly viewer. Compare
 outline and dimensions, layer count, copper/mask, drills, text, apertures,
 keepouts, edge treatments, panel/depanel needs, and assembly side. Export a

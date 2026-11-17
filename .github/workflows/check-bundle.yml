@@ -22,6 +22,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -X utf8 scripts/check_publication.py --tree HEAD
+      - run: python -X utf8 -m pip install -r requirements-dev.txt
       - run: python -X utf8 scripts/validate_bundle.py
       - run: python -X utf8 -m unittest discover -s tests
       - run: python -X utf8 skills/hardware/scripts/hardware_tool.py list --json

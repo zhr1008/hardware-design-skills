@@ -7,10 +7,11 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 
-from validate_release_manifest import APPROVALS, contract_errors
+from validate_release_manifest import APPROVALS, ZERO_VERIFICATIONS, contract_errors, zero
 
 
 def pairs(values: list[str], label: str) -> dict[str, str]:
@@ -35,7 +36,8 @@ def scalar(value: str):
         return int(value)
     except ValueError:
         try:
-            return float(value)
+            number = float(value)
+            return number if math.isfinite(number) else value
         except ValueError:
             return value
 
@@ -73,11 +75,14 @@ def main() -> int:
         raise SystemExit(f"mixed artifact revisions: {mismatched}")
 
     base = args.output.parent.resolve()
+    output = args.output.resolve()
     artifacts: dict[str, dict] = {}
     for role, raw_path in artifact_paths.items():
         path = Path(raw_path).resolve()
         if not path.is_file():
             raise SystemExit(f"artifact not found: {role}={path}")
+        if path == output or (output.exists() and path.samefile(output)):
+            raise SystemExit(f"manifest output cannot overwrite an artifact: {role}={path}")
         stored = Path(os.path.relpath(path, base)).as_posix()
         artifacts[role] = {
             "path": stored, "revision": artifact_revisions[role],
@@ -91,6 +96,13 @@ def main() -> int:
         raise SystemExit(f"unknown approvals: {sorted(unknown_approvals)}")
     approvals = {name: approval_values.get(name, "PENDING") for name in APPROVALS}
     evidence = {name: [approval_evidence[name]] if name in approval_evidence else [] for name in APPROVALS}
+    verification = {}
+    for key, value in pairs(args.verification, "verification").items():
+        # Check counts before float coercion can round a small nonzero input to zero.
+        if key in ZERO_VERIFICATIONS and not zero(value):
+            verification[key] = value
+        else:
+            verification[key] = scalar(value)
 
     manifest = {
         "schema": "pcba-release-manifest-v1",
@@ -100,7 +112,7 @@ def main() -> int:
         "status": args.status,
         "artifacts": artifacts,
         "constraints": {key: scalar(value) for key, value in pairs(args.constraint, "constraint").items()},
-        "verification": {key: scalar(value) for key, value in pairs(args.verification, "verification").items()},
+        "verification": verification,
         "approvals": approvals,
         "approval_evidence": evidence,
     }
@@ -109,7 +121,7 @@ def main() -> int:
         raise SystemExit("release manifest contract failed: " + "; ".join(errors))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(json.dumps({"status": "PASS", "manifest": str(args.output), "artifacts": len(artifacts)}, indent=2))
+    print(json.dumps({"status": args.status, "manifest": str(args.output), "artifacts": len(artifacts)}, indent=2))
     return 0
 
 

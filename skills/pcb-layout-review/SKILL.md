@@ -29,6 +29,9 @@ and [references/proven-lessons.md](references/proven-lessons.md). Record the
 gate with [references/layout-review-record.md](references/layout-review-record.md)
 and select an evidence path from
 [references/eda-adapters.md](references/eda-adapters.md).
+For an existing KiCad 9/10 ERC or DRC JSON, the
+[offline report reader](references/kicad-report.md) summarizes visible findings,
+excluded or ignored rules, and coverage without starting the EDA application.
 For modules, card sockets, daughtercards, or dense connector fanout, also read
 [references/connector-stack-and-fanout.md](references/connector-stack-and-fanout.md).
 For a derivative board, also read

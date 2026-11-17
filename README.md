@@ -2,7 +2,7 @@
 
 **在 Codex 里画电路图、查器件、审查 EDA 工程，或从整板需求推进到制造和台架验证。** 本仓库随包提供 **48 个可单独调用的技能**，包括对应的脚本、模板和参考资料。用 `$hardware` 让助手按任务选择入口，也可以直接调用专项。
 
-[下载 v0.1.0](https://github.com/zhr1008/hardware-design-skills/releases/tag/v0.1.0) · [架构图](#架构与分工) · [模块关系](#各模块怎么配合) · [安装](#安装) · [48 项技能索引](docs/skill-catalog.md)
+[下载最新版](https://github.com/zhr1008/hardware-design-skills/releases/latest) · [架构图](#架构与分工) · [模块关系](#各模块怎么配合) · [安装](#安装) · [48 项技能索引](docs/skill-catalog.md)
 
 ## 在 Codex 里怎么用
 
@@ -12,7 +12,10 @@
 | 「只读核对这个保存的 Altium 工程，按页列出器件数量。」 | 批查保存版 `.PrjPcb` 的原理图、板卡和文件状态，报告缺失项。若任务需要未保存状态，再核对现场读取的许可。 |
 | 「给这批 0402 电阻按阻值、精度和功率选料，保留原位号。」 | 先按完整硬条件离线分组，再按组查询。对最终候选核对原厂和渠道证据，工程选型表默认是可逐格复制的 HTML。 |
 | 「这份 BOM 只转档案 CSV，已有料号原样保留。」 | 按模板映射，在 CSV 读回后结束。 |
+| 「读这两份 KiCad 原生 ERC 和 DRC 报告，看看有没有关掉的检查和未连项。」 | 汇总每份报告的错误、警告、排除项、可见的禁用规则及覆盖信息。 |
+| 「投板前核对这版 BOM 与贴装坐标，TP1 不贴。」 | 检查缺贴、多贴、重复位号以及坐标、板面和角度字段，记录两份输入的哈希。 |
 | 「核对这个冻结制造包，列出缺件和哈希不符的文件。」 | 本地检查版次、清单、尺寸和 SHA-256，返回通过项与缺口。 |
+| 「用这份限值核对台架数据，标出超限和缺项。」 | 对照板号、硬件版次、固件哈希和单位，逐项给出限值判定。 |
 
 单项任务从对应入口开始。查一个料号、确认一个字段或出一张说明图，可以在目标产物交付后结束。跨原理图、PCB、固件或制造的任务才需要逐阶段交接。
 
@@ -74,9 +77,14 @@ python -X utf8 skills/hardware/scripts/hardware_tool.py --plan bom-archive bom.c
 | `bom-archive` | 省略 `--output` 时给预检，有输出路径时生成档案 CSV 并读回。 |
 | `selection-export` | 按已核对的 JSON 生成 AD HTML，Excel 按需生成。后补 Excel 可用 `--xlsx-only`。 |
 | `sourcing-lock-check` | 检查资格表的字段、数量、费用和已记录证据的时效。当前库存与报价由相应渠道工具取得。 |
+| `kicad-report-check` | 读取现有 KiCad 9/10 ERC 或 DRC JSON，区分可见违规、排除项、禁用规则和报告覆盖。 |
+| `assembly-check` | 对照同版 BOM 与 CPL，核对位号、DNP、板面、坐标格式及单位声明。 |
 | `release-check` | 核对本地冻结包版本、清单与哈希，并报告缺失、变化或越界项目。 |
+| `bench-check` | 按指定限值校验本地台架测量，并区分超限、身份或单位错误与缺项。 |
 
 器件批查单独提供 `batch_lookup.py`、`plan_selection_groups.py` 和固定出表脚本。根路由按任务选择入口，已有报告可以只补缺项。固件预览可查看计划中已给定和仍需补齐的信息。 [固定命令参数](skills/hardware/references/local-tools.md) · [器件批查与续跑](skills/component-sourcing/references/batch-lookup.md) · [器件与 BOM 分级](skills/component-sourcing/references/selection-depth.md)
+
+已有证据时，可独立运行每一项检查。从设计推进到制造时，先读 ERC/DRC 与工程状态，再核对 BOM/CPL 和独立 CAM 证据，最后校验冻结包。制成样机后，把测量绑到实际板号与固件，再按限值核对。需要原生导出、独立 CAM、虚拟固件回归或现场测试时，再按阶段选择已有外部工具。 [可选工具与接入点](docs/backends.md)
 
 ## 权限怎么划分
 
@@ -91,7 +99,7 @@ python -X utf8 skills/hardware/scripts/hardware_tool.py --plan bom-archive bom.c
 
 ## 安装
 
-下载并解压 [首版技能包](https://github.com/zhr1008/hardware-design-skills/releases/tag/v0.1.0)，或检出仓库。用 Python 3.11 或更新版本，在仓库根目录运行：
+下载并解压 [最新技能包](https://github.com/zhr1008/hardware-design-skills/releases/latest)，或检出仓库。用 Python 3.11 或更新版本，在仓库根目录运行：
 
 ```powershell
 python -X utf8 scripts/install_skills.py --dry-run
@@ -104,9 +112,10 @@ python -X utf8 scripts/install_skills.py
 
 ## 验证与许可
 
-仓库的 Windows 和 Linux 检查覆盖技能结构、相对链接、Python 语法、离线安装和发布内容检查。原生 EDA、供应商、终端设备和实际制造按本次运行留存证据。可运行：
+仓库的 Windows 和 Linux 检查覆盖技能元数据、相对链接、Python 语法、离线安装、固定 CLI 和发布内容检查。仓库校验的 YAML 依赖仅供开发及 CI 使用。原生 EDA、供应商、终端设备和实际制造按本次运行留存证据。可运行以下命令。
 
 ```powershell
+python -X utf8 -m pip install -r requirements-dev.txt
 python -X utf8 scripts/validate_bundle.py
 python -X utf8 scripts/check_publication.py --tree HEAD
 python -X utf8 -m unittest discover -s tests

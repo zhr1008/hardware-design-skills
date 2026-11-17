@@ -33,6 +33,7 @@ STRUCTURAL_FIELDS = ("位号", "数量", "层级", "DNP", "变体")
 IDENTIFIER_FIELDS = {"编码", "型号", "封装", "位号", "MPN料号", "图号", "版本号", "国标号"}
 PLACEHOLDERS = {"待核实", "待核查", "待核对", "待确认", "未录入", "未标注"}
 LCSC_CODE = re.compile(r"C[0-9]+\Z")
+DNP_FALSE = {"", "0", "0.0", "false", "no", "n", "否"}
 
 
 def read_json(path):
@@ -208,7 +209,7 @@ def prepare_rows(source, source_width, output, mapping, evidence, is_v1, header_
                 record["单位"] = "PCS"
             if "大类" not in mapping and record.get("位号"):
                 record["大类"] = "电子元器件"
-            if "状态" not in mapping and not record.get("DNP"):
+            if "状态" not in mapping and record.get("DNP", "").strip().casefold() in DNP_FALSE:
                 record["状态"] = "启用"
         level = record.get("层级", "")
         if level:

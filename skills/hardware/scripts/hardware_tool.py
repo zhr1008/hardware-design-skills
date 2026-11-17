@@ -3,7 +3,9 @@
 import argparse
 from importlib.util import find_spec
 import json
+import os
 from pathlib import Path
+import stat
 import subprocess
 import sys
 
@@ -30,24 +32,60 @@ TOOLS = {
         "L0", "检查冻结制造包清单、版次、文件尺寸和哈希",
         "release-pcba-fabrication/scripts/validate_release_manifest.py",
     ),
+    "assembly-check": (
+        "L0", "核对 BOM 与 CPL 的位号、装配面、坐标和角度字段",
+        "release-pcba-fabrication/scripts/check_assembly.py",
+    ),
+    "kicad-report-check": (
+        "L0", "读取已有 KiCad ERC/DRC JSON 的问题、排除和覆盖范围",
+        "pcb-layout-review/scripts/check_kicad_report.py",
+    ),
+    "bench-check": (
+        "L0", "按明确的验收限值核对已有测量 CSV",
+        "hardware-design-review/scripts/check_bench_results.py",
+    ),
 }
 SINGLE_AD = "component-sourcing/scripts/inspect_saved.py"
 
 
-def existing_file(value):
-    path = Path(value).absolute()
-    if path.is_symlink():
-        raise ValueError(f"请指定实际输入文件：{path}")
-    if not path.is_file():
-        raise ValueError(f"文件不存在或不是普通文件：{path}")
+def local_file(value, *, input_file=True):
+    path = Path(os.path.abspath(value))
+    if os.name == "nt":
+        from ctypes import windll
+
+        if path.drive.startswith("\\\\") or windll.kernel32.GetDriveTypeW(path.anchor) == 4:
+            raise ValueError(f"固定离线入口需要本机文件，请使用本地副本，当前为网络盘或 UNC：{path}")
+        if any(":" in name or name.rstrip(" .") != name or Path(name).is_reserved()
+               for name in path.parts[1:]):
+            raise ValueError(f"请使用普通 Windows 文件路径：{path}")
+
+    current = Path(path.anchor)
+    for part in path.parts[1:]:
+        current /= part
+        try:
+            info = current.lstat()
+        except FileNotFoundError:
+            if not input_file:
+                break
+            raise ValueError(f"找不到输入文件：{path}") from None
+        if stat.S_ISLNK(info.st_mode) or (
+            getattr(info, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+        ):
+            raise ValueError(f"路径含符号链接或 Windows 重解析点：{current}")
+        if current == path and not stat.S_ISREG(info.st_mode):
+            raise ValueError(f"目标不是普通文件：{path}")
+        if current != path and not stat.S_ISDIR(info.st_mode):
+            raise ValueError(f"路径中间项不是目录：{current}")
+    if path == path.parent:
+        raise ValueError(f"目标不是普通文件：{path}")
     return path
 
 
 def output_path(value, extension):
-    target = Path(value).absolute()
+    target = Path(value)
     if target.suffix.lower() != extension:
         raise ValueError(f"输出路径请使用 {extension}：{target}")
-    return target
+    return local_file(target, input_file=False)
 
 
 def make_parser():
@@ -89,12 +127,28 @@ def make_parser():
     lock = parsers["sourcing-lock-check"]
     lock.add_argument("--max-age-days", type=int, default=14)
     lock.add_argument("--as-of", help="ISO 时间戳")
+
+    assembly = parsers["assembly-check"]
+    assembly.add_argument("--cpl", required=True, help="同一版次和装配变体的坐标 CSV")
+    assembly.add_argument("--exclude", action="append", default=[], help="不贴装位号，以逗号分隔，可重复")
+    assembly.add_argument("--format", choices=("json", "text"))
+
+    kicad = parsers["kicad-report-check"]
+    kicad.add_argument("--kind", choices=("erc", "drc"), help="要求报告为指定检查类型")
+
+    bench = parsers["bench-check"]
+    bench.add_argument("--measurements", required=True, help="已有的测量 CSV")
     return parser
 
 
 def list_tools(as_json):
     items = [
-        {"tool": name, "level": level, "purpose": purpose, "script_installed": (SKILLS / script).is_file()}
+        {
+            "tool": name, "level": level, "purpose": purpose,
+            "script_installed": (SKILLS / script).is_file() and (
+                name != "ad-saved" or (SKILLS / SINGLE_AD).is_file()
+            ),
+        }
         for name, (level, purpose, script) in TOOLS.items()
     ]
     if as_json:
@@ -107,7 +161,7 @@ def list_tools(as_json):
 
 def prepare(args):
     name = args.tool
-    source = existing_file(args.input)
+    source = local_file(args.input)
     entry = TOOLS[name][2]
     command = [str(source)]
     input_paths = [source]
@@ -129,7 +183,7 @@ def prepare(args):
             entry = SINGLE_AD
         else:
             raise ValueError("指定 .PrjPcb、.SchDoc 或 .PcbDoc")
-        if find_spec("altium_monkey") is None:
+        if not args.plan and find_spec("altium_monkey") is None:
             raise ValueError("当前 Python 缺少 altium-monkey。使用已配置该依赖的 Python 环境重试")
         command += [f"--limit={args.limit}"]
         if args.designator:
@@ -138,7 +192,7 @@ def prepare(args):
         for option in ("template", "column_map", "evidence"):
             value = getattr(args, option)
             if value:
-                path = existing_file(value)
+                path = local_file(value)
                 input_paths.append(path)
                 command += [f"--{option.replace('_', '-')}={path}"]
         if args.sheet:
@@ -159,14 +213,14 @@ def prepare(args):
             if not args.draft:
                 raise ValueError("--write-rows 需配合 --draft")
         if args.output:
-            stem = Path(args.output).absolute()
+            stem = Path(os.path.abspath(args.output))
             if stem.suffix.lower() in {".html", ".xlsx"}:
                 raise ValueError("--output 请填写不含 .html 或 .xlsx 的文件主名")
             command += [f"--output={stem}"]
             if not args.xlsx_only:
-                outputs.append(Path(f"{stem}.html"))
+                outputs.append(output_path(f"{stem}.html", ".html"))
             if args.xlsx or args.xlsx_only:
-                outputs.append(Path(f"{stem}.xlsx"))
+                outputs.append(output_path(f"{stem}.xlsx", ".xlsx"))
         elif args.xlsx or args.xlsx_only:
             raise ValueError("Excel 导出需要 --output")
         if not outputs:
@@ -176,6 +230,8 @@ def prepare(args):
         if args.xlsx or args.xlsx_only:
             command += ["--xlsx" if args.xlsx else "--xlsx-only"]
         replace = args.replace_output
+        if not replace:
+            command += ["--no-clobber"]
     elif name == "sourcing-lock-check":
         if args.max_age_days < 0:
             raise ValueError("--max-age-days 不能小于 0")
@@ -184,6 +240,24 @@ def prepare(args):
             command += [f"--as-of={args.as_of}"]
     elif name == "release-check":
         command += ["--confine-to-manifest-dir"]
+    elif name == "assembly-check":
+        cpl = local_file(args.cpl)
+        if source.suffix.casefold() != ".csv" or cpl.suffix.casefold() != ".csv":
+            raise ValueError("BOM 和 CPL 路径都需要使用 .csv")
+        if source.samefile(cpl):
+            raise ValueError("BOM 和 CPL 需要分别指定两份 CSV")
+        input_paths.append(cpl)
+        command += [f"--cpl={cpl}", *(f"--exclude={value}" for value in args.exclude)]
+        if args.format:
+            command += [f"--format={args.format}"]
+    elif name == "kicad-report-check" and args.kind:
+        command += [f"--kind={args.kind}"]
+    elif name == "bench-check":
+        measurements = local_file(args.measurements)
+        if source.suffix.casefold() != ".json" or measurements.suffix.casefold() != ".csv":
+            raise ValueError("限值文件需要使用 .json，测量文件需要使用 .csv")
+        input_paths.append(measurements)
+        command = [f"--limits={source}", f"--measurements={measurements}"]
 
     # 比较解析后的路径以识别符号链接。直接拒绝输出链接，保留已有文件。
     resolved_inputs = {path.resolve() for path in input_paths} if outputs else set()
@@ -214,7 +288,7 @@ def main():
             print(json.dumps({
                 "status": "planned", "tool": args.tool, "level": "L2" if outputs else "L0",
                 "script": str(script), "inputs": [str(path) for path in inputs],
-                "outputs": [str(path) for path in outputs],
+                "outputs": [str(path) for path in outputs], "parameters": command,
             }, ensure_ascii=False))
             return 0
         return subprocess.run(

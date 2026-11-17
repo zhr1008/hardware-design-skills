@@ -48,3 +48,5 @@ python -X utf8 scripts/render_ad_selection.py reviewed-selection.json --output e
 ```
 
 第一条只生成 HTML。明确要两种文件时使用第二条。只要 Excel 或后续补 Excel 时用第三条，沿用同一份已核对 JSON 和输出名。Excel 的文本单元格和 HTML 字段使用同一列结构，按原值保留料号、封装和符号。输入也可用 `-` 读取 UTF-8 标准输入。确实需要待核对的文件预览时可显式加 `--draft`，HTML 标题和 Excel 工作表都会标为待核对。
+
+专项脚本可用 `--no-clobber` 保护已有交付物。它先检查所有目标，再逐个以仅创建新文件的方式提交。通过 `hardware_tool.py selection-export` 调用时，默认开启此保护。

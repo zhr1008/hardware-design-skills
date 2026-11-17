@@ -4,7 +4,7 @@
 
 ## 同名技能的来源
 
-依次选用用户精确点名的技能路径或带命名空间的入口、项目已明确采用的来源、本机 `.codex/skills` 下可用的同名技能。各来源还须满足当前的启用状态、调用策略和依赖。同一专项一次只读所选来源的正文、脚本和参考，保持来源一致。插件另有特定宿主的 `PORTABILITY.md`。`electronic-product-planner` 0.3.0 的 `hardware-solution` 仍写旧名 `szlcsc`，涉及器件选型时向当前 `component-sourcing` 或本轮实际暴露的 `components` 工具交接，`szlcsc_*` 是 `components` 仍可使用的工具名前缀，具体方法以当前签名为准。
+依次选用用户精确点名的技能路径或带命名空间的入口、项目已明确采用的来源、当前可用的随包技能。用户级安装时通常位于 `.codex/skills`。各来源还须满足当前的启用状态、调用策略和依赖。同一专项一次只读所选来源的正文、脚本和参考，固定批处理只调用随包实现。插件另有特定宿主的 `PORTABILITY.md`。`electronic-product-planner` 0.3.0 的 `hardware-solution` 仍写旧名 `szlcsc`，涉及器件选型时向当前 `component-sourcing` 或本轮实际暴露的 `components` 工具交接，`szlcsc_*` 是 `components` 仍可使用的工具名前缀，具体方法以当前签名为准。
 
 本地来源无法使用或缺少适配能力时，才选当前可提供同等验收证据的插件或普通工具，记录缺口和新入口。用户或项目已固定来源时，先说明该来源的实际障碍及可行替代，再按其约束决定是否切换。单次工具失败先诊断原因和会话状态。
 
@@ -28,11 +28,11 @@
 | 对象与状态 | 推荐入口和检查点 |
 | --- | --- |
 | AD 已保存的 `.SchLib` / `.PcbLib` | `altium-library` 配 `mcp__altium_offline_library__*`，如 `read_schlib`、`validate_library` 和 `diff_libraries`，读取库条目、引脚/焊盘和图元，按需做校验、渲染、前后差异。写入使用授权副本和工具的 `allowed_paths`，从磁盘读回。原厂脚位、尺寸和封装变体是库验收依据。已有库的批量物料参数整理按 `component-sourcing` 的实际入口处理。 |
-| AD 已保存的 `.PrjPcb` / `.SchDoc` / `.PcbDoc` | `component-sourcing/scripts/inspect_saved.py` 盘点磁盘工程成员、位号、原理图引脚数量/封装引用及板上器件/焊盘概要。疑似悬空脚、封装链接等交给 `altium-schematic-review` 初筛并对照原厂手册。任务需要编译层级、多分件或当前编辑态证据时，按授权切到 AD 现场入口。只读磁盘的任务应记录其可见范围，解析失败时记录缺口。 |
+| AD 已保存的 `.PrjPcb` / `.SchDoc` / `.PcbDoc` | [`ad-saved`](local-tools.md) 按工程清单批查或读取单个文档，盘点成员、位号、原理图引脚数量/封装引用和板上器件/焊盘概要。疑似悬空脚、封装链接等交 `altium-schematic-review` 初筛并对照原厂手册。需要编译层级、多分件或当前编辑态证据时按授权切到 AD 现场入口，保留已读取范围和缺口。 |
 | AD 活动工程的连续操作 | 选 `mcp__eda_agent__*` 做工程身份与文档上下文确认、跨文档快照、原生编译/检查、相关对象迭代和导出。按本轮签名用 `app_context` 确认已连接项目和文档，再按需选择 `design_review_snapshot`、`proj_compile` 等，检查响应中的实际执行和原生结果。 |
 | AD 现场定向查询、批处理或 OutJob | 可选 `mcp__altium__*` 执行已明确的页/板/网络查询、原生 ERC/DRC、符号/封装批操作或指定 OutJob 容器，如 `get_schematic_data`、`build_schematic`、`run_output_jobs`。按实际签名与 `eda_agent` 择一承接同一组写入、保存和回读，留存输入与输出身份。 |
 | EasyEDA Pro | `easyeda-agent` 配当前可用的 `easyeda` CLI、daemon 和 Pro 宿主连接器。确认目标为专业版原生文档和正确项目/页，使用当前 typed 入口，以 `saved:true`、重载和新读回验收。若实际有匹配的设计执行会话，再按需选择 `autodesign`。标准版公开资产用于参考时标明来源和版本。 |
-| KiCad | 使用对应已保存工程版本的 `kicad-cli` 跑原生 ERC/DRC、导出，编辑按实际可用的原生/IPC 路径或 `text-to-cad:pcb`。使用可能升级格式的编辑器前核对交付版本和副本。`eda_agent` 须在当前运行时证实连接正确的 KiCad 后端、具备所需签名后再用于 KiCad 工程。 |
+| KiCad | 已有原生 ERC/DRC JSON 用 [`kicad-report-check`](local-tools.md) 读取，按报告工件、版本和覆盖范围写结论。需新结果时才用对应工程版本的 `kicad-cli` 运行，经授权向本地输出报告。编辑按实际可用的原生/IPC 路径或 `text-to-cad:pcb`，使用可能升级格式的编辑器前核对版本和副本。`eda_agent` 须证实连接正确的 KiCad 后端且有匹配签名。 |
 
 切换 AD 路径前，先从已授权来源核对项目路径、落盘版本和前一动作结果。取得现场许可后，再读取活动文档和未保存状态。切换两套桥前应确认前一批写入、保存和读回已完成或已回退。必要时用用户授权的保存、重开或新读回建立基线，两个视图有差异时标清各自能支持的结论。现场结果核对实际执行标志、报告来源和规则，零违规须有规则实际运行的证据。跨平台转换是独立任务，需按目标格式重新核对层级、脚网、封装和板层。
 
@@ -47,7 +47,8 @@
 | 只读检查 AD 实际板、规则、回流与层叠 | `altium-pcb-review`，交工程/板版次、原生连接证据、适用规则和按层/位号/网名定位的问题。 |
 | 布局布线、派生改板与关键网约束 | `pcb-layout-review`，由实际网表、叠层、机械和回流约束起步，按授权修改并交原生板、新读回及受影响的 DRC/未连接证据。 |
 | 跨原理图、PCB、BOM、制造或实测的评审 | `hardware-design-review`，按对象区分综合评审、发板门禁和故障 RCA。门禁交固定版本的 `Go/Hold/No-Go`、适用判据、缺口和关闭条件。 |
-| 冻结版本的制造包 | `release-pcba-fabrication`，交同版 Gerber/钻孔、BOM/CPL、装配资料、独立 CAM 检查和版本/hash 清单。 |
+| 核对现成 BOM 和 CPL | [`assembly-check`](local-tools.md)，在指定变体对照双方位号和装配字段，按实际缺漏和冲突交付核对结果。 |
+| 冻结版本的制造包 | `release-pcba-fabrication`，交同版 Gerber/钻孔、通过装配数据核对的 BOM/CPL、装配资料、独立 CAM 检查和版本/hash 清单。 |
 | 嘉立创报价和实际导入复核 | `operate-jlcpcb-order`，根据用户授权的终点核对板选项、物料匹配、贴装预览及指定数量的报价，记录导入差异和结果。 |
 
 只读审查停在可定位的发现和证据，局部修改停在指定源的保存、回读与对应复核，综合门禁停在该版结论和关闭条件，制造包停在可校验的本地交付，报价停在授权的报价或预览。按用户要求的停点选择当前动作，已有授权覆盖的后续阶段可接着推进。制造门禁是工程证据结论，工厂端的实际操作按 [权限与停止点](permission-gates.md) 判断。
@@ -64,7 +65,7 @@
 | PCBA 进度、版本、证据和变更传播 | `manage-pcba-program`。 |
 | 可编辑教程或解释用电路图／可执行电路仿真 | `draw-schemdraw-circuit` ／ `design-and-review-circuit` 配用户指定且已验证的求解器。原生 Multisim 工程及实验用 `multisim`。离线网表仿真、扫参与波形分析可用 `ltspice-mcp`，核对本机启用的后台引擎和任务授权的输入输出路径。 |
 | 固件设计、BSP 和驱动／单次构建、烧录、调试 | `embedded-firmware-design` ／ 工程匹配的 `build-*`、`flash-*`、`debug-*` 专项。需要识别工程或组织这些运行环节时用 `embed-ai-tool`。 |
-| 台架、总线、仪器／已有测试数据 | 按数据源选串口、CAN/Modbus、逻辑分析仪或 VISA 专项。已有日志/波形可直接按数据形态用 `exploratory-data-analysis`、`matlab` 或适用的不确定度/统计专项。 |
+| 台架、总线、仪器／已有测试数据 | 优先处理已有数据。已有契约匹配的测量 CSV 和限值 JSON 时用 [`bench-check`](local-tools.md)。日志、波形和其他数据按格式用 `exploratory-data-analysis`、`matlab` 或适用的不确定度/统计专项。需新取证再按授权选串口、CAN/Modbus、逻辑分析仪或 VISA 专项。 |
 | 板框、外壳、夹具或工程图／文档和实验记录 | 工件匹配的 `text-to-cad` 专项或 `lab-hardware-cad` ／ 项目现有交接格式对应的文档或表格入口。 |
 | SOLIDWORKS 原生装配、零件与 COM 脚本 | 优先使用本机 SDK、模型及 COM。`swapi-pilot` 的本机入口仅转发公开 API 标识，模板和脚本在本机生成与审查。运行 COM 前核对实例、文档身份、文件范围及前台副作用。可能影响前台或外发 3D 文件时，分别先获批。 |
 

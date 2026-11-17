@@ -16,6 +16,11 @@ every command or job configuration needed to reproduce the release.
   accepts them, but still include BOM/assembly and a manifest of the delivered
   package.
 
+For Gerber/Excellon output, a separately installed [Gerbonara CLI](https://gerbolyze.gitlab.io/gerbonara/cli.html)
+can read layer metadata and generate an independent local view. Verify the
+inferred layer mapping against the export log before using it as evidence.
+Run the [BOM/CPL check](assembly-check.md) against the same assembly variant.
+
 If only derived fabrication files exist, audit and package them but mark native
 source traceability BLOCKED or USER_REVIEW. Never reconstruct a release revision
 from filenames alone.

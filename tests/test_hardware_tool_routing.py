@@ -1,0 +1,76 @@
+"""Check local path boundaries and the wrapper's reported plan."""
+
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+
+
+ROUTER = Path(__file__).resolve().parents[1] / "skills" / "hardware" / "scripts" / "hardware_tool.py"
+
+
+class HardwareToolRouting(unittest.TestCase):
+    def plan(self, *arguments):
+        return subprocess.run(
+            [sys.executable, "-X", "utf8", str(ROUTER), "--plan", *map(str, arguments)],
+            capture_output=True, text=True, encoding="utf-8", check=False,
+        )
+
+    def test_linked_parent_cannot_hide_input_or_output_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            actual = root / "real"
+            actual.mkdir()
+            link = root / "alias"
+            if os.name == "nt":
+                from _winapi import CreateJunction
+
+                CreateJunction(str(actual), str(link))
+            else:
+                link.symlink_to(actual, target_is_directory=True)
+            source = actual / "parts.csv"
+            source.write_text("MPN\nExample\n", encoding="utf-8")
+
+            read = self.plan("sourcing-lock-check", link / source.name)
+            write = self.plan("bom-archive", source, "--output", link / "archive.csv")
+            for result in (read, write):
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("符号链接或 Windows 重解析点", result.stderr)
+                self.assertEqual(result.stdout, "")
+            self.assertFalse((actual / "archive.csv").exists())
+
+    @unittest.skipUnless(os.name == "nt", "Windows UNC boundary")
+    def test_unc_is_rejected_before_path_access(self):
+        unc = "\\" * 2 + "hardware-routing.invalid" + "\\" + "share" + "\\" + "parts.csv"
+        result = self.plan("sourcing-lock-check", unc)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("网络盘或 UNC", result.stderr)
+
+    def test_normal_plan_reports_scope_and_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            bom, cpl = root / "BOM.csv", root / "CPL.csv"
+            for file in (bom, cpl):
+                file.write_text("", encoding="utf-8")
+            result = self.plan("assembly-check", bom, "--cpl", cpl, "--exclude", "R2,R3")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(result.stdout)
+            self.assertEqual(report["level"], "L0")
+            self.assertEqual(report["inputs"], [str(bom), str(cpl)])
+            self.assertEqual(report["outputs"], [])
+            self.assertIn("--exclude=R2,R3", report["parameters"])
+
+            output = root / "derived" / "archive.csv"
+            result = self.plan("bom-archive", bom, "--output", output)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(result.stdout)
+            self.assertEqual(report["level"], "L2")
+            self.assertEqual(report["outputs"], [str(output)])
+            self.assertFalse(output.parent.exists())
+
+
+if __name__ == "__main__":
+    unittest.main()
