@@ -1,0 +1,48 @@
+# Local navigation heuristics, 2026-10-31. These infer candidate roles from
+# declared symbol names/pins; they do not verify identity, ratings or suitability.
+# Explicit project overlays may replace these rules. Confirm real roles against
+# native connectivity and the exact manufacturer datasheet before engineering use.
+reference_prefixes:
+  Passive: [R, C, L, D, FB, TP]
+  Connector: [J, P, CN]
+roles:
+  - role: Processor/MCU
+    min_score: 4.0
+    core_score: 20
+    lib_patterns: ['(?i)(?:^|[:_])MCU(?:_|:|$)']
+    pin_patterns: ['(?i)^(SWDIO|SWCLK|BOOT0|NRST)$']
+  - role: Processor/SoC
+    min_score: 4.0
+    core_score: 20
+    lib_patterns: ['(?i)(?:^|[:_])SoC(?:_|:|$)', '(?i)MYC[-_]LR3576']
+    value_patterns: ['(?i)^MYC[-_]LR3576$']
+  - role: Power/Charger
+    min_score: 7.0
+    core_score: 0
+    lib_patterns: ['(?i)(?:battery[_ -]?)?charger']
+    pin_patterns: ['(?i)^(VBUS|BAT|SYS|SW|PG|CE)$']
+    net_patterns: ['(?i)(?:^|/)V(?:BUS|BAT|SYS)$']
+    required_groups:
+      - name: battery_terminal
+        pin_patterns: ['(?i)^BAT$']
+        min_matches: 1
+        score: 0
+transport_hints:
+  - label: I2C Participant
+    pin_patterns: ['(?i)^S(?:CL|DA)$']
+    net_patterns: ['(?i)(?:^|[/_])I2C.*S(?:CL|DA)$']
+  - label: SPI Participant
+    pin_patterns: ['(?i)^(MOSI|MISO|SCK|SCLK)$']
+    net_patterns: ['(?i)(?:^|[/_])SPI.*(?:MOSI|MISO|SCK)$']
+core_scoring:
+  excluded_reference_families: [Passive]
+  minimum_score: 10
+  pin_count_scores:
+    - {minimum: 64, points: 30}
+    - {minimum: 24, points: 20}
+    - {minimum: 8, points: 10}
+  net_count_scores:
+    - {minimum: 24, points: 20}
+    - {minimum: 8, points: 10}
+  signal_pin_scores: []
+  transport_hint_bonus: {minimum_pin_count: 99, points: 0}

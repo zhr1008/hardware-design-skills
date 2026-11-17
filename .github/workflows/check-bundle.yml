@@ -1,0 +1,27 @@
+name: Skill bundle checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -X utf8 scripts/check_publication.py --tree HEAD
+      - run: python -X utf8 scripts/validate_bundle.py
+      - run: python -X utf8 -m unittest discover -s tests
+      - run: python -X utf8 skills/hardware/scripts/hardware_tool.py list --json

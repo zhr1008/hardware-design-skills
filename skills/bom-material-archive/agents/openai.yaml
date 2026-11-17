@@ -1,0 +1,3 @@
+interface:
+  display_name: "BOM 转物料档案"
+  short_description: "按物料档案模板转换电子 BOM，并核对立创料号和导入字段"
