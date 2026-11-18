@@ -22,7 +22,7 @@ PRIVATE_NAMES = {
 PRIVATE_DIRS = {
     ".codex", ".git", ".idea", ".playwright-mcp", ".ssh", ".venv",
     "__pycache__", ".pytest_cache", ".ruff_cache", "node_modules", "logs",
-    "ocr-books", "standard-passives",
+    "ocr-books", "standard-passives", "engineering-library",
 }
 PRIVATE_SUFFIXES = {
     ".key", ".pem", ".p12", ".pfx", ".kdbx", ".sqlite", ".sqlite3", ".db",
@@ -212,6 +212,8 @@ def path_findings(name: str):
         yield "private-directory"
     if any(path.parts[i:i + 2] == ("sources", "raw") for i in range(len(path.parts) - 1)):
         yield "raw-source-corpus"
+    if path.parts[:4] == ("skills", "hardware", "references", "library"):
+        yield "raw-source-corpus"
     if (path.name in PRIVATE_NAMES or path.name.startswith(("client_secret", ".env"))
             and path.name not in {".env.example", ".env.template"}):
         yield "private-metadata-or-credential-file"
@@ -284,7 +286,8 @@ def scan(repo: Path, *, staged: bool, tree: str | None):
         if mode not in {"100644", "100755"}:
             reasons.append("symlink-or-submodule")
         if reasons:
-            reported_name = "[redacted filename]" if filename_findings or "private-directory" in reasons else name
+            private_path = {"private-directory", "raw-source-corpus"}.intersection(reasons)
+            reported_name = "[redacted filename]" if filename_findings or private_path else name
             findings.extend({"path": reported_name, "line": 0, "rule": rule} for rule in reasons)
         else:
             entries.append((name, oid))

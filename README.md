@@ -11,6 +11,7 @@
 | 「用 `$hardware` 画一张 RC 低通示意图，给 SVG。」 | 用 Schemdraw 生成图和 Python 源。需要 EDA 可编辑原理图时，在请求中点明 Altium、EasyEDA Pro 或 KiCad。 |
 | 「只读核对这个保存的 Altium 工程，按页列出器件数量。」 | 批查保存版 `.PrjPcb` 的原理图、板卡和文件状态，报告缺失项。若任务需要未保存状态，再核对现场读取的许可。 |
 | 「在我提供的本地手册索引里核对数据速率，给原页出处。」 | 对照版次查正文，按需回读 OCR 页，记录物理页和印刷页。 |
+| 「审查这路 ADC 前端，先列适用规则和需要验证的条件。」 | 用随包规则查采样建立、回冲、参考源等相关项，结合器件型号和工作条件形成核验依据。 |
 | 「给这批 0402 电阻按阻值、精度和功率选料，保留原位号。」 | 先按完整硬条件离线分组，再按组查询。对最终候选核对原厂和渠道证据，工程选型表默认是可逐格复制的 HTML。 |
 | 「优先用我这份标准阻容索引找满足规格的料，缺项时再查公开来源。」 | 按明确料号、封装和规格筛本地记录，把字段齐全的匹配与待核实项分开。需要时核对国内商品页及原厂资料。 |
 | 「这份 BOM 只转档案 CSV，已有料号原样保留。」 | 按模板映射，在 CSV 读回后结束。 |
@@ -89,6 +90,8 @@ python -X utf8 skills/hardware/scripts/hardware_tool.py --plan bom-archive bom.c
 已有证据时，可独立运行每一项检查。从设计推进到制造时，先读 ERC/DRC 与工程状态，再核对 BOM/CPL 和独立 CAM 证据，最后校验冻结包。制成样机后，把测量绑到实际板号与固件，再按限值核对。需要原生导出、独立 CAM、虚拟固件回归或现场测试时，再按阶段选择已有外部工具。 [可选工具与接入点](docs/backends.md)
 
 指定本地 OCR 数据目录后，`ocr_books.py` 可按书查看覆盖、查同页词和读回单页。`pack_mineru_book.py` 可将已有 MinerU Middle JSON 转为索引并按原件版本补页。工程资料留在使用者管理的数据目录。 [逐页 OCR 用法](skills/hardware/references/ocr-books.md)
+
+`knowledge.py rules` 查询随包的 96 条审查规则和来源页码，覆盖 PCB/EMC、模拟、电源、采样、接口、标准、无源器件、验证与热设计。带 `--library` 可接入本机全文索引，查资料、搜索章节及读取原页文字。公开包内的规则与书目可直接离线查询。 [规则与证据流程](skills/hardware/references/design-review-basis.md) · [知识库用法](skills/hardware/references/engineering-knowledge.md)
 
 指定本地标准阻容索引后，`query_passive_index.py` 可按 C 号、完整料号或结构化规格筛选。查当前供货、更新证据或核对 CAD 库件时，再走相应入口。 [器件查询与回退](skills/component-sourcing/references/sourcing-queries.md)
 

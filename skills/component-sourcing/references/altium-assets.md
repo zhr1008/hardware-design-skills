@@ -20,7 +20,7 @@ szlcsc_sync_datasheets(identifiers=[...], output_dir="...")
 
 磁盘文件任务使用以下入口。只读核对只调用读工具。库写入在用户指定的副本进行，写后重新读取，检查步骤始终以磁盘文件为准。
 
-本机未配置离线服务时，可参考仓库根目录下的 `docs/altium-offline.md`。离线服务的目录权限由 `allowed_paths` 管理。
+本机未配置离线服务时，可参考独立 MCP 的安装说明。离线服务的目录权限由 `allowed_paths` 管理。 [离线 Altium 工具配置](https://github.com/zhr1008/component-sourcing-mcp/blob/v0.8.0-rc.7/docs/altium-offline.md)
 
 | 输入或任务 | 使用方式 |
 | --- | --- |
@@ -53,7 +53,7 @@ python -X utf8 scripts/inspect_saved.py path/to/Standard.IntLib --component LIBR
 4. 核对引脚编号与定义、焊盘编号和几何、孔径、阻焊／锡膏模式及机械层用途。符号电气类型（例如默认 Passive）仅作提示。同一板的实际开窗按适用规则确定。只有看过实际 STEP 几何并与原厂图对照 Pin 1、贴板方向后才填写 `orientation`。转换器的 placement 告警也需保留。提供了目标板时，按板厂或工程规范对照已保存的物理层叠和规则。
 5. 交付库文件和 `verification.json`。将 `generated` 与核验结论分开报告，分别列出已通过、不符合、待核实和提示。默认全程用离线 CAD 工具，生成资产时联网下载。任务缺少证据时继续保留待核实。只有用户另行明确要求 AD 原生 ERC／DRC、活动文档或 ECO 时才进入 AD 桥接。
 
-后续调用 `szlcsc_altium_verify_bundle` 补充证据且当前工具支持 `retain_existing` 时，传 `retain_existing=true`，同一字段的新证据覆盖旧值。默认按本次提交的整组证据重新核验。
+`v0.8.0-rc.7` 支持 `szlcsc_altium_verify_bundle(bundle_dir=…, expected=[…], orientation=…, retain_existing=true)`。补充证据时，同一 `group` 和 `field` 的新证据覆盖旧证据。省略 `orientation` 会沿用已保存的 Pin 1 方向证据。默认 `retain_existing=false`，按本次提交的整组证据重新核验。产物或目标板的哈希已变化时，服务返回 `BUNDLE_CHANGED`。
 
 ### 单独下载、转换或诊断
 
@@ -81,7 +81,7 @@ szlcsc_altium_review(...)
 
 规则：
 
-- Altium 解析/写回需 Python 3.12+ 和显式 `[altium]` extra；默认查料安装不含解析器。启用前阅读 `docs/dependency-security.md`，当前上游 lxml/Pillow 固定版本仍有已知漏洞。
+- Altium 解析/写回需 Python 3.12+ 和显式 `[altium]` extra；默认查料安装不含解析器。启用前核对独立 MCP 固定的 lxml/Pillow 版本及已知漏洞。 [依赖安全说明](https://github.com/zhr1008/component-sourcing-mcp/blob/v0.8.0-rc.7/docs/dependency-security.md)
 - `ready=true` 且 `status="ready"` 才算转换环境就绪。
 - Windows 默认安装器创建 `%LOCALAPPDATA%\szlcsc-mcp\altium-cruncher` 独立环境；失效的 uv launcher 可用 `scripts/install-altium-cruncher.ps1` 修复。
 - 新转换结果必须检查 `quality.symbol_footprint_links.ok` 和保存后重读证据；smoke 包含真实 Footprint implementation 检查。

@@ -4,7 +4,7 @@
 
 跨平台采购使用 `component_providers` 检查实现、凭据配置、官方申请渠道和实际请求状态；配置不等于已联通。随后用 `component_search` 检索、`component_get` 确认供应商 SKU/MPN，再用 `component_offers` 按数量报价。统一搜索的 limit 是每个供应商的分页大小；读取 `complete/provider_errors` 和各供应商 `has_more`，条件只在本次取得的分页内过滤。
 
-贸泽和 DigiKey 由用户自行申请官方 API，填写私有文件并通过 `COMPONENT_SUPPLIERS_CONFIG` 指定，或使用环境变量。申请及填写步骤见仓库 `docs/supplier-setup.md`；不要让用户在聊天、Issue 或公共日志提交密钥。华秋当前仅提供官方申请渠道，未验证协议前返回 `UNSUPPORTED_PROVIDER`。
+贸泽和 DigiKey 由用户自行申请官方 API，填写私有文件并通过 `COMPONENT_SUPPLIERS_CONFIG` 指定，或使用环境变量。密钥只填入私有配置。华秋当前仅提供官方申请渠道，未验证协议前返回 `UNSUPPORTED_PROVIDER`。 [独立 MCP 供应商配置](https://github.com/zhr1008/component-sourcing-mcp/blob/v0.8.0-rc.7/docs/supplier-setup.md)
 
 只比较同制造商、MPN、封装、币种和市场的报价组；包装变体的库存不相加，不隐式换汇。检查 MOQ、订购倍数、原始币种、实际订购量和快照时间，运费税费未知。国内采购按下文的国内库存池处理。
 
@@ -45,7 +45,7 @@ szlcsc_find_alternatives(identifier="Cxxxxxx", in_stock_only=false)
 
 最终兼容性仍核 Datasheet。
 
-精确查询不接受唯一模糊结果。MPN 对应多个 C 编号时检查 `AMBIGUOUS_PART`，回到候选的封装/品牌及明确 C 编号，不擅自选第一条。
+精确查询要求完整身份匹配。`v0.8.0-rc.7` 的目录分页在找到准确 C 号时提前结束。按 MPN 查询仍会在分页预算内核查同型号对应的多个 C 号。收到 `AMBIGUOUS_PART` 时，按候选的封装、品牌和 C 号消歧。
 
 ### 明确 MPN
 
@@ -57,7 +57,16 @@ szlcsc_find_alternatives(identifier="Cxxxxxx", in_stock_only=false)
 
 ### 功能/参数选型
 
-通过立创 MCP 外查时，普通中文需求优先调用 `szlcsc_select`。把用户原话传给 `request`，通过 `conditions` 补充明确但未自动识别的条件。保留返回的 `selection`，后续只改精度、封装或数量时将它传给 `previous`，沿用其他条件。明确要求现货时可单独查询最终候选的当前库存，给出数量后查询该数量的报价。
+通过立创 MCP 外查时，普通中文需求优先调用 `szlcsc_select`。把用户原话传给 `request`，再检查返回的 `selection.constraints`。`v0.8.0-rc.7` 可从下面的示例识别 `resistance="=10KΩ"`、`package="=0603"`、`power=">=100mW"` 和 `tolerance="<=1%"`，支持 `2m`、`1M` 的阻值短写和 `1/4W` 形式的功率。线性稳压器和电压基准可识别 `输入3V~5V` 一类的输入范围。
+
+```text
+szlcsc_select(request="选10K电阻，0603，100mW，1%", preferred_brand="风华")
+```
+
+- 通过 `conditions` 补充明确但未识别的硬条件。例如，按商城完整品牌字段精确限制可传 `conditions={"brand":"==FH(风华)"}`。`preferred_brand` 在证据相当的候选中用于排序，同时保留其他合格品牌作为备选。
+- 续调时原样传回 `previous=selection`，在 `request` 中说明本轮改动。`conditions={"条件名":null}` 删除对应硬条件，「品牌不限」清除继承的品牌限制和偏好。
+- 明确要求现货时可单独查询最终候选的当前库存。提供 `quantity` 后，`szlcsc_select` 会为候选查询当前国内零售库存及对应报价。
+- 检查 `coverage.query_errors` 和 `coverage.stopped_on_access_limit`。技术筛选会优先使用目录已有的详情标识，遇到访问限制后仍可能返回已找到的候选。结合 `evidence.checks` 标出未补全的参数证据。
 
 按 [AD 字段规范](ad-field-rules.md) 核实 `pending_evidence` 和最终候选字段。只有达到文件交付终点才走 [固定导出程序](ad-selection-export.md)。
 

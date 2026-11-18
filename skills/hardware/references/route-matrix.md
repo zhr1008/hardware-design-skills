@@ -28,6 +28,7 @@
 | 对象与状态 | 推荐入口和检查点 |
 | --- | --- |
 | 本地手册、标准、教材或既有逐页 OCR | [工程资料检索](engineering-knowledge.md) 先核版本再定位正文；使用本地 OCR 时报告物理页、印刷页和覆盖范围。以相同版次的原页核对文字、公式及工况。 |
+| 确定电路、PCB 或综合审查的核验依据 | [设计与审查规则](design-review-basis.md) 按对象、工况和版次选规则，核对引文后交专项落实。明确记录适用范围、证据与判定。 |
 | AD 已保存的 `.SchLib` / `.PcbLib` | `altium-library` 配 `mcp__altium_offline_library__*`，如 `read_schlib`、`validate_library` 和 `diff_libraries`，读取库条目、引脚/焊盘和图元，按需做校验、渲染、前后差异。写入使用授权副本和工具的 `allowed_paths`，从磁盘读回。原厂脚位、尺寸和封装变体是库验收依据。已有库的批量物料参数整理按 `component-sourcing` 的实际入口处理。 |
 | AD 已保存的 `.PrjPcb` / `.SchDoc` / `.PcbDoc` | [`ad-saved`](local-tools.md) 按工程清单批查或读取单个文档，盘点成员、位号、原理图引脚数量/封装引用和板上器件/焊盘概要。疑似悬空脚、封装链接等交 `altium-schematic-review` 初筛并对照原厂手册。需要编译层级、多分件或当前编辑态证据时按授权切到 AD 现场入口，保留已读取范围和缺口。 |
 | AD 活动工程的连续操作 | 选 `mcp__eda_agent__*` 做工程身份与文档上下文确认、跨文档快照、原生编译/检查、相关对象迭代和导出。按本轮签名用 `app_context` 确认已连接项目和文档，再按需选择 `design_review_snapshot`、`proj_compile` 等，检查响应中的实际执行和原生结果。 |

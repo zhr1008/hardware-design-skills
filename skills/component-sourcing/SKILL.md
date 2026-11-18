@@ -5,7 +5,7 @@ description: 根据功能和电气约束选器件或替代料，按精确 C 号�
 
 # 器件选型与采购
 
-按用户需要的证据和交付物选择能完成任务的最短流程。各层可直接进入，按本层停点交付。使用当前会话实际暴露的 `components` 签名。
+按用户需要的证据和交付物选择能完成任务的最短流程。各层可直接进入，按本层停点交付。在线查料由独立的 Component Sourcing MCP 提供。阻容条件解析、品牌优先和增量核验的示例以 `v0.8.0-rc.7` 为准，调用时核对当前 `components` 的工具签名。 [独立 MCP 预发布版](https://github.com/zhr1008/component-sourcing-mcp/releases/tag/v0.8.0-rc.7)
 
 查询电阻、电容时，优先使用用户提供的标准阻容 JSON 索引。未提供索引或库内证据不足时，按所需证据查询国内立创和原厂。用户另行提供对应 `.IntLib` 时，可用索引中的 `symbol` 和 `footprint` 定位库件。 [标准库查询与外部检索](references/sourcing-queries.md#标准库优先与外部检索)
 

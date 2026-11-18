@@ -11,4 +11,7 @@ build/
 outputs/
 .codex-install-source.json
 /skills/hardware/assets/ocr-books/
+/skills/hardware/assets/engineering-library/
+/skills/hardware/references/library/
+/skills/hardware/scripts/index.db*
 /skills/component-sourcing/assets/standard-passives/

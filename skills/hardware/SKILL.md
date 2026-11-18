@@ -1,6 +1,6 @@
 ---
 name: hardware
-description: "为电子电路、EDA、PCB、仿真、机械、采购、固件和台架任务选择专项及操作权限。可检索用户提供的工程资料和逐页 OCR，并处理保存态工程、选型出表、BOM 转档与制造交付核验。"
+description: "为电子电路、EDA、PCB、仿真、机械、采购、固件和台架任务选择专项及操作权限。可查工程审查规则、资料正文和逐页 OCR，并处理保存态工程、选型出表、BOM 转档与制造交付核验。"
 ---
 
 # 硬件设计
@@ -21,6 +21,8 @@ description: "为电子电路、EDA、PCB、仿真、机械、采购、固件和
 ## 工程资料检索
 
 需要用手边的数据手册、应用笔记、标准或教材支持结论时，按 [工程资料检索](references/engineering-knowledge.md) 定位版本、查正文并回读原页。已有逐页 OCR 数据时，直接用 [本地 OCR 检索](references/ocr-books.md)。引用时保留版次、物理页和已确认的印刷页。通过外部服务检索私有资料时，按[权限门禁](references/permission-gates.md)先核对发送范围。
+
+设计或审查需要确定核验依据时，先按 [设计与审查规则](references/design-review-basis.md) 查与当前工况相关的规则，并把适用条件、来源及闭环证据交给对应专项。
 
 ## 可直接运行的批处理
 

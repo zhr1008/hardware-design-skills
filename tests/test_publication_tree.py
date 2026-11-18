@@ -49,7 +49,9 @@ class PublicationTreeTest(unittest.TestCase):
 
     def test_local_library_json_stays_out_of_public_tree(self):
         paths = [
+            "skills/hardware/assets/engineering-library/manifest.json",
             "skills/hardware/assets/ocr-books/manifest.json",
+            "skills/hardware/references/library/example/fulltext.md",
             "skills/component-sourcing/assets/standard-passives/index.json",
         ]
         for relative in paths:
@@ -60,6 +62,8 @@ class PublicationTreeTest(unittest.TestCase):
         self.assertEqual(publication.scan(self.repo, staged=True, tree=None), (0, [
             {"path": "[redacted filename]", "line": 0, "rule": "private-directory"},
             {"path": "[redacted filename]", "line": 0, "rule": "private-directory"},
+            {"path": "[redacted filename]", "line": 0, "rule": "private-directory"},
+            {"path": "[redacted filename]", "line": 0, "rule": "raw-source-corpus"},
         ]))
 
 
