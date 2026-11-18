@@ -1,5 +1,7 @@
 # 已有 Altium SchLib/PcbLib 整理（v0.6+）
 
+收到已编译的 `.IntLib` 时，可先运行 `python -X utf8 scripts/inspect_saved.py Standard.IntLib --limit 30` 离线盘点。添加 `--component 库件名` 后可按准确库件名读取保存的参数和封装引用，输出包含总条数、匹配条数及截断标志。建立选型索引时，按同版物料清单核对准确 C 号和已验证字段。 [离线检查](altium-assets.md#离线操作-altium-库与已保存工程)
+
 这是**整理用户现有 AD 库**的路径，与 EasyEDA→Altium 新建库不同。
 
 ### 核心原则

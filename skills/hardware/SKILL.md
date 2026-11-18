@@ -1,6 +1,6 @@
 ---
 name: hardware
-description: "为电子电路、EDA、PCB、仿真、机械、采购、固件和台架任务选择专项及操作权限。固定脚本可处理保存态 AD 工程、KiCad 检查报告、选型出表、BOM 转档和制造交付核验。"
+description: "为电子电路、EDA、PCB、仿真、机械、采购、固件和台架任务选择专项及操作权限。可检索用户提供的工程资料和逐页 OCR，并处理保存态工程、选型出表、BOM 转档与制造交付核验。"
 ---
 
 # 硬件设计
@@ -17,6 +17,10 @@ description: "为电子电路、EDA、PCB、仿真、机械、采购、固件和
 按交付深度从能完成请求的最短入口开始。单项事实用定向工具，已有工件的重复处理用脚本，工程决策或冻结才进入相应核验。已有证据足够就交付，缺一项补一项。采购、建库、报价和出文件按当前目标分别触发。
 
 画图时按产物选入口。说明或教程用的电路图走 [Schemdraw](../draw-schemdraw-circuit/SKILL.md)，未指定图片格式时用 SVG。要求可在 EDA 中编辑的原理图时走 [电路设计](../design-and-review-circuit/SKILL.md) 与目标平台。要求运行和波形时选经过核对的仿真入口。
+
+## 工程资料检索
+
+需要用手边的数据手册、应用笔记、标准或教材支持结论时，按 [工程资料检索](references/engineering-knowledge.md) 定位版本、查正文并回读原页。已有逐页 OCR 数据时，直接用 [本地 OCR 检索](references/ocr-books.md)。引用时保留版次、物理页和已确认的印刷页。通过外部服务检索私有资料时，按[权限门禁](references/permission-gates.md)先核对发送范围。
 
 ## 可直接运行的批处理
 
@@ -36,7 +40,7 @@ description: "为电子电路、EDA、PCB、仿真、机械、采购、固件和
 
 ## 器件任务的交付停点
 
-- 找器件、核对已知型号、查资料、现货或数量价时，直接用能完成该查询的 `components` 工具，默认在正文交付。只做物料档案转换或补齐渠道料号时，由 `bom-material-archive` 交付所需 CSV。按用户所给输入核对，原理图、网表、PCB 和器件库仅在任务确实需要时进入。
+- 找器件、核对已知型号或筛选阻容规格时，优先复用可用证据。用户提供标准阻容索引时走 [本地查询与回退](../component-sourcing/references/sourcing-queries.md#标准库优先与外部检索)。补证、现货和数量价用当前实际可用的定向渠道工具，默认在正文交付。只做物料档案转换或补齐渠道料号时，由 `bom-material-archive` 交付所需 CSV。原理图、网表、PCB 和器件库按实际需要进入。
 - 已有一份精确 C 号或完整 MPN 清单需要查技术详情时，直接运行器件专项的 [批量精确查询](../component-sourcing/references/batch-lookup.md)，沿用仍适用的报告只补缺项。多位号按同一组硬条件选型时，先用 [选型条件分组](../component-sourcing/references/selection-depth.md#批量同条件分组)。
 - 用户要求为工程选用或替换器件时，即使只有一个位号，也由 `component-sourcing` 整理已核验的选型数据并按 [导出流程](../component-sourcing/references/ad-selection-export.md) 生成默认的 HTML。用户明确指定的文件格式和范围优先，Excel 按需从同一份数据导出。工程字段及商品页证据以 [AD 字段规则](../component-sourcing/references/ad-field-rules.md) 为准。
 

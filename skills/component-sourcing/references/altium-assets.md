@@ -27,6 +27,7 @@ szlcsc_sync_datasheets(identifiers=[...], output_dir="...")
 | `.SchLib` / `.PcbLib` 的引脚、焊盘、封装链接和几何检查 | 优先用 `altium-offline-library` MCP。用 `list_components` 查名称、`read_schlib` / `read_pcblib` 查图元、`validate_library` 查结构、`diff_libraries` 查差异。需要查看静态外观时用 `render_symbol` / `render_footprint`。 |
 | 生成、复制或更新库条目 | 用 `altium-offline-library` 操作已授权的库副本。EasyEDA 转换、采购身份与 AD 属性补全仍用 `szlcsc_altium_*` / `szlcsc_ad_library_*`。可参考已装的 `altium-library` Skill 核对 Datasheet、焊盘和引脚。 |
 | `.PrjPcb`、`.SchDoc`、`.PcbDoc` | 用本技能的 [inspect_saved.py](../scripts/inspect_saved.py) 读文件。先用工程清单识别目标，再把具体图纸或板文件传给脚本。 |
+| `.IntLib` | 用同一脚本查看内嵌器件，按 `--component` 筛选准确库件名，取得已保存的参数和封装引用。 |
 | 原理图封装链接、单针网络和驱动冲突初筛 | 如已装 `altium-schematic-review`，用它自带的 `audit_footprints.py <SchDoc> --libs <库目录>`、`net_erc.py <SchDoc>`。结合层级连接、器件分件和厂家资料复核候选问题。 |
 
 用已安装 `altium-monkey` 的 Python 3.12 执行，例如复用 `components` 的 Altium 扩展环境。以下为在本技能目录运行的例子，也可用脚本绝对路径。
@@ -35,9 +36,10 @@ szlcsc_sync_datasheets(identifiers=[...], output_dir="...")
 python -X utf8 scripts/inspect_saved.py path/to/Design.PrjPcb
 python -X utf8 scripts/inspect_saved.py path/to/Sheet.SchDoc --designator U1
 python -X utf8 scripts/inspect_saved.py path/to/Board.PcbDoc --designator U1
+python -X utf8 scripts/inspect_saved.py path/to/Standard.IntLib --component LIBRARY-PART-NAME
 ```
 
-`PrjPcb` 列出工程登记的文档路径，`SchDoc` 给出位号、Comment、引脚数量及封装引用，`PcbDoc` 给出器件及焊盘、走线、网络数量。输出标注 `source=saved_file`，列表默认前 30 项，可用 `--limit` 调整。仅当当前任务明确要求活动文档、未保存内容、原生编译/ERC/DRC 或 ECO 时，才走 AD 桥接。遇到离线工具缺失、解析失败或证据不足时，报告具体缺口，不自动改用 AD。
+`PrjPcb` 列出工程登记的文档路径，`SchDoc` 给出位号、Comment、引脚数量及封装引用，`PcbDoc` 给出器件及焊盘、走线、网络数量。`IntLib` 需要支持 `AltiumIntLib` 的 `altium-monkey` 版本，输出库件名、已保存的符号参数和引脚数量，以及封装引用。输出标注 `source=saved_file`，列表默认前 30 项，可用 `--limit` 调整。仅当当前任务明确要求活动文档、未保存内容、原生编译/ERC/DRC 或 ECO 时，才走 AD 桥接。遇到离线工具缺失、解析失败或证据不足时，报告具体缺口。
 
 ## EasyEDA / 新器件 Altium 生成
 
@@ -50,6 +52,8 @@ python -X utf8 scripts/inspect_saved.py path/to/Board.PcbDoc --designator U1
 3. 实际阅读原厂 Datasheet，确认覆盖完全一致的订购型号和封装。对照 `report_path` 中的 `observations`，把独立取得的期望值用 `szlcsc_altium_verify_bundle` 的 `expected` 提交。每项填 `group`、`field`、`value`、`source`、`reference`，Datasheet 必填实际页码 `page`。数值按报告单位和原点对齐，容差来自引用的资料。先完成有证据的字段，缺项保留待核实。
 4. 核对引脚编号与定义、焊盘编号和几何、孔径、阻焊／锡膏模式及机械层用途。符号电气类型（例如默认 Passive）仅作提示。同一板的实际开窗按适用规则确定。只有看过实际 STEP 几何并与原厂图对照 Pin 1、贴板方向后才填写 `orientation`。转换器的 placement 告警也需保留。提供了目标板时，按板厂或工程规范对照已保存的物理层叠和规则。
 5. 交付库文件和 `verification.json`。将 `generated` 与核验结论分开报告，分别列出已通过、不符合、待核实和提示。默认全程用离线 CAD 工具，生成资产时联网下载。任务缺少证据时继续保留待核实。只有用户另行明确要求 AD 原生 ERC／DRC、活动文档或 ECO 时才进入 AD 桥接。
+
+后续调用 `szlcsc_altium_verify_bundle` 补充证据且当前工具支持 `retain_existing` 时，传 `retain_existing=true`，同一字段的新证据覆盖旧值。默认按本次提交的整组证据重新核验。
 
 ### 单独下载、转换或诊断
 

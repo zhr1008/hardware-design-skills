@@ -8,7 +8,7 @@
 
 | 技能 | 用途 | 输入与交付终点 | 交给谁或从谁接收 |
 | --- | --- | --- | --- |
-| [`hardware`](../skills/hardware/SKILL.md) | 判断任务归属、执行深度和操作权限 | 从请求、工件、平台、授权和目标产物出发，选择专项或固定批处理 | 按需派给下表专项，收回读回证据和受阻动作 |
+| [`hardware`](../skills/hardware/SKILL.md) | 判断任务归属、执行深度和操作权限 | 从请求、工件、平台、授权和目标产物出发，选择专项、固定批处理或本地资料检索 | 按需派给下表专项，交接工件读回、文档版次与页码、权限停点 |
 | [`plan-electronic-product`](../skills/plan-electronic-product/SKILL.md) | 把产品想法和行为描述转成工程要求 | 接收目标、使用场景及商业和机械约束，交付 `product-brief.yaml` 与 `architecture.md` | 从参考库取适用资料，把供电、引脚、行为和可测条件交给系统、电路及固件设计 |
 | [`hardware-project-library`](../skills/hardware-project-library/SKILL.md) | 查找、评估和管理可复用参考工程 | 输入要复用的模块或指定资料，交付带来源、版本、适用边界和验证状态的参考记录 | 为需求、整板、电路和 PCB 提供有出处的基线，变更在派生工程中验证 |
 | [`hardware-solution`](../skills/hardware-solution/SKILL.md) | 统筹整板开发、软硬协同和改版 | 输入需求或既有工程，按目标推进到设计文件、固件与复核记录 | 跨阶段保持供电、引脚、时序与故障接口一致，把实现和验收交给相应站点 |
@@ -39,7 +39,7 @@
 
 | 技能 | 用途 | 输入与交付终点 | 交给谁或从谁接收 |
 | --- | --- | --- | --- |
-| [`component-sourcing`](../skills/component-sourcing/SKILL.md) | 批查型号、选型和采购字段，按需求导出 AD 表 | 输入精确 C 号、MPN、功能条件或经核对 JSON，按层交付定向参数、短名单、批查结果或 HTML/XLSX | 在线搜索须配置 `components`。同条件分组、结果复用与导出脚本支持电路设计、BOM 或资格流程 |
+| [`component-sourcing`](../skills/component-sourcing/SKILL.md) | 查型号、从标准库筛选阻容、核采购字段，按需求导出 AD 表 | 输入精确 C 号、MPN、规格、可选的本地索引或经核对 JSON，按任务交付参数、短名单、批查结果或 HTML/XLSX | 缺项按需要查国内商品页、原厂或渠道。已核验证据供电路设计、BOM 或资格流程使用 |
 | [`ee-datasheet-master`](../skills/ee-datasheet-master/SKILL.md) | 从原厂 PDF 取得可追溯的参数和脚位证据 | 入参为精确型号、Datasheet 与问题，输出版本、页码、单位、工况和 min/typ/max | 为电路和固件参数、符号与封装核验、器件资格提供依据。使用可用 PDF 读取路径 |
 | [`bom-material-archive`](../skills/bom-material-archive/SKILL.md) | 将 BOM 映射为本地物料档案 | 输入 CSV/XLSX、目标表头和已核对料号，交付保留位号、数量、分组、层级的 CSV 及读回结果 | 采购字段来自 `component-sourcing` 的商品证据。资格判定和制造出包由对应专项处理 |
 | [`qualify-pcba-sourcing`](../skills/qualify-pcba-sourcing/SKILL.md) | 按位号核实器件和替代料适用性 | 输入原理图、PCB、BOM、原厂依据和产量，交付逐位号的资格结论和 `sourcing-lock.csv` | 汇合精确身份、封装、脚位、库存和装配证据，把已确定的料件与未决项交给冻结和制造 |

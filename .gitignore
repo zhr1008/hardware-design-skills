@@ -10,3 +10,5 @@ dist/
 build/
 outputs/
 .codex-install-source.json
+/skills/hardware/assets/ocr-books/
+/skills/component-sourcing/assets/standard-passives/

@@ -7,7 +7,8 @@
 | 电路示意图 | Python 和 Schemdraw。校验脚本随 `draw-schemdraw-circuit` 安装。 |
 | Altium 保存文件解析 | 支持当前工件的 `altium-monkey` Python 环境。库只读 MCP 可按需独立配置。 |
 | 原生 EDA | Altium Designer、EasyEDA Pro 或 KiCad，及与目标平台匹配的 CLI/连接器。活动项目、写入和界面操作遵循对应授权。 |
-| 器件查询和库转换 | 独立安装 [Component Sourcing MCP](https://github.com/zhr1008/component-sourcing-mcp) 并启用 `components`。批查脚本另外需要 MCP Python SDK。HTML/XLSX 选型导出使用标准库，BOM 的 XLSX 输入需要 openpyxl。 |
+| 工程资料与 OCR | Python 标准库可查询或转换使用者指定的本地逐页索引。生成 OCR 原始导出需在对应环境运行 MinerU。现有全文索引按其本地入口调用。 [资料检索](../skills/hardware/references/engineering-knowledge.md) |
+| 器件查询和库转换 | 本地阻容 JSON 筛选与 HTML/XLSX 选型导出使用标准库。在线查料可独立安装 [Component Sourcing MCP](https://github.com/zhr1008/component-sourcing-mcp)，批查脚本另外需要 MCP Python SDK。读取 Altium 集成库按实际版本配 `altium-monkey`，BOM 的 XLSX 输入需要 openpyxl。 |
 | 仿真 | 实际可用的 SPICE 求解器或用户指定的 Multisim 环境。按工作文件和求解器核对网表及模型，按工况读回波形。 |
 | 固件与台架 | 用户项目指定的 SDK、编译器、调试器及仪器。随包 `workflow` 脚本生成离线步骤预览，实际构建和设备动作由对应专项按授权执行。 |
 | 机械 | `lab-hardware-cad` 按需使用 build123d。用户也可使用自己的 SOLIDWORKS、FreeCAD 或对应 CAD 入口。原始 3D 文件与几何数据默认留在本机，外发需单独批准。 |

@@ -10,7 +10,9 @@
 | --- | --- |
 | 「用 `$hardware` 画一张 RC 低通示意图，给 SVG。」 | 用 Schemdraw 生成图和 Python 源。需要 EDA 可编辑原理图时，在请求中点明 Altium、EasyEDA Pro 或 KiCad。 |
 | 「只读核对这个保存的 Altium 工程，按页列出器件数量。」 | 批查保存版 `.PrjPcb` 的原理图、板卡和文件状态，报告缺失项。若任务需要未保存状态，再核对现场读取的许可。 |
+| 「在我提供的本地手册索引里核对数据速率，给原页出处。」 | 对照版次查正文，按需回读 OCR 页，记录物理页和印刷页。 |
 | 「给这批 0402 电阻按阻值、精度和功率选料，保留原位号。」 | 先按完整硬条件离线分组，再按组查询。对最终候选核对原厂和渠道证据，工程选型表默认是可逐格复制的 HTML。 |
+| 「优先用我这份标准阻容索引找满足规格的料，缺项时再查公开来源。」 | 按明确料号、封装和规格筛本地记录，把字段齐全的匹配与待核实项分开。需要时核对国内商品页及原厂资料。 |
 | 「这份 BOM 只转档案 CSV，已有料号原样保留。」 | 按模板映射，在 CSV 读回后结束。 |
 | 「读这两份 KiCad 原生 ERC 和 DRC 报告，看看有没有关掉的检查和未连项。」 | 汇总每份报告的错误、警告、排除项、可见的禁用规则及覆盖信息。 |
 | 「投板前核对这版 BOM 与贴装坐标，TP1 不贴。」 | 检查缺贴、多贴、重复位号以及坐标、板面和角度字段，记录两份输入的哈希。 |
@@ -85,6 +87,10 @@ python -X utf8 skills/hardware/scripts/hardware_tool.py --plan bom-archive bom.c
 器件批查单独提供 `batch_lookup.py`、`plan_selection_groups.py` 和固定出表脚本。根路由按任务选择入口，已有报告可以只补缺项。固件预览可查看计划中已给定和仍需补齐的信息。 [固定命令参数](skills/hardware/references/local-tools.md) · [器件批查与续跑](skills/component-sourcing/references/batch-lookup.md) · [器件与 BOM 分级](skills/component-sourcing/references/selection-depth.md)
 
 已有证据时，可独立运行每一项检查。从设计推进到制造时，先读 ERC/DRC 与工程状态，再核对 BOM/CPL 和独立 CAM 证据，最后校验冻结包。制成样机后，把测量绑到实际板号与固件，再按限值核对。需要原生导出、独立 CAM、虚拟固件回归或现场测试时，再按阶段选择已有外部工具。 [可选工具与接入点](docs/backends.md)
+
+指定本地 OCR 数据目录后，`ocr_books.py` 可按书查看覆盖、查同页词和读回单页。`pack_mineru_book.py` 可将已有 MinerU Middle JSON 转为索引并按原件版本补页。工程资料留在使用者管理的数据目录。 [逐页 OCR 用法](skills/hardware/references/ocr-books.md)
+
+指定本地标准阻容索引后，`query_passive_index.py` 可按 C 号、完整料号或结构化规格筛选。查当前供货、更新证据或核对 CAD 库件时，再走相应入口。 [器件查询与回退](skills/component-sourcing/references/sourcing-queries.md)
 
 ## 权限怎么划分
 

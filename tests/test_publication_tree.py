@@ -47,6 +47,21 @@ class PublicationTreeTest(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn("private-network-address", result.stdout)
 
+    def test_local_library_json_stays_out_of_public_tree(self):
+        paths = [
+            "skills/hardware/assets/ocr-books/manifest.json",
+            "skills/component-sourcing/assets/standard-passives/index.json",
+        ]
+        for relative in paths:
+            file = self.repo / relative
+            file.parent.mkdir(parents=True)
+            file.write_text("{}", encoding="utf-8")
+        publication.git(self.repo, "add", "--", *paths)
+        self.assertEqual(publication.scan(self.repo, staged=True, tree=None), (0, [
+            {"path": "[redacted filename]", "line": 0, "rule": "private-directory"},
+            {"path": "[redacted filename]", "line": 0, "rule": "private-directory"},
+        ]))
+
 
 if __name__ == "__main__":
     unittest.main()

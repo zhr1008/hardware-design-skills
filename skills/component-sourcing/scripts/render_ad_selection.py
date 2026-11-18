@@ -21,7 +21,8 @@ PASSIVE_ENDINGS = ("电阻", "电容", "电感")
 PASSIVE_TYPES = {"电阻阵列", "电感阵列", "电容阵列", "resistor", "capacitor", "inductor"}
 SOURCE_FIELDS = (
     "mpn", "lcsc_code", "brand", "package", "component_type", "parameters",
-    "ad_comment", "ad_description", "match_status", "evidence", "procurement",
+    "ad_comment", "ad_description", "generic_description", "specific_description",
+    "match_status", "evidence", "procurement",
 )
 HEADERS = (
     ("designator", "位号"),
@@ -134,14 +135,14 @@ def candidate_row(payload):
         raise ValueError("选型候选 evidence 必须是 JSON 对象。")
     kind = field_text(payload, "component_type")
     generic_in_tool = kind.endswith("电容") or kind == "贴片电阻"
+    legacy_description = payload.get("ad_description")
     return {
         "ad_comment": payload.get("ad_comment"),
         "lcsc_code": payload.get("lcsc_code"),
         "package": payload.get("package"),
         "component_type": kind,
-        "generic_description": payload.get("ad_description") if generic_in_tool else "",
-        # The current MCP provides only the generic Description for resistors and capacitors.
-        "specific_description": UNKNOWN if generic_in_tool else payload.get("ad_description"),
+        "generic_description": payload.get("generic_description", legacy_description if generic_in_tool else ""),
+        "specific_description": payload.get("specific_description", UNKNOWN if generic_in_tool else legacy_description),
         "product_url": evidence.get("product_url"),
         "source": {field: payload[field] for field in SOURCE_FIELDS if field in payload},
     }

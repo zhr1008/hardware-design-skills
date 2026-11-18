@@ -27,6 +27,7 @@
 
 | 对象与状态 | 推荐入口和检查点 |
 | --- | --- |
+| 本地手册、标准、教材或既有逐页 OCR | [工程资料检索](engineering-knowledge.md) 先核版本再定位正文；使用本地 OCR 时报告物理页、印刷页和覆盖范围。以相同版次的原页核对文字、公式及工况。 |
 | AD 已保存的 `.SchLib` / `.PcbLib` | `altium-library` 配 `mcp__altium_offline_library__*`，如 `read_schlib`、`validate_library` 和 `diff_libraries`，读取库条目、引脚/焊盘和图元，按需做校验、渲染、前后差异。写入使用授权副本和工具的 `allowed_paths`，从磁盘读回。原厂脚位、尺寸和封装变体是库验收依据。已有库的批量物料参数整理按 `component-sourcing` 的实际入口处理。 |
 | AD 已保存的 `.PrjPcb` / `.SchDoc` / `.PcbDoc` | [`ad-saved`](local-tools.md) 按工程清单批查或读取单个文档，盘点成员、位号、原理图引脚数量/封装引用和板上器件/焊盘概要。疑似悬空脚、封装链接等交 `altium-schematic-review` 初筛并对照原厂手册。需要编译层级、多分件或当前编辑态证据时按授权切到 AD 现场入口，保留已读取范围和缺口。 |
 | AD 活动工程的连续操作 | 选 `mcp__eda_agent__*` 做工程身份与文档上下文确认、跨文档快照、原生编译/检查、相关对象迭代和导出。按本轮签名用 `app_context` 确认已连接项目和文档，再按需选择 `design_review_snapshot`、`proj_compile` 等，检查响应中的实际执行和原生结果。 |
@@ -58,8 +59,8 @@
 | 任务 | 先用 |
 | --- | --- |
 | 产品需求与可测设计输入／已有工程与参考复用 | `plan-electronic-product` ／ `hardware-project-library`。整板跨专业交付用 `hardware-solution`。 |
-| 查器件、核对已知型号、比较指定条目、查库存或数量价 | 优先调用当前 `components` 的匹配查询工具，默认以所问事实或候选在正文结束。资料和原厂封装图按需使用 `ee-datasheet-master`，CAD 资产按实际请求选择器件专项入口。 |
-| 为工程选用或替换器件，包括一个位号 | `component-sourcing` 配 `components`。已有选型仅收窄或修改条件时复用上轮筛选状态。按 [导出流程](../../component-sourcing/references/ad-selection-export.md) 用已核验数据生成默认 HTML，明示格式优先。追加 Excel 时复用已交付的数据。 |
+| 查器件、核对已知型号、比较指定条目、查库存或数量价 | 有用户提供的标准阻容索引时先做 [离线筛选](../../component-sourcing/references/sourcing-queries.md#标准库优先与外部检索)，只补证据缺口。实时库存、价和采购档位用对应渠道。默认以所问事实或候选在正文结束。 |
+| 为工程选用或替换器件，包括一个位号 | `component-sourcing` 按适用的本地证据、原厂和渠道核对条件。已有选型仅收窄或修改条件时复用上轮筛选状态。按 [导出流程](../../component-sourcing/references/ad-selection-export.md) 用已核验数据生成默认 HTML，明示格式优先。追加 Excel 时复用已交付的数据。 |
 | 逐位号 BOM 资格、替代适用性和供货证据 | `qualify-pcba-sourcing` 负责资格结论，按需从 `component-sourcing` 取得精确身份及渠道证据。 |
 | 将电子 BOM 转换成物料档案 CSV，或补齐档案的渠道料号 | [bom-material-archive](../../bom-material-archive/SKILL.md) 保留模板字段、层级、位号及数量，必要时定向查料。纯 CSV 以已提供 BOM 和模板为输入，停在 CSV 读回。 |
 | PCBA 进度、版本、证据和变更传播 | `manage-pcba-program`。 |

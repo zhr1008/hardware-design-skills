@@ -37,4 +37,4 @@ python -X utf8 scripts/hardware_tool.py bench-check validation/limits.json --mea
 
 - 固件的 Keil、CMake 和 PlatformIO 流水线用 [workflow runner](../../workflow/scripts/workflow_runner.py)。`--dry-run` 输出步骤预览。执行时复核项目、目标、探针、端口和实编译产物，设备写入按 L3。
 - SPICE 批量扫参与输出量测用当前暴露的 `ltspice-mcp` 的 `run_experiments`，将案例、参数变化和量测一次提交。检查输入网表和导入项，按实际仿真和窗口副作用核对权限。
-- 只查精确 C 号、库存或资料时，用当前 `components` 的对应聚焦只读工具。选择、下载、导出和现场工作按用户实际要求触发。
+- 有用户提供的标准阻容索引时，先做 [按料号或规格的查询](../../component-sourcing/references/sourcing-queries.md#标准库优先与外部检索)。需要实时库存、价格或缺失字段时，用对应渠道的聚焦只读工具。下载、导出和现场工作按用户实际要求触发。

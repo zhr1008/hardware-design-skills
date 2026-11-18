@@ -22,6 +22,7 @@ PRIVATE_NAMES = {
 PRIVATE_DIRS = {
     ".codex", ".git", ".idea", ".playwright-mcp", ".ssh", ".venv",
     "__pycache__", ".pytest_cache", ".ruff_cache", "node_modules", "logs",
+    "ocr-books", "standard-passives",
 }
 PRIVATE_SUFFIXES = {
     ".key", ".pem", ".p12", ".pfx", ".kdbx", ".sqlite", ".sqlite3", ".db",
@@ -283,7 +284,7 @@ def scan(repo: Path, *, staged: bool, tree: str | None):
         if mode not in {"100644", "100755"}:
             reasons.append("symlink-or-submodule")
         if reasons:
-            reported_name = "[redacted filename]" if filename_findings else name
+            reported_name = "[redacted filename]" if filename_findings or "private-directory" in reasons else name
             findings.extend({"path": reported_name, "line": 0, "rule": rule} for rule in reasons)
         else:
             entries.append((name, oid))

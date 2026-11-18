@@ -10,6 +10,23 @@
 
 ## 精确查询和选型
 
+### 标准库优先与外部检索
+
+1. 用户提供标准阻容 JSON 索引时，按 `lcsc_id`（或 `code`）和完整 `mpn` 精确匹配，或用 `group`、`package` 和 `parameters` 筛规格。检查请求中的全部硬条件。查询输出保留原始单位、来源和核对日期。适用用户或项目品牌偏好时，在证据相当的候选中排序。
+2. 库内候选满足硬条件、数量和所需证据时，可用同一 C 号下已核对且仍适用的 `comment`、`generic_description`、`description` 和 `url`。涉及电气适用性或替代时按原厂证据判断。按命中的 C 号查询实时库存和数量价，索引中的采购信息仅作留档。需要符号或封装时，用 `symbol`、`footprint` 定位用户提供的对应 `.IntLib`。 [离线检查](altium-assets.md#离线操作-altium-库与已保存工程)
+3. 索引未提供、不可读、未覆盖该类器件、候选不足或证据有缺口时，按需要查询立创、原厂及其它渠道。可并行调用立创 MCP 和搜索公开网页。立创 MCP 按准确 C 号、MPN 或规格查询，网络搜索可给料号或规格加 `site:item.szlcsc.com` 找国内商品页，也可定位原厂产品页和 Datasheet。明确要求全市场、跨渠道或网络搜索时，覆盖用户指定的范围。
+4. 立创 MCP 超时、限速、失败或漏项时，打开网络搜索找到的实际商品页核对 C 号、MPN、品牌和封装。同一立创建议按准确 C 号合并，保留来源差异。只报告当前可证实的库存与数量价，缺证字段写「待核实」。
+
+公开技能包提供只读查询程序，索引和 `.IntLib` 由用户自行提供。索引采用 UTF-8 JSON 数组，每个器件对象可含 `lcsc_id` 或 `code`、`mpn`、`group`、`package`、`brand`，以及按原字段名保存文本规格的 `parameters` 对象。从技能目录运行以下命令。
+
+```powershell
+python -X utf8 scripts/query_passive_index.py path/to/standard-passives.json --code C900000001
+python -X utf8 scripts/query_passive_index.py path/to/standard-passives.json --mpn SAMPLE-0603-100NF
+python -X utf8 scripts/query_passive_index.py path/to/standard-passives.json --group 贴片电容_0603 --package 0603 --param '容值=0.1uF' --param '额定电压>=50V' --param '温度系数=X7R'
+```
+
+重复给出的筛选条件必须同时成立。`--param` 按 `parameters` 中的准确字段名匹配。`=` 支持文本对照及同量纲换算，`>=` 和 `<=` 需要支持的数值单位，例如 `Ω`、`kΩ`、`mΩ`、`F`、`nF`、`uF`、`V`、`W`、`A`、`%`、`ppm/℃`、`mm` 或 `h`。文本规格保留原拼写。按 `unknown_conditions` 补查缺失项、占位值或无法直接比较的条件。`matched_count` 统计库内明确满足所传条件的行，`pending_count` 统计无已知冲突但需补证的行，`--limit` 限制两组各自展示的行数，`truncated` 提示还有结果。工程适用性、库件几何和采购状态另按所需证据核对。
+
 ### 精确 C 编号
 
 ```text
@@ -40,7 +57,7 @@ szlcsc_find_alternatives(identifier="Cxxxxxx", in_stock_only=false)
 
 ### 功能/参数选型
 
-普通中文需求优先调用 `szlcsc_select`。把用户原话传给 `request`，通过 `conditions` 补充明确但未自动识别的条件。保留返回的 `selection`，后续只改精度、封装或数量时将它传给 `previous`，沿用其他条件。用户给出数量后才查询候选的当前库存和该数量的报价。
+通过立创 MCP 外查时，普通中文需求优先调用 `szlcsc_select`。把用户原话传给 `request`，通过 `conditions` 补充明确但未自动识别的条件。保留返回的 `selection`，后续只改精度、封装或数量时将它传给 `previous`，沿用其他条件。明确要求现货时可单独查询最终候选的当前库存，给出数量后查询该数量的报价。
 
 按 [AD 字段规范](ad-field-rules.md) 核实 `pending_evidence` 和最终候选字段。只有达到文件交付终点才走 [固定导出程序](ad-selection-export.md)。
 
@@ -117,7 +134,7 @@ szlcsc_jlcpcb_categories(refresh=false)
 
 ## 失败降级
 
-- C-code 查不到：报告失败，不改国际商城。
+- 准确 C 号经国内来源仍查不到时，报告检索范围并保留待核实。
 - MPN 无 exact：不要强绑，转参数化搜索或人工确认候选。
 - price/stock 缺失：unknown，不猜 0。
 - Datasheet 缺失：不能完成最终 package/pin verification。
