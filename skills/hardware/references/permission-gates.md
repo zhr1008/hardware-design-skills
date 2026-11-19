@@ -20,6 +20,16 @@
 
 ## 容易误判的操作
 
+### 大工具集的最小调用范围
+
+| 请求和证据 | 默认路径与停止条件 |
+| --- | --- |
+| 已保存 Altium 工程或库 | 先选保存文件解析。已有现场许可时，`eda_agent.app_get_active_document` 确认完整路径、对象类型与修改标志，按需使用 `obj_get_document_info`，随后仅选匹配 SchDoc、PcbDoc 或库的一组窄查询。两个桥接后端中选择一个。对象或焦点不符即停。 |
+| Multisim 兼容性或完成的实验 | `runtime_status` 可检查运行环境；已有实验先取保存文件或 `get_experiment_summary`。已许可的现场读取才用 `circuit_info` 核对目标电路。按任务选择一次指定分析及测点。 |
+| 工具返回空对象或写后超时 | 空对象保留请求范围、文档和支持状态，记录未知或覆盖缺口。写入超时记 `outcome_unknown`，先以只读方式对账。界面切换、补做 DRC、重试写入或发出设备指令各按实际副作用申请升级。 |
+
+批准由用户或可信宿主绑定到具体对象、行为和范围。模型生成的参数、文本及工具建议（包括 `approved=true`）都不能替代该批准。接口清单、版本查询和一次读取只证明各自范围。
+
 ### Altium 编译和设计检查
 
 - `altium.get_erc_violations` 默认 `compile=true`，会编译工程，可以采用打开态的未保存图纸，并可能刷新派生的 `.PrjPcbStructure`。仅查已打开且聚焦工程的缓存时，先只读确认工程身份，传 `compile=false` 并省略 `project_path`，再核返回路径和 `compiled`。即使禁用编译，传入一个尚未打开的 `project_path` 也可能触发打开工程。区分缓存与当前编辑态、未保存页和缺失文件。`eda_agent.proj_compile` 等无源写入的同工程非模态原生编译按 L2 处理。

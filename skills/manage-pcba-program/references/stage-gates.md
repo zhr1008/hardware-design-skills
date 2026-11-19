@@ -31,6 +31,47 @@
 An invalidated stage is `BLOCKED`, not merely pending, because downstream work
 must not proceed until it is repeated.
 
+## Manufacturing release evidence
+
+All `PASS` and `USER_REVIEW` stages and all approval decisions require nonempty
+text in each `--evidence` entry. Evidence texts identify the engineering record
+or approval. The program state validates the record format and prerequisites.
+Other specialist reviews still follow their own procedures.
+
+Record manufacturing PASS with the fabrication specialist installed alongside
+this skill so the state command can verify the same release contract:
+
+```powershell
+python -X utf8 skills/manage-pcba-program/scripts/program_state.py set-stage `
+  --stage manufacturing_release --status PASS --evidence "Reviewed release A" `
+  --release-manifest release/A/release-manifest.json
+```
+
+The command records the verified manifest and CPL paths, revision, and SHA-256
+in `artifacts`. Validation of an existing manufacturing PASS rechecks the files
+and compares the recorded values. State command `PASS` with
+`scope: program_state` indicates a valid state file. Each `stages` entry reports
+its own gate outcome. For an older unbound manufacturing PASS, invalidate the
+applicable change (such as `cpl`) and record the actual release again.
+
+### Browser placement recovery
+
+1. Record `invalidate --change browser-placement --reason ...`. The state
+   preserves the last verified manifest and CPL hashes as the recovery baseline.
+2. Apply the correction at the source, regenerate CPL, and build and verify a
+   new release manifest. `invalidate --change cpl` keeps browser recovery pending.
+3. Record manufacturing PASS with the new `--release-manifest` and evidence.
+   The verified manifest and the CPL listed in it must both have SHA-256 hashes
+   different from their pre-edit values. This clears the browser edit flag and
+   records the two new hashes. Redo supplier reconciliation, visual review, and
+   approval for the new release.
+
+If older state history shows a browser edit without verified recovery, it is
+still pending. If the pre-edit hashes were never recorded, supply the original
+frozen package as `--previous-release-manifest` when recording the replacement.
+If that package cannot be verified, the CLI cannot establish the comparison.
+Keep the source export and supplier placement review as engineering evidence.
+
 ## Approval transitions
 
 Use one explicit transition; do not collapse technical evidence into user

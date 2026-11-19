@@ -1,0 +1,8 @@
+{
+  "schema": "hardware-spice-input-v1",
+  "netlist": "rc.cir",
+  "model_files": [],
+  "measurements": {
+    "tau": {"unit": "s", "min": 0.000999, "max": 0.001001}
+  }
+}

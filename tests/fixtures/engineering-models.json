@@ -1,0 +1,229 @@
+[
+  {
+    "check": "i2c-pullup",
+    "context": {
+      "model": "open_drain_lumped_rc",
+      "inputs_bounded": true,
+      "corners_reachable": true
+    },
+    "inputs": {
+      "vdd_max_v": "3.3",
+      "vol_max_v": "0.4",
+      "iol_min_a": ".003",
+      "rise_max_s": "3e-7",
+      "bus_cap_max_f": "160e-12",
+      "r_ohm": 2000,
+      "tolerance": ".05"
+    },
+    "counterexample": {
+      "bus_cap_max_f": "400e-12"
+    },
+    "expected_counterexample": "fail",
+    "result_field": "window_ohm"
+  },
+  {
+    "check": "divider-wcca",
+    "context": {
+      "model": "positive_unloaded_linear_divider",
+      "inputs_bounded": true,
+      "corners_reachable": true
+    },
+    "inputs": {
+      "vin_min_v": 10,
+      "vin_max_v": 10,
+      "top_min_ohm": 90,
+      "top_max_ohm": 110,
+      "bottom_min_ohm": 90,
+      "bottom_max_ohm": 110,
+      "allowed_min_v": 4.5,
+      "allowed_max_v": 5.5
+    },
+    "counterexample": {
+      "allowed_min_v": 4.7
+    },
+    "expected_counterexample": "fail",
+    "result_field": "output_v"
+  },
+  {
+    "check": "hot-copper",
+    "context": {
+      "model": "uniform_dc_copper_at_known_temperature",
+      "inputs_bounded": true,
+      "corners_reachable": true
+    },
+    "inputs": {
+      "length_mm": 60,
+      "width_mm": 1,
+      "finished_copper_um": 35,
+      "current_a": 2.5,
+      "copper_temp_c": 80,
+      "rho20_ohm_m": "1.724e-8",
+      "alpha_per_k": ".00393",
+      "contact_ohm": 0,
+      "maximum_drop_v": 0.1
+    },
+    "counterexample": {
+      "maximum_drop_v": 0.075
+    },
+    "expected_counterexample": "fail",
+    "result_field": "total_drop_v"
+  },
+  {
+    "check": "measurement-guardband",
+    "context": {
+      "model": "expanded_interval_inclusive_limits",
+      "inputs_bounded": true,
+      "corners_reachable": true
+    },
+    "inputs": {
+      "value": 10,
+      "expanded_uncertainty": 0.5,
+      "minimum": 9.5,
+      "maximum": 10.5,
+      "unit": "mm",
+      "coverage_probability": 0.95
+    },
+    "counterexample": {
+      "value": 12
+    },
+    "expected_counterexample": "fail",
+    "result_field": "interval"
+  },
+  {
+    "check": "stencil-ratio",
+    "context": {
+      "model": "rectangular_straight_wall_aperture",
+      "inputs_bounded": true,
+      "corners_reachable": true
+    },
+    "inputs": {
+      "length_mm": 0.3,
+      "width_mm": 0.25,
+      "thickness_mm": 0.1,
+      "minimum_area_ratio": 0.66,
+      "minimum_aspect_exclusive": 1.5
+    },
+    "counterexample": {
+      "thickness_mm": 0.12
+    },
+    "expected_counterexample": "fail",
+    "result_field": "area_ratio"
+  },
+  {
+    "check": "zero-failure",
+    "context": {
+      "model": "iid_same_mission_zero_failures",
+      "inputs_bounded": true,
+      "corners_reachable": true
+    },
+    "inputs": {
+      "sample_count": 1000,
+      "failure_count": 0,
+      "confidence": 0.95,
+      "target_probability": 0.003
+    },
+    "counterexample": {
+      "target_probability": 0.001
+    },
+    "expected_counterexample": "indeterminate",
+    "result_field": "upper_probability"
+  },
+  {
+    "check": "tolerance-stack",
+    "context": {
+      "model": "linear_signed_interval_stack",
+      "inputs_bounded": true,
+      "corners_reachable": true
+    },
+    "inputs": {
+      "nominal": 2,
+      "minimum": 1.7,
+      "maximum": 2.4,
+      "unit": "mm",
+      "signed_contributions": [
+        [
+          -0.1,
+          0.2
+        ],
+        [
+          -0.2,
+          0.2
+        ]
+      ]
+    },
+    "counterexample": {
+      "maximum": 2.1
+    },
+    "expected_counterexample": "fail",
+    "result_field": "stack_interval"
+  },
+  {
+    "check": "s-passivity",
+    "context": {
+      "model": "normalized_power_waves_equal_real_z0",
+      "inputs_bounded": true,
+      "corners_reachable": true
+    },
+    "inputs": {
+      "reference_ohm": 50,
+      "samples": [
+        {
+          "hz": 1000,
+          "s": [
+            [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            [
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                0
+              ]
+            ]
+          ]
+        }
+      ]
+    },
+    "counterexample": {
+      "samples": [
+        {
+          "hz": 1000,
+          "s": [
+            [
+              [
+                0.6,
+                0
+              ],
+              [
+                0.6,
+                0
+              ]
+            ],
+            [
+              [
+                0.6,
+                0
+              ],
+              [
+                0.6,
+                0
+              ]
+            ]
+          ]
+        }
+      ]
+    },
+    "expected_counterexample": "fail",
+    "result_field": "violating_samples_hz"
+  }
+]

@@ -6,8 +6,6 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).absolute().parents[4]
 CLI_PATH = REPO_ROOT / ".claude/skills/schematic-analyzer/scripts/schematic-cli.py"
-DENALI_ROOT = REPO_ROOT / "data/denali/RK3576.kicad_sch"
-E1005_ROOT = REPO_ROOT / "data/E1005_v01"
 SCRIPTS_ROOT = REPO_ROOT / ".claude/skills/schematic-analyzer/scripts"
 if str(SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_ROOT))
@@ -43,8 +41,8 @@ def test_help_only_exposes_light_refactor_command_surface() -> None:
     assert "export" not in result.stdout
 
 
-def test_overview_renders_structural_sections_for_project() -> None:
-    result = run_cli("overview", str(DENALI_ROOT))
+def test_overview_renders_structural_sections_for_project(schematic_example) -> None:
+    result = run_cli("overview", str(schematic_example.root))
 
     assert result.returncode == 0, result.stderr
     assert "Project Overview" in result.stdout
@@ -54,21 +52,21 @@ def test_overview_renders_structural_sections_for_project() -> None:
     assert "Referenced Pages:" in result.stdout
 
 
-def test_overview_json_output_contains_required_sections(tmp_path: Path) -> None:
+def test_overview_json_output_contains_required_sections(tmp_path: Path, schematic_example) -> None:
     output_path = tmp_path / "overview.json"
 
-    result = run_cli("overview", str(DENALI_ROOT), "--output", str(output_path))
+    result = run_cli("overview", str(schematic_example.root), "--output", str(output_path))
 
     assert result.returncode == 0, result.stderr
     overview = load_json(output_path)
-    assert overview["project_overview"]["root_schematic_filename"] == "RK3576.kicad_sch"
+    assert overview["project_overview"]["root_schematic_filename"] == schematic_example.root.name
     assert overview["project_overview"]["referenced_page_count"] >= 1
     assert overview["page_navigation"]
     assert overview["core_component_candidates"]
 
 
-def test_query_page_returns_structured_json_for_page_index() -> None:
-    result = run_cli("query", str(DENALI_ROOT), "--page", "1")
+def test_query_page_returns_structured_json_for_page_index(schematic_example) -> None:
+    result = run_cli("query", str(schematic_example.root), "--page", "1")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -79,8 +77,8 @@ def test_query_page_returns_structured_json_for_page_index() -> None:
     assert all(component["mpn"] for component in payload["components"])
 
 
-def test_query_component_returns_structured_json_for_reference() -> None:
-    result = run_cli("query", str(DENALI_ROOT), "--component", "U36")
+def test_query_component_returns_structured_json_for_reference(denali_connected_root: Path) -> None:
+    result = run_cli("query", str(denali_connected_root), "--component", "U36")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -105,8 +103,8 @@ def test_query_component_returns_structured_json_for_reference() -> None:
         assert isinstance(entry["cross_page"], bool)
 
 
-def test_query_component_deduplicates_repeated_pin_net_pairs() -> None:
-    result = run_cli("query", str(DENALI_ROOT), "--component", "U36")
+def test_query_component_deduplicates_repeated_pin_net_pairs(denali_connected_root: Path) -> None:
+    result = run_cli("query", str(denali_connected_root), "--component", "U36")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -115,8 +113,8 @@ def test_query_component_deduplicates_repeated_pin_net_pairs() -> None:
     assert len(pairs) == len(set(pairs))
 
 
-def test_query_component_default_omits_unconnected_nets_for_large_components() -> None:
-    result = run_cli("query", str(DENALI_ROOT), "--component", "U23")
+def test_query_component_default_omits_unconnected_nets_for_large_components(denali_connected_root: Path) -> None:
+    result = run_cli("query", str(denali_connected_root), "--component", "U23")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -127,8 +125,8 @@ def test_query_component_default_omits_unconnected_nets_for_large_components() -
     assert all(not entry["name"].startswith("unconnected-") for entry in payload["nets"])
 
 
-def test_query_component_full_restores_unconnected_nets() -> None:
-    result = run_cli("query", str(DENALI_ROOT), "--component", "U23", "--full")
+def test_query_component_full_restores_unconnected_nets(denali_connected_root: Path) -> None:
+    result = run_cli("query", str(denali_connected_root), "--component", "U23", "--full")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -136,8 +134,8 @@ def test_query_component_full_restores_unconnected_nets() -> None:
     assert any(entry["name"].startswith("unconnected-") for entry in payload["nets"])
 
 
-def test_query_component_neighbors_are_sorted_by_fanout_then_name() -> None:
-    result = run_cli("query", str(DENALI_ROOT), "--component", "U36")
+def test_query_component_neighbors_are_sorted_by_fanout_then_name(denali_connected_root: Path) -> None:
+    result = run_cli("query", str(denali_connected_root), "--component", "U36")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -146,8 +144,8 @@ def test_query_component_neighbors_are_sorted_by_fanout_then_name() -> None:
     assert keys == sorted(keys)
 
 
-def test_query_net_returns_structured_json_for_exact_name() -> None:
-    result = run_cli("query", str(DENALI_ROOT), "--net", "/FPCIO/FPC_I2C_SCL")
+def test_query_net_returns_structured_json_for_exact_name(denali_connected_root: Path) -> None:
+    result = run_cli("query", str(denali_connected_root), "--net", "/FPCIO/FPC_I2C_SCL")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -157,8 +155,8 @@ def test_query_net_returns_structured_json_for_exact_name() -> None:
     assert "pins" in payload
 
 
-def test_query_property_returns_structured_json_for_key() -> None:
-    result = run_cli("query", str(DENALI_ROOT), "--property", "MPN")
+def test_query_property_returns_structured_json_for_key(schematic_example) -> None:
+    result = run_cli("query", str(schematic_example.root), "--property", "MPN")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -168,10 +166,10 @@ def test_query_property_returns_structured_json_for_key() -> None:
     assert payload["missing"] >= 0
 
 
-def test_query_pattern_returns_structured_json_for_yaml() -> None:
-    pattern_path = REPO_ROOT / ".claude/skills/schematic-analyzer/patterns/i2c.yaml"
+def test_query_pattern_returns_structured_json_for_yaml(schematic_example) -> None:
+    pattern_path = SCRIPTS_ROOT.parent / "patterns/i2c.yaml"
 
-    result = run_cli("query", str(DENALI_ROOT), "--pattern", str(pattern_path))
+    result = run_cli("query", str(schematic_example.root), "--pattern", str(pattern_path))
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -180,8 +178,8 @@ def test_query_pattern_returns_structured_json_for_yaml() -> None:
     assert "matches" in payload
 
 
-def test_query_match_mode_finds_component_text_matches() -> None:
-    result = run_cli("query", str(DENALI_ROOT), "--component", "--match", "FUSB302")
+def test_query_match_mode_finds_component_text_matches(denali_root: Path) -> None:
+    result = run_cli("query", str(denali_root), "--component", "--match", "FUSB302")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -190,8 +188,8 @@ def test_query_match_mode_finds_component_text_matches() -> None:
     assert any(match["ref"] == "U36" for match in payload["matches"])
 
 
-def test_query_match_mode_finds_net_text_matches() -> None:
-    result = run_cli("query", str(DENALI_ROOT), "--net", "--match", "I2C")
+def test_query_match_mode_finds_net_text_matches(schematic_example) -> None:
+    result = run_cli("query", str(schematic_example.root), "--net", "--match", "I2C")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -202,8 +200,8 @@ def test_query_match_mode_finds_net_text_matches() -> None:
     assert any("I2C" in match["name"] for match in payload["matches"])
 
 
-def test_query_match_mode_finds_regex_net_label_matches_in_e1005() -> None:
-    result = run_cli("query", str(E1005_ROOT), "--net", "--match", "SDA|SCL|I2C", "--all")
+def test_query_match_mode_finds_regex_net_label_matches_in_e1005(e1005_root: Path) -> None:
+    result = run_cli("query", str(e1005_root), "--net", "--match", "SDA|SCL|I2C", "--all")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -314,8 +312,8 @@ def test_query_match_mode_finds_regex_net_label_matches_in_e1005() -> None:
     assert all("pin_count" not in match for match in payload["matches"])
 
 
-def test_query_match_mode_sorts_net_matches_by_naming_value_without_hiding_results() -> None:
-    result = run_cli("query", str(E1005_ROOT), "--net", "--match", "SDA|SCL|I2C", "--all")
+def test_query_match_mode_sorts_net_matches_by_naming_value_without_hiding_results(e1005_root: Path) -> None:
+    result = run_cli("query", str(e1005_root), "--net", "--match", "SDA|SCL|I2C", "--all")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -329,9 +327,9 @@ def test_query_match_mode_sorts_net_matches_by_naming_value_without_hiding_resul
     ]
 
 
-def test_query_match_mode_respects_all_for_component_search() -> None:
-    baseline = run_cli("query", str(DENALI_ROOT), "--component", "--match", "U")
-    full = run_cli("query", str(DENALI_ROOT), "--component", "--match", "U", "--all")
+def test_query_match_mode_respects_all_for_component_search(schematic_example) -> None:
+    baseline = run_cli("query", str(schematic_example.root), "--component", "--match", "U")
+    full = run_cli("query", str(schematic_example.root), "--component", "--match", "U", "--all")
 
     assert baseline.returncode == 0, baseline.stderr
     assert full.returncode == 0, full.stderr
@@ -347,9 +345,9 @@ def test_query_match_mode_respects_all_for_component_search() -> None:
     assert len(full_payload["matches"]) > len(baseline_payload["matches"])
 
 
-def test_query_property_includes_truncation_metadata_and_all_override() -> None:
-    baseline = run_cli("query", str(DENALI_ROOT), "--property", "Footprint")
-    full = run_cli("query", str(DENALI_ROOT), "--property", "Footprint", "--all")
+def test_query_property_includes_truncation_metadata_and_all_override(schematic_example) -> None:
+    baseline = run_cli("query", str(schematic_example.root), "--property", "Footprint")
+    full = run_cli("query", str(schematic_example.root), "--property", "Footprint", "--all")
 
     assert baseline.returncode == 0, baseline.stderr
     assert full.returncode == 0, full.stderr
@@ -365,8 +363,8 @@ def test_query_property_includes_truncation_metadata_and_all_override() -> None:
     assert full_payload["shown"] == full_payload["total_values"]
 
 
-def test_query_property_values_are_sorted_stably() -> None:
-    result = run_cli("query", str(DENALI_ROOT), "--property", "MPN", "--all")
+def test_query_property_values_are_sorted_stably(schematic_example) -> None:
+    result = run_cli("query", str(schematic_example.root), "--property", "MPN", "--all")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -377,8 +375,8 @@ def test_query_property_values_are_sorted_stably() -> None:
     assert normalized == sorted(normalized, key=lambda item: (item[0] is None, str(item[0])))
 
 
-def test_query_net_match_results_are_sorted_by_naming_value() -> None:
-    result = run_cli("query", str(DENALI_ROOT), "--net", "--match", "I2C", "--all")
+def test_query_net_match_results_are_sorted_by_naming_value(denali_connected_root: Path) -> None:
+    result = run_cli("query", str(denali_connected_root), "--net", "--match", "I2C", "--all")
 
     assert result.returncode == 0, result.stderr
     payload = json.loads(result.stdout)
@@ -426,15 +424,20 @@ def test_query_net_match_results_are_sorted_by_naming_value() -> None:
     ]
 
 
-def test_cache_status_is_default_action() -> None:
-    result = run_cli("cache", str(DENALI_ROOT))
+def test_cache_status_is_default_action(schematic_example) -> None:
+    result = run_cli("cache", str(schematic_example.root))
 
     assert result.returncode == 0, result.stderr
     assert "Cache Status:" in result.stdout
 
 
-def test_cache_clear_succeeds() -> None:
-    result = run_cli("cache", str(DENALI_ROOT), "--clear")
+def test_cache_clear_succeeds(schematic_example) -> None:
+    cache_dir = schematic_example.root.parent / ".schematic-analyzer" / "cache"
+    cache_dir.mkdir(parents=True)
+    (cache_dir / "entry").write_text("test cache entry", encoding="utf-8")
+
+    result = run_cli("cache", str(schematic_example.root), "--clear")
 
     assert result.returncode == 0, result.stderr
     assert "Cache cleared" in result.stdout
+    assert not cache_dir.exists()

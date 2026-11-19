@@ -22,8 +22,10 @@
 ```powershell
 python -X utf8 scripts/query_passive_index.py path/to/standard-passives.json --code C900000001
 python -X utf8 scripts/query_passive_index.py path/to/standard-passives.json --mpn SAMPLE-0603-100NF
-python -X utf8 scripts/query_passive_index.py path/to/standard-passives.json --group 贴片电容_0603 --package 0603 --param '容值=0.1uF' --param '额定电压>=50V' --param '温度系数=X7R'
+python -X utf8 scripts/query_passive_index.py path/to/standard-passives.json --group 贴片电容_0603 --package 0603 --param '容值=0.1uF' --param '额定电压>=50V' --param '温度系数=X7R' --preferred-brand 'FH(风华)'
 ```
+
+用 `--preferred-brand` 传索引中的完整品牌名，去掉首尾空白后按全名比较，忽略大小写。脚本先检查全部硬条件，再把 `matched` 中的偏好品牌提到前面，最后应用 `--limit`。偏好品牌内部和其余合格品牌各自保持源顺序。未传偏好时按索引顺序展示，`pending` 单独按原顺序展示。指定必须使用某品牌时用 `--brand`，例如 `--brand 'FH(风华)'`。至少提供一个料号或规格筛选条件。
 
 重复给出的筛选条件必须同时成立。`--param` 按 `parameters` 中的准确字段名匹配。`=` 支持文本对照及同量纲换算，`>=` 和 `<=` 需要支持的数值单位，例如 `Ω`、`kΩ`、`mΩ`、`F`、`nF`、`uF`、`V`、`W`、`A`、`%`、`ppm/℃`、`mm` 或 `h`。文本规格保留原拼写。按 `unknown_conditions` 补查缺失项、占位值或无法直接比较的条件。`matched_count` 统计库内明确满足所传条件的行，`pending_count` 统计无已知冲突但需补证的行，`--limit` 限制两组各自展示的行数，`truncated` 提示还有结果。工程适用性、库件几何和采购状态另按所需证据核对。
 

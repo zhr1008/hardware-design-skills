@@ -4,13 +4,17 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import math
 import os
 import stat
+import sys
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
+
+from check_assembly import check as check_assembly, parse_refs
 
 
 APPROVALS = (
@@ -34,6 +38,7 @@ PASS_VERIFICATIONS = {
     "visual_mechanical_review", "dfm_review", "sourcing_lock_current",
     "revision_reconciled",
 }
+ASSEMBLY_CHECK_KEY = "assembly_check"
 
 
 def sha256(path: Path) -> str:
@@ -184,26 +189,51 @@ def unique_json_object(pairs: list[tuple[str, object]]) -> dict:
     return result
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("manifest", type=Path)
-    parser.add_argument(
-        "--confine-to-manifest-dir", action="store_true",
-        help="Artifacts must use package-relative paths that stay inside the manifest directory.",
-    )
-    args = parser.parse_args()
+def read_manifest(path: Path) -> tuple[dict, str]:
+    raw = path.read_bytes()
+    return parse_manifest(raw), hashlib.sha256(raw).hexdigest().upper()
+
+
+def parse_manifest(raw: bytes) -> dict:
+    data = json.loads(raw.decode("utf-8-sig"), parse_float=Decimal, object_pairs_hook=unique_json_object)
+    if not isinstance(data, dict):
+        raise ValueError("manifest must be a JSON object")
+    return data
+
+
+def assembly_check_record(artifacts: dict, paths: dict[str, Path], exclusions: set[str]) -> dict:
     try:
-        data = json.loads(
-            args.manifest.read_text(encoding="utf-8-sig"), parse_float=Decimal, object_pairs_hook=unique_json_object,
-        )
-        if not isinstance(data, dict):
-            raise ValueError("manifest must be a JSON object")
-    except (OSError, ValueError, InvalidOperation) as exc:
-        print(json.dumps({"status": "BLOCKED", "manifest_status": None, "artifacts": 0, "errors": [str(exc)]}, indent=2))
-        return 1
-    errors = contract_errors(data)
+        if paths["bom"].samefile(paths["cpl"]):
+            raise ValueError("BOM and CPL must be distinct files")
+        result = check_assembly(paths["bom"], paths["cpl"], exclusions)
+    except (OSError, ValueError, csv.Error) as exc:
+        raise ValueError(f"BOM/CPL reconciliation requires supported same-revision CSV files: {exc}") from exc
+    hashes = {role: value.upper() for role, value in result["sha256"].items()}
+    if any(hashes[role] != artifacts[role].get("sha256") for role in hashes):
+        raise ValueError("BOM/CPL SHA-256 changed between artifact verification and assembly check")
+    if result["status"] != "matched":
+        raise ValueError(f"BOM/CPL reconciliation failed: {json.dumps(result['issues'], ensure_ascii=False)}")
+    return {"status": result["status"], "sha256": hashes, "explicit_exclusions": sorted(exclusions)}
+
+
+def assembly_exclusions(record: object, artifacts: dict) -> set[str]:
+    if (not isinstance(record, dict) or record.get("status") != "matched"
+            or record.get("sha256") != {role: artifacts[role]["sha256"] for role in ("bom", "cpl")}):
+        raise ValueError("assembly_check must record a match bound to the listed BOM/CPL SHA-256")
+    references = record.get("explicit_exclusions")
+    if not isinstance(references, list) or not all(isinstance(ref, str) for ref in references):
+        raise ValueError("assembly_check explicit_exclusions must be a list of BOM reference designators")
+    return {ref for item in references for ref in parse_refs(item, grouped=False)}
+
+
+def manifest_errors(data: dict, root: Path, *, confine: bool = False) -> list[str]:
+    return contract_errors(data) + package_errors(data, root, confine=confine)
+
+
+def package_errors(data: dict, root: Path, *, confine: bool = False) -> list[str]:
+    errors = []
     artifacts = data.get("artifacts") if isinstance(data.get("artifacts"), dict) else {}
-    root = args.manifest.parent.resolve()
+    verified_paths = {}
     for role, item in artifacts.items():
         if not isinstance(item, dict):
             continue
@@ -213,7 +243,7 @@ def main() -> int:
             continue
         relative = Path(value)
         try:
-            path = confined_artifact(root, relative) if args.confine_to_manifest_dir else (root / relative).resolve()
+            path = confined_artifact(root, relative) if confine else (root / relative).resolve()
             if not path.is_file():
                 errors.append(f"{role}: missing file {path}")
                 continue
@@ -226,16 +256,62 @@ def main() -> int:
             errors.append(f"{role}: SHA-256 mismatch")
         if type(item.get("size_bytes")) is not int or size != item["size_bytes"]:
             errors.append(f"{role}: size mismatch")
+        elif actual == item.get("sha256"):
+            verified_paths[role] = path
     if data.get("status") != "PASS":
         errors.append(f"manifest status is {data.get('status')!r}, not PASS")
-    result = {
-        "status": "PASS" if not errors else "BLOCKED",
-        "manifest_status": data.get("status") if isinstance(data.get("status"), str) else None,
-        "artifacts": len(artifacts),
-        "errors": errors,
-    }
-    print(json.dumps(result, indent=2))
-    return 0 if not errors else 1
+    elif {"bom", "cpl"} <= verified_paths.keys():
+        verification = data.get("verification")
+        try:
+            exclusions = set()
+            if isinstance(verification, dict) and ASSEMBLY_CHECK_KEY in verification:
+                exclusions = assembly_exclusions(verification[ASSEMBLY_CHECK_KEY], artifacts)
+            assembly_check_record(artifacts, verified_paths, exclusions)
+        except ValueError as exc:
+            errors.append(str(exc))
+    return errors
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("manifest", type=Path)
+    parser.add_argument("--formal", action="store_true", help="emit a versioned evidence envelope")
+    parser.add_argument(
+        "--confine-to-manifest-dir", action="store_true",
+        help="Artifacts must use package-relative paths that stay inside the manifest directory.",
+    )
+    args = parser.parse_args()
+    digest = None
+    missing = False
+    identity = {}
+    try:
+        raw = args.manifest.read_bytes()
+        digest = hashlib.sha256(raw).hexdigest() if args.formal else None
+        data = parse_manifest(raw)
+        identity = {key: data[key] for key in ("release", "revision")
+                    if isinstance(data.get(key), str) and data[key].strip()}
+        structural = contract_errors(data)
+        errors = structural + package_errors(data, args.manifest.parent.resolve(), confine=args.confine_to_manifest_dir)
+        invalid = bool(structural)
+        artifacts = data.get("artifacts") if isinstance(data.get("artifacts"), dict) else {}
+        result = {
+            "status": "PASS" if not errors else "BLOCKED",
+            "manifest_status": data.get("status") if isinstance(data.get("status"), str) else None,
+            "artifacts": len(artifacts),
+            "errors": errors,
+        }
+    except (OSError, ValueError, InvalidOperation) as exc:
+        result = {"status": "BLOCKED", "manifest_status": None, "artifacts": 0, "errors": [str(exc)]}
+        invalid = True
+        missing = isinstance(exc, FileNotFoundError)
+    output = result
+    if args.formal:
+        sys.path.insert(0, str(Path(__file__).absolute().parents[2] / "hardware/scripts"))
+        from evidence_adapter import saved_release
+
+        output = saved_release(result, args.manifest, digest, identity=identity, invalid=invalid, missing=missing)
+    print(json.dumps(output, indent=2))
+    return 0 if result["status"] == "PASS" else 1
 
 
 if __name__ == "__main__":

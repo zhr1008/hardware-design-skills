@@ -1,0 +1,7 @@
+Diode circuit with a deliberately missing native model definition
+V1 in 0 PULSE(0 1 0 1n 1n 10m 20m)
+D1 in out MissingModel
+R1 out 0 1k
+.tran 5u 5m
+.measure tran peak MAX v(out)
+.end

@@ -9,7 +9,9 @@
 | 原生 EDA | Altium Designer、EasyEDA Pro 或 KiCad，及与目标平台匹配的 CLI/连接器。活动项目、写入和界面操作遵循对应授权。 |
 | 工程资料与 OCR | Python 标准库可查询或转换使用者指定的本地逐页索引。生成 OCR 原始导出需在对应环境运行 MinerU。现有全文索引按其本地入口调用。 [资料检索](../skills/hardware/references/engineering-knowledge.md) |
 | 器件查询和库转换 | 本地阻容 JSON 筛选与 HTML/XLSX 选型导出使用标准库。在线查料可独立安装 [Component Sourcing MCP](https://github.com/zhr1008/component-sourcing-mcp)，批查脚本另外需要 MCP Python SDK。读取 Altium 集成库按实际版本配 `altium-monkey`，BOM 的 XLSX 输入需要 openpyxl。 |
-| 仿真 | 实际可用的 SPICE 求解器或用户指定的 Multisim 环境。按工作文件和求解器核对网表及模型，按工况读回波形。 |
+| 工程计算与后端诊断 | 共享验算使用 Python 标准库。`backend_doctor.py` 检查指定后端和已有观测，输出探测范围。[模型](../skills/hardware/references/model-checks.md) · [后端合同](../skills/hardware/references/evidence-and-backends.md) |
+| 仿真 | 批处理试点使用本机 ngspice，绑定网表、模型和命名量测。Multisim 项目按实际环境选择对应入口。[SPICE 实验输入与读回](../skills/design-and-review-circuit/references/spice-readback.md) |
+| CAM 与原生检查 | Gerbonara 可独立读回 Gerber 和 Excellon。KiCad 原生 ERC/DRC 运行器在新目录操作工程副本，已有报告也可直接离线读取。[CAM 读回](../skills/release-pcba-fabrication/references/cam-readback.md) · [KiCad 原生检查](../skills/pcb-layout-review/references/kicad-native-checks.md) |
 | 固件与台架 | 用户项目指定的 SDK、编译器、调试器及仪器。随包 `workflow` 脚本生成离线步骤预览，实际构建和设备动作由对应专项按授权执行。 |
 | 机械 | `lab-hardware-cad` 按需使用 build123d。用户也可使用自己的 SOLIDWORKS、FreeCAD 或对应 CAD 入口。原始 3D 文件与几何数据默认留在本机，外发需单独批准。 |
 | 工厂流程 | 用户自己的嘉立创、Fictiv 或对应供应商入口。按文件版本、接收方、价格和用户授权分别处理预览、上传、报价、下单和付款。 |

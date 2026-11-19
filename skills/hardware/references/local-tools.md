@@ -28,7 +28,7 @@ python -X utf8 scripts/hardware_tool.py bench-check validation/limits.json --mea
 | `selection-export` | 复用 [选型导出器](../../component-sourcing/references/ad-selection-export.md)。可用 `--draft --write-rows draft.json` 从候选保留证据并形成待核对底稿，正式出表使用已核对 JSON。Excel 按显式参数生成。更新已授权的现有表时加 `--replace-output`。 |
 | `sourcing-lock-check` | 核对已有资格表的字段、数量与证据时效。表内证据与本次真实供货查询各按实际记录。 |
 | `assembly-check` | 只读同一冻结版次与装配变体的 BOM 和 CPL。核对双方位号、重复、缺漏及 CPL 的层面、坐标和角度字段。只把已确认的不贴装位号传入 `--exclude`，实际焊盘方向和坐标原点由独立 CAM 或供应商预览复核。 |
-| `release-check` | 校验已有制造包清单和文件内容。工件路径以清单目录为根，验证版次、尺寸、哈希及已填写的门槛证据。CAM、DRC、上传和下单由相应专项处理。 |
+| `release-check` | 校验已有制造包清单、版次、尺寸和哈希，重新核对所列制造 BOM/CPL，并校验装配核对记录与工件哈希一致。CAM、DRC、上传和下单由相应专项处理。 |
 | `bench-check` | 按既有验收限值 JSON 逐项核对测量 CSV。先确认表头、单位和工况符合专项契约，停在结构化结果与实际证据缺项。设备取证由台架专项按许可执行。 |
 
 脚本只向选中的本机专项传递固定参数，保留下游退出码和报告。对于字面输入、重名文件、缺项或权限错误，依返回的具体原因决定后续动作。一次任务只读取匹配项的帮助或引用即可。

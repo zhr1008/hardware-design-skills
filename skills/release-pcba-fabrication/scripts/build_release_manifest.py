@@ -5,13 +5,15 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-import hashlib
 import json
 import math
 import os
 from pathlib import Path
 
-from validate_release_manifest import APPROVALS, ZERO_VERIFICATIONS, contract_errors, zero
+from check_assembly import parse_refs
+from validate_release_manifest import (
+    APPROVALS, ASSEMBLY_CHECK_KEY, ZERO_VERIFICATIONS, assembly_check_record, contract_errors, sha256, zero,
+)
 
 
 def pairs(values: list[str], label: str) -> dict[str, str]:
@@ -42,14 +44,6 @@ def scalar(value: str):
             return value
 
 
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest().upper()
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=Path(".pcba-workflow/release-manifest.json"))
@@ -60,9 +54,13 @@ def main() -> int:
     parser.add_argument("--artifact-revision", action="append", default=[], metavar="ROLE=REVISION")
     parser.add_argument("--constraint", action="append", default=[], metavar="KEY=VALUE")
     parser.add_argument("--verification", action="append", default=[], metavar="KEY=VALUE")
+    parser.add_argument("--exclude", action="append", default=[], metavar="REFS",
+                        help="Explicit BOM refs omitted from placement for a PASS release (repeatable).")
     parser.add_argument("--approval", action="append", default=[], metavar="NAME=STATUS")
     parser.add_argument("--approval-evidence", action="append", default=[], metavar="NAME=EVIDENCE")
     args = parser.parse_args()
+    if args.exclude and args.status != "PASS":
+        parser.error("--exclude applies to a PASS release")
 
     artifact_paths = pairs(args.artifact, "artifact")
     artifact_revisions = pairs(args.artifact_revision, "artifact revision")
@@ -77,6 +75,7 @@ def main() -> int:
     base = args.output.parent.resolve()
     output = args.output.resolve()
     artifacts: dict[str, dict] = {}
+    paths = {}
     for role, raw_path in artifact_paths.items():
         path = Path(raw_path).resolve()
         if not path.is_file():
@@ -88,6 +87,7 @@ def main() -> int:
             "path": stored, "revision": artifact_revisions[role],
             "size_bytes": path.stat().st_size, "sha256": sha256(path),
         }
+        paths[role] = path
 
     approval_values = pairs(args.approval, "approval")
     approval_evidence = pairs(args.approval_evidence, "approval evidence")
@@ -98,6 +98,8 @@ def main() -> int:
     evidence = {name: [approval_evidence[name]] if name in approval_evidence else [] for name in APPROVALS}
     verification = {}
     for key, value in pairs(args.verification, "verification").items():
+        if key == ASSEMBLY_CHECK_KEY:
+            parser.error(f"{ASSEMBLY_CHECK_KEY} is generated from the BOM and CPL")
         # Check counts before float coercion can round a small nonzero input to zero.
         if key in ZERO_VERIFICATIONS and not zero(value):
             verification[key] = value
@@ -119,6 +121,12 @@ def main() -> int:
     errors = contract_errors(manifest)
     if errors:
         raise SystemExit("release manifest contract failed: " + "; ".join(errors))
+    if args.status == "PASS":
+        try:
+            exclusions = {ref for group in args.exclude for ref in parse_refs(group, grouped=True)}
+            verification[ASSEMBLY_CHECK_KEY] = assembly_check_record(artifacts, paths, exclusions)
+        except ValueError as exc:
+            raise SystemExit(f"release manifest contract failed: {exc}") from exc
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({"status": args.status, "manifest": str(args.output), "artifacts": len(artifacts)}, indent=2))

@@ -24,6 +24,20 @@ description: "为电子电路、EDA、PCB、仿真、机械、采购、固件和
 
 设计或审查需要确定核验依据时，先按 [设计与审查规则](references/design-review-basis.md) 查与当前工况相关的规则，并把适用条件、来源及闭环证据交给对应专项。
 
+当任务需要定量核对 SAR ADC 建立误差或 PDN 目标阻抗时，使用 [工程预算](references/engineering-budgets.md) 的离线计算。将模型结果和实际工程证据分别交给下游。
+
+涉及 SI、EMC、热与降额、绝缘、DFM／DFT 或器件资格时，按 [工程核验与交接](references/engineering-verification.md) 选读对应主题。已有明确输入时用同页的离线命令，工程结论随适用条件、项目限值和证据交接。
+
+## 工作深度与结果交接
+
+正式记录字段、后端状态与调用示例见[证据外壳与后端诊断](references/evidence-and-backends.md)。
+
+单点问答、单项查料及模型计算直接给条件、结果、适用范围和缺项。专项审查、仿真验收、制造冻结或阶段门禁使用版本化 `evidence_envelope`。在三个已接入的批处理 `kicad-report-check`、`release-check`、`bench-check` 上加 `--formal`。原始工件与专项状态随记录保留。KiCad 的 `no_reported_findings` 只描述该报告的可见项目。保守包络触碰界限时，查能否实际达到或由独立证据证明越界。
+
+按 [11 域工程索引](references/lifecycle-domain-index.md) 选取本次主题，按 [来源版次与页码](references/source-index.md) 核查采用的原文。确定性计算见 [计算输入和退出码](references/model-checks.md)。运行条件缺失时，用 [backend_doctor.py](scripts/backend_doctor.py) 离线核配置、安装与已有观察证据。
+
+保存态解析先选一个解析器和一个目标文件。现场经授权后，先读目标工程、文档身份与活动窗口，限用对应对象族。空列表、焦点不符、缺编译或不支持时记录覆盖缺项。Multisim 先选既有网表/结果或经批准的副本，核模型与测点后才选择所需分析。写后超时记 `outcome_unknown`，先独立读回目标和差异。可信批准来自用户或宿主授权记录，模型填写的 `approved=true` 无效。
+
 ## 可直接运行的批处理
 
 任务已明确匹配下表、采用本机入口且输入与权限已明确时，直接调用 [hardware_tool.py](scripts/hardware_tool.py)。用 `list --json` 取固定目录，`<命令> --help` 取参数，必要时以 `--plan <命令> …` 预览本次读写。流程步骤、缺项和停止结果由专项脚本返回。

@@ -6,6 +6,8 @@ description: >-
 
 # Altium 회로도 검토
 
+保存文件优先。经授权连接现场时只取文档身份、对应图纸和所需引脚/网络，核对活动焦点。空结果记证据缺口；写后超时先只读对账。
+
 ## 本机 Codex 路由：磁盘文件优先
 
 先按用户指定的已保存文件检查。读取整份 `.PrjPcb` 中原理图和 PCB 的保存结构时，调用 [批量读取脚本](scripts/inspect_saved_project.py)。只读单份文档时，可用同级 [component-sourcing](../component-sourcing/SKILL.md) 的 `scripts/inspect_saved.py`。需要封装链接或网络初筛时，再用本技能的 `audit_footprints.py` 和 `net_erc.py`。脚本用装有 `altium-monkey` 的 Python 3.12，可复用本机 `components` 的虚拟环境。AD 已打开时，明确说明只分析了保存文件。

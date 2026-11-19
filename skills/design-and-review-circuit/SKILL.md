@@ -5,6 +5,12 @@ description: Design, audit, or correct an electronic circuit from a product brie
 
 # Circuit Design Reviewer
 
+[SPICE 实验合同与读回](references/spice-readback.md)
+
+电源环路、PDN、采样和时序预算见[电源与模拟审查](references/power-and-analog-review.md)。具备已审网表与测量合同的离线验收使用 [SPICE 批处理](scripts/run_spice.py)。
+
+仿真先核已有网表、模型身份、求解器和测量窗口。Multisim 现场先核目标电路，仅查询该次分析需要的对象。COM、前台或原件写入按硬件门禁另行核权，超时后读回再处置。
+
 Treat readability and electrical correctness as separate gates. A review request
 stays read-only; a new-design or correction request authorizes the corresponding
 implementation. Continue through the requested native circuit deliverable.
@@ -47,6 +53,10 @@ implementation. Continue through the requested native circuit deliverable.
    claim an edit or verification stronger than the source permits.
 
 ## Audit
+
+涉及快边沿、瞬态保护、器件应力或隔离屏障时，按 [工程核验](../hardware/references/engineering-verification.md) 记录最快有效边沿、终端、保护与回流路径、损耗和设计工况、隔离两侧与采用的限值。把实际约束交给 PCB，并标出需要仿真或量测的项。
+
+涉及 SAR ADC 前端或电源瞬态预算时，引用 [工程预算](../hardware/references/engineering-budgets.md) 记录阶跃、实际采集窗或动态压降分配，交给 PCB 对应的网名、工况、测点与未验证项。
 
 Read [references/circuit-audit-checklist.md](references/circuit-audit-checklist.md)
 and produce `.pcba-workflow/circuit-review.md` from

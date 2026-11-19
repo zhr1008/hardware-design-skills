@@ -15,8 +15,6 @@ from tools.scope_resolver import ScopeResolver
 
 
 CLI_PATH = REPO_ROOT / ".claude/skills/schematic-analyzer/scripts/schematic-cli.py"
-DENALI_DIR = REPO_ROOT / "data/denali"
-DENALI_ROOT = DENALI_DIR / "RK3576.kicad_sch"
 
 
 def run_cli(*args: str) -> subprocess.CompletedProcess[str]:
@@ -29,35 +27,37 @@ def run_cli(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_scope_resolver_for_directory_returns_root_and_hierarchy_only() -> None:
-    scope = ScopeResolver.resolve(DENALI_DIR)
+def test_scope_resolver_for_directory_returns_root_and_hierarchy_only(schematic_example) -> None:
+    root = schematic_example.root
+    scope = ScopeResolver.resolve(root.parent)
 
-    assert scope.root_schematic == DENALI_ROOT
-    assert scope.project_name == "RK3576"
+    assert scope.root_schematic == root
+    assert scope.project_name == root.stem
     assert scope.is_hierarchical is True
-    assert all(path.parent == DENALI_DIR for path in scope.referenced_sheets)
+    assert all(path.parent == root.parent for path in scope.referenced_sheets)
     assert not hasattr(scope, "supplemental_sheets")
 
 
-def test_project_index_keys_components_by_reference() -> None:
-    index = ProjectIndexer().build(DENALI_ROOT)
+def test_project_index_keys_components_by_reference(schematic_example) -> None:
+    index = ProjectIndexer().build(schematic_example.root)
+    reference = schematic_example.child_reference
 
-    assert "U36" in index.components
-    assert index.components["U36"].reference == "U36"
-    assert index.components["U36"].sheet_path
+    assert reference in index.components
+    assert index.components[reference].reference == reference
+    assert index.components[reference].sheet_path
 
 
-def test_project_index_hierarchy_contains_root_and_child_pages() -> None:
-    index = ProjectIndexer().build(DENALI_ROOT)
+def test_project_index_hierarchy_contains_root_and_child_pages(schematic_example) -> None:
+    index = ProjectIndexer().build(schematic_example.root)
 
     assert index.hierarchy
     assert index.hierarchy[0].sheet_type == "root"
     assert any(sheet.sheet_type == "hierarchy" for sheet in index.hierarchy[1:])
 
 
-def test_connectivity_builder_uses_net_name_as_root_identity() -> None:
-    index = ProjectIndexer().build(DENALI_ROOT)
-    graph = ConnectivityBuilder().build(index, DENALI_ROOT)
+def test_connectivity_builder_uses_net_name_as_root_identity(denali_connected_root: Path) -> None:
+    index = ProjectIndexer().build(denali_connected_root)
+    graph = ConnectivityBuilder().build(index, denali_connected_root)
 
     assert graph.netlist_available is True
     assert "/FPCIO/FPC_I2C_SCL" in graph.all_nets
@@ -65,16 +65,16 @@ def test_connectivity_builder_uses_net_name_as_root_identity() -> None:
     assert graph.all_nets["/FPCIO/FPC_I2C_SCL"].net_type == "Unclassified"
 
 
-def test_analyzer_overview_uses_hierarchy_scope_without_supplemental_pages() -> None:
-    analyzer = SchematicAnalyzer(str(DENALI_ROOT))
+def test_analyzer_overview_uses_hierarchy_scope_without_supplemental_pages(schematic_example) -> None:
+    analyzer = SchematicAnalyzer(str(schematic_example.root))
     overview = analyzer.build_overview()
 
     page_files = {page["page_source_file"] for page in overview["page_navigation"]}
-    assert "USB_MUX.kicad_sch" not in page_files
+    assert schematic_example.unrelated_sheet not in page_files
 
 
-def test_overview_page_navigation_order_is_stable_and_root_first() -> None:
-    analyzer = SchematicAnalyzer(str(DENALI_ROOT))
+def test_overview_page_navigation_order_is_stable_and_root_first(schematic_example) -> None:
+    analyzer = SchematicAnalyzer(str(schematic_example.root))
 
     first = analyzer.build_overview()
     second = analyzer.build_overview()
@@ -85,8 +85,8 @@ def test_overview_page_navigation_order_is_stable_and_root_first() -> None:
     assert indices == list(range(1, len(indices) + 1))
 
 
-def test_overview_core_candidate_order_is_structurally_stable() -> None:
-    analyzer = SchematicAnalyzer(str(DENALI_ROOT))
+def test_overview_core_candidate_order_is_structurally_stable(denali_connected_root: Path) -> None:
+    analyzer = SchematicAnalyzer(str(denali_connected_root))
 
     overview = analyzer.build_overview()
     candidates = overview["core_component_candidates"]
@@ -104,8 +104,8 @@ def test_overview_core_candidate_order_is_structurally_stable() -> None:
     assert ranked_keys == sorted(ranked_keys, reverse=True)
 
 
-def test_overview_neighboring_symbol_count_matches_shared_net_peer_count() -> None:
-    analyzer = SchematicAnalyzer(str(DENALI_ROOT))
+def test_overview_neighboring_symbol_count_matches_shared_net_peer_count(denali_connected_root: Path) -> None:
+    analyzer = SchematicAnalyzer(str(denali_connected_root))
 
     overview = analyzer.build_overview()
     phase_1 = analyzer._run_phase_1()
@@ -124,8 +124,8 @@ def test_overview_neighboring_symbol_count_matches_shared_net_peer_count() -> No
         assert candidate["neighboring_symbol_count"] == len(expected_neighbors)
 
 
-def test_removed_scope_command_is_not_available() -> None:
-    result = run_cli("scope", str(DENALI_ROOT))
+def test_removed_scope_command_is_not_available(schematic_example) -> None:
+    result = run_cli("scope", str(schematic_example.root))
 
     assert result.returncode != 0
     assert "invalid choice" in result.stderr

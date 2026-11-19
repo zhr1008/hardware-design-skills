@@ -21,7 +21,7 @@
 
 ## 架构与分工
 
-![硬件技能包总图。任务经过选路与权限检查，专项使用规则、已有工件和所需工具，读回证据并交付。](docs/architecture/hardware-design-skills.png)
+![硬件技能包架构。路由按平台和权限选择专项，从规则与器件事实、工程验算或保存态后端取得证据，交付单项答复或正式审查记录。](docs/architecture/hardware-design-skills.png)
 
 `$hardware` 根据目标、已有工件、EDA 平台和授权选入口。`hardware-solution` 在整板项目里协调供电、通信、机械和固件接口。`manage-pcba-program` 管理 PCBA 阶段、工件版本、放行结果和变更后的重验范围。需要做多专项的冻结判定或归因时，由 `hardware-design-review` 汇总各项工程证据。
 
@@ -31,7 +31,7 @@
 | --- | --- |
 | [任务路由与权限](docs/architecture-guide.md#任务路由与权限) | 根据工件状态和真实工具动作选入口。执行前检查许可，在用户要求的交付点停止。 |
 | [需求与整板协调](docs/architecture-guide.md#需求与整板协调) | 把目标和参考工程转成可测要求与接口约束，交电路、PCB、固件和测试。 |
-| [工程知识与综合评审](docs/architecture-guide.md#工程知识与综合评审) | 查适用规则和资料页，把判据与工程证据对齐，给出通过、待验证或阻塞项。 |
+| [工程知识与综合评审](docs/architecture-guide.md#工程知识与综合评审) | 查适用规则和资料页，按 [关键工况](skills/hardware/references/engineering-verification.md) 收集证据，给出通过、待验证或阻塞项。 |
 | [器件选型与 BOM](docs/architecture-guide.md#器件选型与-bom) | 用规格、订购 MPN 和渠道编号核对器件。把原厂脚位、封装和资格结果交给库、BOM 或制造。 |
 | [原理图、工程库与 PCB](docs/architecture-guide.md#原理图工程库与-pcb) | 按 Altium、EasyEDA Pro 或 KiCad 选择入口。交付可编辑工件，或给现有工件的只读检查结果。 |
 | [电路仿真](docs/architecture-guide.md#电路仿真) | 对指定模型、输入和工况运行求解，给波形及量测。结果回到电路设计或评审。 |
@@ -46,6 +46,25 @@
 先定采集范围、误差、供电与通信接口。器件专项用原厂资料核对采样前端和主控，留下完整 MPN、封装与脚位依据。电路专项输出原理图和关键网约束。PCB 与固件使用同一份板级接口约定，机械模块同时回传板框、孔位和连接器装配空间。
 
 首板联调时，用板号、硬件版次和固件哈希绑定启动日志与测量结果。测量异常先确认是供电、前端、采样配置还是测试条件的问题，再回到相应专项。出包时绑定 PCB、BOM、CPL 和装配证据。如果贴装预览的方向有误，从库件、板上的放置或 CPL 导出查起。修正后重新生成并核对受影响的工件。
+
+## 工程知识、计算与正式审查
+
+遇到一个具体问题，先取能回答它的最小证据。比如问「2 kΩ 上拉是否合适」，先查电源、电容、上升时间及器件的灌电流条件，再算可用阻值窗。若任务是冻结某版 I²C 设计，还要把器件、网络、模型条件和计算结果绑定到本版工程。可以从以下三处进入。
+
+| 要回答的问题 | 可用入口 | 结果怎样使用 |
+| --- | --- | --- |
+| 这个判据来自哪个版本？ | 11 个工程域按阶段链接专项参考。96 条审查规则保留原件定位，手册索引另收录 175 个来源编号。用 `knowledge.py sources AN2867` 可同时查到规则书目和手册记录。 | 按实读版本引用。例如 AN2867 的本机资料与另一版官网 PDF 分别定位。条款只有目录、页码未核或版本冲突时，沿用记录中的访问边界。[工程域](skills/hardware/references/lifecycle-domain-index.md) · [来源索引](skills/hardware/references/source-index.md) |
+| 给定工况是否满足预算？ | `engineering_checks.py evaluate` 提供 I²C 上拉、分压最坏情况、热态铜损、测量保护带、钢网面积比、零失效置信上限、公差链和二端口 S 参数无源性八个模型。另保留 ADC 建立与 PDN 命令。 | 返回值 0、1、2 分别表示在本模型内满足、已证越界、条件不足或输入无效。保守区间只在部分角点越界时，需查这些角点能否达到。[参数与可复算示例](skills/hardware/references/model-checks.md) |
+| 工具实际运行了什么？ | `backend_doctor.py` 区分后端声明、安装及调用证据。对保存的 KiCad 报告、制造清单和台架记录使用 `--formal`。 | 读回证据外壳中的工件哈希、执行状态、修改结果、验证状态及已查／跳过项。KiCad 报告的零发现仅覆盖该报告所记录的范围。[证据与后端](skills/hardware/references/evidence-and-backends.md) |
+
+从仓库根目录可直接查一份应用笔记的版本，或将已有的 KiCad 报告整理为正式审查证据。
+
+```powershell
+python -X utf8 skills/hardware/scripts/knowledge.py sources AN2867 --limit 3
+python -X utf8 skills/hardware/scripts/hardware_tool.py kicad-report-check board-drc.json --kind drc --formal
+```
+
+要从原生设计重新取证，可在隔离输出目录运行 KiCad ERC/DRC，或让 ngspice 执行受控网表并读回命名量测。制造包的独立 CAM 读回可比较图层几何和孔槽计数。输入工件、后端条件、结果及缺项分别记录。[KiCad 原生检查](skills/pcb-layout-review/references/kicad-native-checks.md) · [SPICE 量测](skills/design-and-review-circuit/references/spice-readback.md) · [CAM 读回](skills/release-pcba-fabrication/references/cam-readback.md)
 
 ## 固定脚本与交付终点
 
@@ -65,10 +84,14 @@ python -X utf8 skills/hardware/scripts/knowledge.py rules --domain PCB与EMC --s
 | `sourcing-lock-check` | 核对资格表字段、数量、费用及已记录证据的时效。 |
 | `kicad-report-check` | 读取现有 KiCad 9/10 ERC 或 DRC JSON，列出违规、排除、禁用规则与覆盖范围。 |
 | `assembly-check` | 对照同版 BOM 与 CPL，核对位号、DNP、板面、坐标格式和单位。 |
-| `release-check` | 校验冻结制造包清单、版次、尺寸及 SHA-256。 |
+| `release-check` | 校验冻结制造包清单、版次、尺寸及 SHA-256，并对所列制造 BOM/CPL 重新做装配数据核对。 |
 | `bench-check` | 按输入限值核验台架测量，标出超限、记录无效与缺项。 |
 
 `knowledge.py` 可离线查随包的 96 条审查规则。带 `--library` 时可读用户的全文索引，查题录、正文和页标。`ocr_books.py` 用于已整理的逐页 OCR，`pack_mineru_book.py` 可从现有 Middle JSON 建索引。器件专项另有批量查料、等条件分组和本地阻容筛选脚本。 [固定命令用法](skills/hardware/references/local-tools.md) · [知识库用法](skills/hardware/references/engineering-knowledge.md) · [器件批查与续跑](skills/component-sourcing/references/batch-lookup.md)
+
+SAR ADC 一阶建立估算和 PDN 目标阻抗扫频检查沿用现有子命令。电路、PCB 与台架可按同一采集窗口、负载阶跃和测点复验。[工程预算与样本](skills/hardware/references/engineering-budgets.md)
+
+`engineering_validation.py` 提供 RS-485 支线、稳态结温区间、圆孔最小环宽、故障覆盖区间和有界测量比较。SI、EMC、热、绝缘、DFM／DFT 和器件资格的入口各有原文定位、失效案例和可复算样本。 [工程核验与调用示例](skills/hardware/references/engineering-verification.md)
 
 ## 权限怎么划分
 
@@ -102,7 +125,16 @@ Windows 和 Linux CI 检查技能元数据、相对链接、Python 语法、离�
 python -X utf8 -m pip install -r requirements-dev.txt
 python -X utf8 scripts/validate_bundle.py
 python -X utf8 scripts/check_publication.py --tree HEAD
-python -X utf8 -m unittest discover -s tests
+python -X utf8 -m pytest -ra tests skills/schematic-analyzer/tests skills/hardware-project-library/tests
+```
+
+原理图专项的层级、查询、缓存和运行时配置测试可使用临时生成的 KiCad 工程。需要核对上游原板的 13 项回归另用 Denali（11 项）和 E1005_v01（2 项）。例如 Denali 要能在 `RK3576.kicad_sch` 的工程层级中读到 U36 的完整料号和 `/FPCIO/FPC_I2C_SCL`。E1005 用例核对层级标签、页名和全部匹配项。官方 Sticky PDF 和 STEP 可协助识别板卡，运行这些用例还需要对应版次的原生 KiCad 工程。[上游固定提交](https://github.com/Seeed-Studio/ai-skills/tree/32a1f21b834bcb08bd273e155d70257dd3d5dbef) · [Sticky 官方硬件资料](https://www.seeedstudio.com/sticky/docs/zh/device-guide/hardware-overview/)
+
+取得两套原工程后，将含子图的完整目录分别放在同一夹具根的 `denali/` 和 `E1005_v01/` 下，让 `kicad-cli` 在 PATH 中可用，然后运行专项。显式指定的夹具路径出错时测试会报错。默认环境缺原板时，pytest 逐项显示跳过原因。
+
+```powershell
+$env:SCHEMATIC_ANALYZER_TEST_DATA = (Resolve-Path ./board-fixtures).Path
+python -X utf8 -m pytest -ra skills/schematic-analyzer/tests
 ```
 
 自有内容采用 [MIT](LICENSE)。随包第三方文件保留各自版权和许可。 [来源与许可](THIRD_PARTY_NOTICES.md)

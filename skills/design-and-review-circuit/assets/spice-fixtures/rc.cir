@@ -1,0 +1,9 @@
+RC transient calibration
+V1 in 0 PULSE(0 1 0 1n 1n 10m 20m)
+R1 in out 1k
+C1 out 0 1u
+.temp 25
+.options reltol=0.0001
+.tran 5u 5m
+.measure tran tau WHEN v(out)=0.63212056 RISE=1
+.end

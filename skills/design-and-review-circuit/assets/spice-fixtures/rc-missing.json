@@ -1,0 +1,8 @@
+{
+  "schema": "hardware-spice-input-v1",
+  "netlist": "rc-missing.cir",
+  "model_files": [],
+  "measurements": {
+    "unreachable": {"unit": "s", "min": 0, "max": 0.005}
+  }
+}

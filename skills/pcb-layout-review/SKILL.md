@@ -5,6 +5,10 @@ description: Audit, finish, or port PCB placement and routing using circuit inte
 
 # PCB Layout Reviewer
 
+[KiCad 原生检查输入与局限](references/kicad-native-checks.md)
+
+特殊板材、软硬结合和装配板弯按[材料、机械与环境](references/materials-mechanics-and-environment.md)核对。已有 KiCad 报告以 `check_kicad_report.py --formal` 交接；需从保存态重新跑 ERC/DRC 时用 [受控 CLI](scripts/run_kicad_checks.py) 指定新的隔离目录。
+
 ## New boards and current execution
 
 For a new-board request, continue from the verified circuit, netlist, mechanical
@@ -75,6 +79,10 @@ For a derivative board, also read
    dimensions. Independently fitted screenshots are not size evidence.
 
 ## Review in order
+
+按 [工程核验](../hardware/references/engineering-verification.md) 逐项把 SI、EMC、热、绝缘和 DFM／DFT 的约束定位到实际叠层、层面、网名、屏障、散热路径或探点。读回对应版次的几何/报告；没确认连续回流、短路径或测试可达性时记录证据缺口。
+
+电源轨阻抗、去耦和 ADC 前端布局先接收来自电路专项的预算与网名。按 [工程预算](../hardware/references/engineering-budgets.md) 核回流、安装寄生和可用的扫频/量测证据，记录实际板版次与测点。
 
 1. **Architecture placement:** align external connector pin order with
    functional corridors; place protection, translation, processing, memory,

@@ -81,7 +81,7 @@ class ParameterCondition:
         return COMPARE[self.operation](measured[1], self.numeric[1])
 
 
-def query(records, *, code, mpn, fields, conditions, limit):
+def query(records, *, code, mpn, fields, conditions, limit, preferred_brand=None):
     matches, pending = [], []
     for part in records:
         codes = {value.upper() for key in ("lcsc_id", "code")
@@ -115,6 +115,9 @@ def query(records, *, code, mpn, fields, conditions, limit):
             pending.append({**row, "unknown_conditions": unknown})
         else:
             matches.append(row)
+    if preferred_brand is not None:
+        preferred_brand = preferred_brand.casefold()
+        matches.sort(key=lambda row: (known_text(row.get("brand")) or "").casefold() != preferred_brand)
     return {
         "source": "local_passive_index", "record_count": len(records),
         "matched_count": len(matches), "pending_count": len(pending),
@@ -130,12 +133,14 @@ def main():
     parser.add_argument("--mpn", help="完整订购料号，忽略大小写")
     parser.add_argument("--group", help="准确分组名")
     parser.add_argument("--package", help="准确封装名")
-    parser.add_argument("--brand", help="准确品牌名")
+    parser.add_argument("--brand", help="硬条件，要求准确品牌名")
+    parser.add_argument("--preferred-brand", help="准确品牌名，优先显示满足硬条件的该品牌候选")
     parser.add_argument("--param", action="append", type=ParameterCondition.parse, default=[], metavar="条件")
     parser.add_argument("--limit", type=int, default=10, help="匹配项和待核实项各显示的最大条数")
     args = parser.parse_args()
     fields = {key: getattr(args, key) for key in ("group", "package", "brand")}
-    if any(value is not None and known_text(value) is None for value in (args.mpn, *fields.values())):
+    text_values = (args.mpn, *fields.values(), args.preferred_brand)
+    if any(value is not None and known_text(value) is None for value in text_values):
         parser.error("筛选值需明确")
     if args.code is not None and not LCSC_CODE.fullmatch(args.code.strip()):
         parser.error("--code 需要准确的立创 C 号")
@@ -153,7 +158,7 @@ def main():
         return 1
     result = query(records, code=known_text(args.code), mpn=known_text(args.mpn),
                    fields={key: known_text(value) for key, value in fields.items()},
-                   conditions=args.param, limit=args.limit)
+                   conditions=args.param, limit=args.limit, preferred_brand=known_text(args.preferred_brand))
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 

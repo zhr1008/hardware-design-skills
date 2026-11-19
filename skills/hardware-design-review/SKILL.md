@@ -5,6 +5,12 @@ description: 组织电子硬件综合评审、冻结门禁和板级故障分析�
 
 # 硬件综合评审
 
+做正式验收时，按[模型与实测对齐](references/simulation-correlation.md)核条件和偏差。首次上电、重复故障与测量伪影按[联调排障](references/bring-up-troubleshooting.md)规定的探点交接。已有台架记录可用 `check_bench_results.py --formal`。
+
+综合评审需按 [工程核验与交接](../hardware/references/engineering-verification.md) 复核已采用的限值、工况和单项证据。区间跨限、模型覆盖不足、资格未覆盖实际料号或故障覆盖缺证时保留待验证项。
+
+ADC 前端或 PI/PDN 的证据按 [工程预算](../hardware/references/engineering-budgets.md) 回读。用工件版本、测点、工况和判据核对综合结论；一阶估算、采样筛查、仿真和实测分别记录。
+
 把审查对象绑定到版次、工程目录、平台、待检指标和已获许可。默认基于现有证据，只需单项审查时选择对应专项。用户明确需要综合结论时，用下面的流程。
 
 1. 建立证据表，区分设计值、原厂保证值、求解结果和实测。记录报告覆盖的板号、固件版本和工况。

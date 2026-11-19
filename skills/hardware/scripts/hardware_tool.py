@@ -133,6 +133,9 @@ def make_parser():
     assembly.add_argument("--exclude", action="append", default=[], help="不贴装位号，以逗号分隔，可重复")
     assembly.add_argument("--format", choices=("json", "text"))
 
+    for name in ("kicad-report-check", "release-check", "bench-check"):
+        parsers[name].add_argument("--formal", action="store_true", help="输出正式审查的版本化证据")
+
     kicad = parsers["kicad-report-check"]
     kicad.add_argument("--kind", choices=("erc", "drc"), help="要求报告为指定检查类型")
 
@@ -161,7 +164,8 @@ def list_tools(as_json):
 
 def prepare(args):
     name = args.tool
-    source = local_file(args.input)
+    formal = getattr(args, "formal", False)
+    source = local_file(args.input, input_file=not formal)
     entry = TOOLS[name][2]
     command = [str(source)]
     input_paths = [source]
@@ -253,11 +257,14 @@ def prepare(args):
     elif name == "kicad-report-check" and args.kind:
         command += [f"--kind={args.kind}"]
     elif name == "bench-check":
-        measurements = local_file(args.measurements)
+        measurements = local_file(args.measurements, input_file=not formal)
         if source.suffix.casefold() != ".json" or measurements.suffix.casefold() != ".csv":
             raise ValueError("限值文件需要使用 .json，测量文件需要使用 .csv")
         input_paths.append(measurements)
         command = [f"--limits={source}", f"--measurements={measurements}"]
+
+    if formal:
+        command.append("--formal")
 
     # 比较解析后的路径以识别符号链接。直接拒绝输出链接，保留已有文件。
     resolved_inputs = {path.resolve() for path in input_paths} if outputs else set()

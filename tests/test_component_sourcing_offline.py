@@ -75,6 +75,51 @@ class PassiveIndexTest(unittest.TestCase):
         self.assertEqual([row["code"] for row in result["matched"]], ["C900000001"])
         self.assertEqual(result["pending"][0]["unknown_conditions"], ["精度"])
 
+    def test_brand_preference_ranks_only_hard_matches_before_limiting(self):
+        sample = {"package": "0603", "parameters": {"阻值": "10kΩ"}}
+        records = [
+            {**sample, "code": "C900000001", "brand": "其他品牌"},
+            {**sample, "code": "C900000002", "brand": "FH(风华)示例"},
+            {**sample, "code": "C900000003", "brand": "FH(风华)", "parameters": {"阻值": "1kΩ"}},
+            {**sample, "code": "C900000004", "brand": "其他品牌", "parameters": {}},
+            {**sample, "code": "C900000005", "brand": "FH(风华)"},
+            {**sample, "code": "C900000006", "brand": "FH(风华)", "parameters": {}},
+            {**sample, "code": "C900000007", "brand": "FH(风华)"},
+            {**sample, "code": "C900000008", "brand": "其他品牌"},
+            {**sample, "code": "C900000009"},
+        ]
+        options = ("--package", "0603", "--param", "阻值=10kΩ")
+        preference = ("--preferred-brand", " fh(风华) ")
+        original = self.query(records, *options)
+        self.assertEqual(original["matched"], [records[i] for i in (0, 1, 4, 6, 7, 8)])
+        preferred = self.query(records, *options, *preference)
+        self.assertEqual(preferred["matched"], [records[i] for i in (4, 6, 0, 1, 7, 8)])
+        self.assertEqual(preferred["pending"], [
+            {**records[3], "unknown_conditions": ["阻值"]},
+            {**records[5], "unknown_conditions": ["阻值"]},
+        ])
+        limited = self.query(records, *options, *preference, "--limit", 1)
+        self.assertEqual(limited["matched"], [records[4]])
+        self.assertEqual(limited["pending"], preferred["pending"][:1])
+        self.assertEqual((limited["matched_count"], limited["pending_count"]), (6, 2))
+        self.assertTrue(limited["truncated"])
+
+        forced_other = self.query(records, *options, "--brand", "其他品牌", *preference)
+        self.assertEqual(forced_other["matched"], [records[0], records[7]])
+        self.assertEqual(forced_other["pending"], [
+            {**records[3], "unknown_conditions": ["阻值"]},
+            {**records[8], "unknown_conditions": ["brand"]},
+        ])
+
+    def test_brand_preference_requires_a_real_brand_and_a_filter(self):
+        invalid_brand = run_cli("query_passive_index.py", self.path, "--package", "0603",
+                                "--preferred-brand", "待核实")
+        self.assertEqual(invalid_brand.returncode, 2)
+        self.assertIn("筛选值需明确", invalid_brand.stderr)
+        no_filter = run_cli("query_passive_index.py", self.path, "--preferred-brand", "FH(风华)")
+        self.assertEqual(no_filter.returncode, 2)
+        self.assertIn("至少提供一个料号或规格条件", no_filter.stderr)
+
     def test_rejects_malformed_index_and_unsupported_numeric_limit(self):
         self.path.write_text('{"parts": []}', encoding="utf-8")
         self.assertEqual(run_cli("query_passive_index.py", self.path, "--code", "C900000001").returncode, 1)

@@ -20,7 +20,11 @@ SECTION_ROWS = (
     "SELECT sections.file, sections.anchor, sections.heading, section_content.content "
     "FROM sections JOIN section_content ON section_content.id = sections.id"
 )
-SOURCE_FIELDS = ("id", "title", "display_title", "publisher", "edition", "category", "display_group")
+SOURCE_FIELDS = (
+    "id", "title", "display_title", "publisher", "edition", "category", "display_group",
+    "document_number", "source_sha256", "access_status", "source_url", "source_url_status",
+    "source_url_edition", "related_official_url", "source_note",
+)
 
 
 def json_v1(path, key, expected_type):
@@ -78,6 +82,15 @@ def describe(doc, root=None):
         result["source_attached"] = source is not None and source.is_file()
         result["source_path"] = str(source) if result["source_attached"] else None
     return result
+
+
+def enrich_catalogue(docs, public_sources):
+    for key, doc in docs.items():
+        public = public_sources.get(key)
+        if public and public.get("source_sha256") == doc.get("source_sha256") and doc.get("source_sha256"):
+            overrides = {field: value for field, value in doc.items() if value not in (None, "", "未核对")}
+            docs[key] = {**doc, **public, **overrides}
+    return docs
 
 
 def metadata_match(doc, terms):
@@ -247,6 +260,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("--library", type=Path, help="本机知识库根目录")
     sub = parser.add_subparsers(dest="command", required=True)
+    sources = sub.add_parser("sources", help="跨规则书目、手册索引和制造版次查证")
+    sources.add_argument("terms", nargs="+")
+    sources.add_argument("--limit", type=int, choices=range(1, 101), default=10)
     sub.add_parser("status", help="列出规则数量及索引覆盖")
     rules = sub.add_parser("rules", help="按领域、编号或关键词检索规则")
     rules.add_argument("terms", nargs="*")
@@ -269,19 +285,26 @@ def main():
     build = sub.add_parser("build-index", help="以清单中的 Markdown 建立本机索引")
     build.add_argument("--replace", action="store_true")
     args = parser.parse_args()
+    if args.command == "sources":
+        from source_catalog import search_sources
+
+        print(json.dumps(search_sources(args.terms, args.limit), ensure_ascii=False, indent=2))
+        return
     try:
         root = args.library.resolve(strict=True) if args.library else None
         if root is None and args.command in {"search", "read", "build-index"}:
             raise ValueError("请用 --library 指定本机知识库目录")
         public = json_v1(RULES, "rules", list)
-        docs = catalogue(root) if root is not None else {}
         sources = {key.upper(): {"id": key, **entry} for key, entry in public["sources"].items()}
+        docs = enrich_catalogue(catalogue(root), sources) if root is not None else {}
         data = public["rules"]
         if root is not None and args.command in {"rules", "status"}:
             path = library_path(root, DATA / "review-rules.json")
             if path.is_file():
                 data = json_v1(path, "rules", list)["rules"]
-            sources.update(docs)
+                sources.update(docs)
+            else:
+                sources = {**docs, **sources}
         if args.command == "status":
             result = {"review_rules": len(data), "rule_domains": dict(Counter(rule["domain"] for rule in data)),
                       "reference_sources": len(sources), "library_configured": root is not None}

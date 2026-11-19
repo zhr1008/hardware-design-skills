@@ -22,6 +22,8 @@ than relying on model memory.
 
 ## Workflow
 
+项目明确要求 AEC 或其它器件资格时，用 [器件资格与替换验收](../hardware/references/component-qualification.md) 核准型号、封装、适用制造配置、报告版本与工程温度/应力。把结论和证据定位记录在对应位号的资格引用中。资格缺证随本阶段未决项进入门禁，库存和价格可独立查询。
+
 1. Read the product brief, architecture, schematic/netlist, BOM, layout, and
    production quantity. Derive the actual requirement before comparing parts.
 2. For every populated reference, record the exact manufacturer, orderable MPN,

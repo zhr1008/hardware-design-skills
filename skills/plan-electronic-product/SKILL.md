@@ -5,6 +5,8 @@ description: Turn an electronic product idea, behavior description, reverse-engi
 
 # Electronic Product Planner
 
+涉及安全目标、故障反应时间或可靠性分配时，按[系统安全与需求](references/system-safety-and-requirements.md)核口径、需求派生和上下游签收。
+
 Produce `.pcba-workflow/product-brief.yaml` and
 `.pcba-workflow/architecture.md`. Do not invent requirements merely to fill a
 template. A focused planning request ends at its requested output. For an already

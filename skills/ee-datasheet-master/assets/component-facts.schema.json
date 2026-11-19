@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Component facts tied to a manufacturer datasheet and exact orderable identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "identity", "datasheet", "facts"],
+  "$defs": {
+    "text": {"type": "string", "pattern": "\\S"},
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manufacturer", "mpn", "package"],
+      "properties": {
+        "manufacturer": {"$ref": "#/$defs/text"},
+        "mpn": {"$ref": "#/$defs/text"},
+        "package": {"$ref": "#/$defs/text"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["page", "location"],
+      "properties": {
+        "page": {"type": "integer", "minimum": 1},
+        "location": {"$ref": "#/$defs/text"}
+      }
+    },
+    "electrical": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit", "min", "typ", "max"],
+      "properties": {
+        "unit": {"$ref": "#/$defs/text"},
+        "min": {"type": ["number", "null"]},
+        "typ": {"type": ["number", "null"]},
+        "max": {"type": ["number", "null"]}
+      },
+      "anyOf": [
+        {"properties": {"min": {"type": "number"}}},
+        {"properties": {"typ": {"type": "number"}}},
+        {"properties": {"max": {"type": "number"}}}
+      ]
+    },
+    "pin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "name", "role"],
+      "properties": {
+        "number": {"$ref": "#/$defs/text"},
+        "name": {"$ref": "#/$defs/text"},
+        "role": {"enum": ["signal", "power", "ground", "nc", "exposed_pad", "other"]}
+      }
+    }
+  },
+  "properties": {
+    "schema": {"const": "hardware-component-facts-v1"},
+    "identity": {"$ref": "#/$defs/identity"},
+    "datasheet": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["kind", "url", "revision", "sha256", "applies_to"],
+      "properties": {
+        "kind": {"const": "manufacturer_datasheet"},
+        "url": {"type": "string", "pattern": "^https?://[^/\\s]+(?:/[^\\s]*)?$"},
+        "revision": {"$ref": "#/$defs/text"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$", "minLength": 64, "maxLength": 64},
+        "applies_to": {
+          "type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/identity"}
+        }
+      }
+    },
+    "facts": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "category", "status", "value", "conditions", "source"],
+        "properties": {
+          "id": {"$ref": "#/$defs/text"},
+          "category": {"enum": ["pin", "absolute_maximum", "recommended_operating", "electrical_characteristic"]},
+          "status": {"enum": ["supported", "unknown"]},
+          "value": {"type": ["object", "null"]},
+          "conditions": {
+            "type": ["array", "null"], "items": {"$ref": "#/$defs/text"}, "uniqueItems": true
+          },
+          "source": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/source"}]},
+          "reason": {"$ref": "#/$defs/text"}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"status": {"const": "unknown"}}},
+            "then": {"required": ["reason"], "properties": {"value": {"type": "null"}}},
+            "else": {
+              "not": {"required": ["reason"]},
+              "properties": {"conditions": {"type": "array"}, "source": {"$ref": "#/$defs/source"}},
+              "if": {"properties": {"category": {"const": "pin"}}},
+              "then": {"properties": {"value": {"$ref": "#/$defs/pin"}}},
+              "else": {"properties": {"value": {"$ref": "#/$defs/electrical"}}}
+            }
+          }
+        ]
+      }
+    }
+  }
+}

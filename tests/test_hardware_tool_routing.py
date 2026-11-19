@@ -13,6 +13,25 @@ ROUTER = Path(__file__).resolve().parents[1] / "skills" / "hardware" / "scripts"
 
 
 class HardwareToolRouting(unittest.TestCase):
+    def test_formal_evidence_flag_reaches_only_the_three_matching_checkers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "input.json"
+            measurements = Path(directory) / "measurements.csv"
+            source.write_text("{}", encoding="utf-8")
+            measurements.write_text("test_id,value\n", encoding="utf-8")
+            for name, extras in (
+                ("release-check", []), ("kicad-report-check", ["--kind", "drc"]),
+                ("bench-check", ["--measurements", measurements]),
+            ):
+                with self.subTest(name=name):
+                    result = self.plan(name, source, "--formal", *extras)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    plan = json.loads(result.stdout)
+                    self.assertEqual(plan["level"], "L0")
+                    self.assertEqual(plan["parameters"].count("--formal"), 1)
+                    if name == "release-check":
+                        self.assertIn("--confine-to-manifest-dir", plan["parameters"])
+
     def plan(self, *arguments):
         return subprocess.run(
             [sys.executable, "-X", "utf8", str(ROUTER), "--plan", *map(str, arguments)],

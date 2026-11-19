@@ -1,0 +1,2556 @@
+{
+  "schema_version": 1,
+  "source": {
+    "title": "硬件全生命周期工程知识体系与可内化能力参考手册",
+    "sha256": "9136ea3c733af755b8a744c359b5a42148ff7058ab806db7fe407c1c982c886e",
+    "lifecycle_sources": "附录 E 与 F",
+    "manufacturing_revisions": "附录 D",
+    "recorded_date": "2026-11-19",
+    "evidence_status": "记录原手册逐项标注的读取范围与限制。按项目任务取得匹配版次、受控正文和适用要求后再使用。"
+  },
+  "sources": {
+    "B01": {
+      "kind": "book_catalog_and_framework_only",
+      "title": "Paul Horowitz / Winfield Hill，《The Art of Electronics》",
+      "edition_and_identity": "第3版，2015；纸本 ISBN 9780521809269",
+      "framework_scope": "域2/3/4/10：器件行为、模拟与混合信号、电源及实验调试之间的综合设计思路；可作为决策树分类入口",
+      "urls": [
+        "https://www.cambridgebookshop.co.uk/products/the-art-of-electronics",
+        "https://artofelectronics.net/the-book/table-of-contents/"
+      ],
+      "full_text_reviewed": false
+    },
+    "B02": {
+      "kind": "book_catalog_and_framework_only",
+      "title": "Henry W. Ott，《Electromagnetic Compatibility Engineering》",
+      "edition_and_identity": "本题名结构化版次为第1版，2009；纸本 ISBN 9780470189306；在线 ISBN 9780470508510",
+      "framework_scope": "域3/4/6/7/10：噪声耦合、线缆/接地/屏蔽、去耦、叠层与混合信号、瞬态及预兼容测量；适合组织“源—路径—受扰对象—验证”审查流程",
+      "urls": [
+        "https://www.wiley-vch.de/en/areas-interest/engineering/electrical-electronics-engineering-10ee/electromagnetic-theory-10ee4/noise-in-electronic-systems-10ee42/electromagnetic-compatibility-engineering-978-0-470-18930-6",
+        "https://onlinelibrary.wiley.com/doi/book/10.1002/9780470508510"
+      ],
+      "full_text_reviewed": false
+    },
+    "B03": {
+      "kind": "book_catalog_and_framework_only",
+      "title": "Howard Johnson / Martin Graham，《High Speed Digital Design: A Handbook of Black Magic》",
+      "edition_and_identity": "第1版，1993；纸本 ISBN 9780133957242",
+      "framework_scope": "域5/6/9/10：高速数字的模拟本质、边沿/振铃/串扰及测量方法；适合建立“由边沿与互连判断模型”的入口",
+      "urls": [
+        "https://www.informit.com/store/high-speed-digital-design-a-handbook-of-black-magic-9780133957242"
+      ],
+      "full_text_reviewed": false
+    },
+    "B04": {
+      "kind": "book_catalog_and_framework_only",
+      "title": "Eric Bogatin，《Signal and Power Integrity - Simplified》",
+      "edition_and_identity": "第3版；本条纸本记录2018；ISBN 9780134513416",
+      "framework_scope": "域3/5/6/9/10：传输线、差分与损耗、S参数、眼图和PDN；适合连接解析近似、仿真与测量证据",
+      "urls": [
+        "https://www.informit.com/store/signal-and-power-integrity-simplified-9780134513416"
+      ],
+      "full_text_reviewed": false
+    },
+    "B05": {
+      "kind": "book_catalog_and_framework_only",
+      "title": "Robert W. Erickson / Dragan Maksimović，《Fundamentals of Power Electronics》",
+      "edition_and_identity": "第3版，2020；纸本 ISBN 9783030438791；eBook ISBN 9783030438814",
+      "framework_scope": "域2/3/9：变换器稳态、平均模型、控制、磁件、输入滤波与数字控制；适合组织模型选择及小信号模型失效边界",
+      "urls": [
+        "https://link.springer.com/book/10.1007/978-3-030-43881-4"
+      ],
+      "full_text_reviewed": false
+    },
+    "B06": {
+      "kind": "book_catalog_and_framework_only",
+      "title": "Mark I. Montrose，《Printed Circuit Board Design Techniques for EMC Compliance: A Handbook for Designers》",
+      "edition_and_identity": "第2版，2000；纸本 ISBN 9780780353763",
+      "framework_scope": "域5/6/7/10：PCB去耦、时钟/走线/端接、I/O、ESD与板间连接；适合编排布局审查问题，历史法规附录不能当现行法规",
+      "urls": [
+        "https://www.wiley-vch.de/en?isbn=9780780353763&option=com_eshop&view=product",
+        "https://montrosecompliance.com/publications-books/"
+      ],
+      "full_text_reviewed": false
+    },
+    "E01-01": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 1,
+            "title": "系统架构与需求工程"
+          },
+          "edition_and_identity": "ISO/IEC/IEEE 15288；2023，Ed2，2023-05",
+          "primary_url": "https://www.iso.org/standard/81702.html",
+          "recorded_access_and_limits": "官方版次、状态、范围；未取得授权全文。标准不强制只使用V模型。"
+        }
+      ]
+    },
+    "E01-02": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 1,
+            "title": "系统架构与需求工程"
+          },
+          "edition_and_identity": "ISO/IEC/IEEE 29148；2018，Ed2；2024复审确认",
+          "primary_url": "https://www.iso.org/standard/72089.html",
+          "recorded_access_and_limits": "官方目录与范围；后继DIS不等于已发布，条款须授权文本。"
+        }
+      ]
+    },
+    "E01-03": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 1,
+            "title": "系统架构与需求工程"
+          },
+          "edition_and_identity": "IEC 61508-1；2010，Ed2.0",
+          "primary_url": "https://webstore.iec.ch/en/publication/5515",
+          "recorded_access_and_limits": "官方当前有效发布版元数据。Ed3研发/预计日期不能替代发布证据；未读付费全文。"
+        }
+      ]
+    },
+    "E01-04": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 1,
+            "title": "系统架构与需求工程"
+          },
+          "edition_and_identity": "IEC 60812；2018，Ed3.0",
+          "primary_url": "https://webstore.iec.ch/en/publication/26359",
+          "recorded_access_and_limits": "官方版次、范围与FMEA/FMECA用途；未读付费全文。"
+        }
+      ]
+    },
+    "E01-05": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 1,
+            "title": "系统架构与需求工程"
+          },
+          "edition_and_identity": "IEC 61025；2006，Ed2.0",
+          "primary_url": "https://webstore.iec.ch/en/publication/4311",
+          "recorded_access_and_limits": "官方版次和FTA范围；不是2009版。未读付费全文。"
+        }
+      ]
+    },
+    "E01-06": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 1,
+            "title": "系统架构与需求工程"
+          },
+          "edition_and_identity": "AIAG Core Learning Portal—Risk Profiles；动态官方说明页，未宣称手册修订号",
+          "primary_url": "https://learn.aiagcore.org/en/support/solutions/articles/150000222639-risk-profiles",
+          "recorded_access_and_limits": "官方公开AP/RPN说明；没有取得AIAG/VDA授权手册正文，不能重建整张AP查表。"
+        }
+      ]
+    },
+    "E01-07": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 1,
+            "title": "系统架构与需求工程"
+          },
+          "edition_and_identity": "JCGM 100；2008；另见2026修订单目录E01-12",
+          "primary_url": "https://www.bipm.org/documents/20126/2071204/JCGM_100_2008_E.pdf/cb0ef43f-baa5-11cf-3f85-4dcd86f77bd6",
+          "recorded_access_and_limits": "公开PDF已读相关公式与§5相关输入协方差。RSS不等于最坏情况边界。"
+        }
+      ]
+    },
+    "E01-08": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 1,
+            "title": "系统架构与需求工程"
+          },
+          "edition_and_identity": "Infineon KBA 379692；2022-11-02；页面更新2026-10-06",
+          "primary_url": "https://community.infineon.com/t5/Knowledge-Base-Articles/AURIX-MCU-ISO-26262-fault-classification-of-a-HW-element-and-associated-HW/ta-p/379692",
+          "recorded_access_and_limits": "原厂员工知识库正文已读，核SPFM/LFM公式及安全故障分母；标准解释不是授权标准原文。"
+        }
+      ]
+    },
+    "E01-09": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 1,
+            "title": "系统架构与需求工程"
+          },
+          "edition_and_identity": "Infineon KBA 372906；2022-09-27；页面更新2026-06-30",
+          "primary_url": "https://community.infineon.com/t5/Knowledge-Base-Articles/Failure-Modes-Effects-and-Diagnostic-Analysis-FMEDA-AURIX-MCU/ta-p/372906",
+          "recorded_access_and_limits": "官方正文核SPFM/LFM目标、PMHF与EEC两路径；PMHF不从通用FIT总和直接得出。"
+        }
+      ]
+    },
+    "E01-10": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 1,
+            "title": "系统架构与需求工程"
+          },
+          "edition_and_identity": "TI SFFSAY3 / 中文ZHDS036；2026-01",
+          "primary_url": "https://www.ti.com/lit/pdf/sffsay3",
+          "recorded_access_and_limits": "官方PDF与中文对照，硬件目标表已读；PMHF≤符号与Infineon<不同，边界需授权标准/安全计划裁决。"
+        }
+      ]
+    },
+    "E01-11": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 1,
+            "title": "系统架构与需求工程"
+          },
+          "edition_and_identity": "ISO 26262-5；2018，Ed2",
+          "primary_url": "https://www.iso.org/standard/68387.html",
+          "recorded_access_and_limits": "官方目录及范围；未取得授权全文，不据目录独立认证ASIL。"
+        }
+      ]
+    },
+    "E01-12": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 1,
+            "title": "系统架构与需求工程"
+          },
+          "edition_and_identity": "BIPM/JCGM Guides；核验2026-11-19：包含JCGM100:2008 Amd1:2026与GUM-5:2026",
+          "primary_url": "https://www.bipm.org/en/web/guest/publications/guides",
+          "recorded_access_and_limits": "仅核目录与出版状态；未读2026修订单全文。使用非线性新方法前须补足具体正文。"
+        }
+      ]
+    },
+    "E01-13": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 1,
+            "title": "系统架构与需求工程"
+          },
+          "edition_and_identity": "TI ZHDS036；2026-01，对应SFFSAY3",
+          "primary_url": "https://www.ti.com.cn/cn/lit/an/zhds036/zhds036.pdf",
+          "recorded_access_and_limits": "已实际提取官方中文正文；作中英文术语交叉核对。"
+        }
+      ]
+    },
+    "E02-01": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "ECSS-Q-ST-30-11C；Rev.2，2021-06-23",
+          "primary_url": "https://ecss.nl/standard/ecss-q-st-30-11c-rev-2-derating-eee-components-23-june-2021/",
+          "recorded_access_and_limits": "官方目录标为Active Standards；范围、版次、2022年图形重制说明已核。仅空间项目适用；具体条款见E02-02。"
+        }
+      ]
+    },
+    "E02-02": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "ECSS-Q-ST-30-11C；Rev.2，2021-06-23；PDF图形重制2022-07",
+          "primary_url": "https://ecss.nl/wp-content/uploads/2022/07/ECSS-Q-ST-30-11C-Rev.2%2823June2021%29.pdf",
+          "recorded_access_and_limits": "官方PDF正文已读，核对§6.11与Table6-10的连接器器件族和降额；不得推广为工业通用强制比例。"
+        }
+      ]
+    },
+    "E02-03": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "SLYP673；本次未核明确修订日期",
+          "primary_url": "https://www.ti.com/lit/ml/slyp673/slyp673.pdf",
+          "recorded_access_and_limits": "官方培训PDF正文，WCCA/RSS及设计流程；应用方法，不是标准或器件保证。"
+        }
+      ]
+    },
+    "E02-04": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "原厂技术文章；无固定文档编号；网页未核明确修订号",
+          "primary_url": "https://www.analog.com/en/resources/technical-articles/how-to-model-statistical-tolerance-analysis.html",
+          "recorded_access_and_limits": "官方正文，Monte Carlo、分布与最坏条件分析；不将元件公差自动解释为正态3σ。"
+        }
+      ]
+    },
+    "E02-05": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "Ceramic Capacitors FAQ 0005；网页未公开明确修订号",
+          "primary_url": "https://www.murata.com/en-eu/support/faqs/capacitor/ceramiccapacitor/char/0005",
+          "recorded_access_and_limits": "官方FAQ正文，Class II等高介电材料偏压效应；不证明特定MPN有效容量保证下限。"
+        }
+      ]
+    },
+    "E02-06": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "Ceramic Capacitors FAQ 0006；网页未公开明确修订号",
+          "primary_url": "https://www.murata.com/en-us/support/faqs/capacitor/ceramiccapacitor/char/0006",
+          "recorded_access_and_limits": "官方FAQ正文，时间对数老化与去老化热历史。"
+        }
+      ]
+    },
+    "E02-07": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "General technical information；PDF正文页脚8/26；按所见页脚登记",
+          "primary_url": "https://www.tdk-electronics.tdk.com/download/185386/11a9011cd3cac4ccfbc490fbd4ce88b4/pdf-generaltechnicalinformation.pdf",
+          "recorded_access_and_limits": "官方PDF正文§4–5，纹波、温度、使用寿命和模型结果不构成保修的边界。"
+        }
+      ]
+    },
+    "E02-08": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "CLARA原厂发布页；发布2021-06-08",
+          "primary_url": "https://www.tdk-electronics.tdk.com/en/373812/tech-library/articles/tools-services/tools-services/tdk-offers-a-comprehensive-calculation-and-selection-tool-for-film-capacitors-for-pcb-mounting/2982092",
+          "recorded_access_and_limits": "原厂工具介绍正文；核对使用维度，未实际运行在线计算器，不能输出某器件寿命结果。"
+        }
+      ]
+    },
+    "E02-09": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "原厂应用笔记；网页无编号；网页未核明确修订号",
+          "primary_url": "https://www.coilcraft.com/en-us/resources/application-notes/current-and-temperature-ratings/",
+          "recorded_access_and_limits": "原厂正文；Isat电感下降定义、Irms温升定义及热测试条件。"
+        }
+      ]
+    },
+    "E02-10": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "AN-1368；网页未核明确修订号",
+          "primary_url": "https://www.analog.com/en/resources/app-notes/an-1368.html",
+          "recorded_access_and_limits": "原厂应用笔记正文，偏压阻抗、LC谐振和阻尼方法。"
+        },
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "AN-1368；网页未核明确修订号",
+          "primary_url": "https://www.analog.com/en/resources/app-notes/an-1368.html",
+          "recorded_access_and_limits": "原厂应用笔记正文，偏压阻抗、LC谐振和阻尼方法。"
+        }
+      ]
+    },
+    "E02-11": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "AN2867；Rev.25，2026-10-13（首页October 2026；修订表给出13-Oct-2026）",
+          "primary_url": "https://www.st.com/content/ccc/resource/technical/document/application_note/c6/eb/5e/11/e3/69/43/eb/CD00221665.pdf/files/CD00221665.pdf/jcr%3Acontent/translations/en.CD00221665.pdf",
+          "recorded_access_and_limits": "原厂60页PDF首页、§3.3–3.5与修订表已核；Rev.25引入STM32G5/H7P并更新推荐晶体表。CL公式、gm与Gm_crit_max两个分支仍适用；驱动功率须匹配晶体端子电流与等效电阻，不能混用运动支路Rm。"
+        }
+      ]
+    },
+    "E02-12": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "原厂测试说明；引用IEC 60512-5-2；网页无明确修订号；未核IEC 60512-5-2现行版",
+          "primary_url": "https://www.phoenixcontact.com/en-us/quality-tests/laboratory-tests-for-connectors-and-electronics-housings/electrical-tests-connectors-electronics-housings",
+          "recorded_access_and_limits": "原厂正文说明连接器电气试验/电流温度关系；并非IEC标准全文，不能据此认定标准当前版次。"
+        }
+      ]
+    },
+    "E02-13": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "Fuseology Design Guide；PDF未见可确认修订号",
+          "primary_url": "https://www.littelfuse.com/assetdocs/fuseology-selection-guide?assetguid=d812dff2-1c47-4dc3-bce7-07a4001ddc32",
+          "recorded_access_and_limits": "原厂PDF，电压、分断、时间—电流、I²t、温度和脉冲协调；未将示例降额当全部保险丝硬要求。"
+        }
+      ]
+    },
+    "E02-14": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "Linear Mode Operation / SOA application note；版本日期待确认：页脚5/2/2017与参考文献2022存在不一致",
+          "primary_url": "https://www.infineon.com/assets/row/public/documents/24/42/infineon-applicationnote-linear-mode-operation-safe-operation-diagram-mosfets-applicationnotes-en.pdf",
+          "recorded_access_and_limits": "原厂正文，线性热失稳、SOA与温度/脉冲边界；不宣称2017为现行版日期。"
+        },
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "Linear Mode Operation / SOA application note；版本日期待确认：页脚5/2/2017与参考文献2022存在不一致",
+          "primary_url": "https://www.infineon.com/assets/row/public/documents/24/42/infineon-applicationnote-linear-mode-operation-safe-operation-diagram-mosfets-applicationnotes-en.pdf",
+          "recorded_access_and_limits": "原厂正文，线性热失稳、SOA与温度/脉冲边界；不宣称2017为现行版日期。"
+        }
+      ]
+    },
+    "E02-15": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "原厂技术说明页；网页未核明确修订号",
+          "primary_url": "https://www.infineon.com/product-information/gate-driver-requirements-mosfet-igbt-sic-gan",
+          "recorded_access_and_limits": "原厂各技术门极驱动要求概览；器件数值仍须实际型号Datasheet。"
+        },
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "原厂技术说明页；网页未核明确修订号",
+          "primary_url": "https://www.infineon.com/product-information/gate-driver-requirements-mosfet-igbt-sic-gan",
+          "recorded_access_and_limits": "原厂各技术门极驱动要求概览；器件数值仍须实际型号Datasheet。"
+        }
+      ]
+    },
+    "E02-16": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "General Purpose Relays Safety Precautions；网页未核明确修订号",
+          "primary_url": "https://www.ia.omron.com/product/cautions/36/safety_precautions.html",
+          "recorded_access_and_limits": "原厂正文，DC/AC负载、接通/分断、线圈条件、机械/电气寿命等。"
+        }
+      ]
+    },
+    "E02-17": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "IPC J-STD-046A；ANSI目录IPC J-STD-046A-2026，标Most recent；其他发行体系有2025标记",
+          "primary_url": "https://webstore.ansi.org/standards/ipc/ipcstd046a2026",
+          "recorded_access_and_limits": "官方标准销售目录和适用范围已核；未获取授权全文，不提取具体通知天数为硬条款。"
+        }
+      ]
+    },
+    "E02-18": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "IPC J-STD-048A；ANSI目录IPC J-STD-048A-2026，标Most recent；其他发行体系有2025标记",
+          "primary_url": "https://webstore.ansi.org/standards/ipc/ipcstd048a2026",
+          "recorded_access_and_limits": "官方标准销售目录和适用范围已核；未获取授权全文，不把所有停产统一为同一LTB/交付期限。"
+        }
+      ]
+    },
+    "E02-19": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "原厂PCN/EOL政策页；网页发布日期2026-03-17",
+          "primary_url": "https://www.ti.com/en-us/quality-reliability/quality/product-change-notification",
+          "recorded_access_and_limits": "官方PCN/EOL政策正文；以具体通知为准；页面引用的旧AEC版本不用于证明AEC当前版次。"
+        }
+      ]
+    },
+    "E02-20": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "AEC-Q100；AEC-Q101；AEC-Q200；本次未核实现行版次",
+          "primary_url": "https://www.aecouncil.com/AECDocuments.html",
+          "recorded_access_and_limits": "原站读取超时；检索未取得现行官方全文。仅保留官方待补证入口，不把二手Rev.J1/E等版本或具体阈值当已验证证据。"
+        }
+      ]
+    },
+    "E02-21": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "MIL-HDBK-1547A；Rev.A 1998-07-06；Notice1取消2016-07-28",
+          "primary_url": "https://quicksearch.dla.mil/qsDocDetails.aspx?ident_number=203013",
+          "recorded_access_and_limits": "DLA官方状态目录已核，状态Canceled；当前未列替代文件。仅供项目明确采用的历史参考，不是现行强制规范。"
+        }
+      ]
+    },
+    "E03-01": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "SLVAFJ2；2023-03",
+          "primary_url": "https://www.ti.com/document-viewer/lit/html/slvafj2",
+          "recorded_access_and_limits": "原厂正文；输入输出、功率、隔离及拓扑约束，建议范围不当强制边界。 已核对应官方PDF首页标题与页脚日期。"
+        }
+      ]
+    },
+    "E03-02": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "SLVA432；2010-08",
+          "primary_url": "https://www.ti.com/lit/pdf/slva432",
+          "recorded_access_and_limits": "原厂PDF，环路/补偿及45°/60°工程建议；非所有拓扑通用硬阈值。 文中电压/电流模式措辞不一致，模型须按具体控制器重新核对。"
+        }
+      ]
+    },
+    "E03-03": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "SLVAFJ5；2023-03",
+          "primary_url": "https://www.ti.com/document-viewer/lit/html/slvafj5",
+          "recorded_access_and_limits": "原厂正文；CCM Boost右半平面零点、穿越频率初筛和输入至输出连接。 已核对应官方PDF首页标题与页脚日期。"
+        }
+      ]
+    },
+    "E03-04": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "SLUA618A；Rev.A，2018-10修订",
+          "primary_url": "https://www.ti.com/lit/ml/slua618a/slua618a.pdf",
+          "recorded_access_and_limits": "原厂48页PDF；门极充放电、Miller和寄生参数机制。"
+        }
+      ]
+    },
+    "E03-05": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "AN2017-04；Rev.1.2，2024-04-12",
+          "primary_url": "https://www.infineon.com/dgdl/Infineon-Silicon-Carbide_MOSFETs_using_EiceDRIVER_Advanced_Gate_Drive_Options-ApplicationNotes-v01_02-EN.pdf?da=t&fileId=5546d4625b3ca4ec015b47c9ac35705b",
+          "recorded_access_and_limits": "原厂PDF，特别核§2.6短路保护；微秒级示例不当所有SiC器件保证耐受时间。"
+        }
+      ]
+    },
+    "E03-06": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "UG863；Rev.1.12 English，2026-06-16",
+          "primary_url": "https://docs.amd.com/r/en-US/ug863-versal-pcb-design/Target-Impedance",
+          "recorded_access_and_limits": "原厂在线正文及页头版次；目标阻抗、DC/AC分账、有限频带、板级PDN仿真建议。"
+        }
+      ]
+    },
+    "E03-07": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "UG583；Rev.1.29 English，2025-12-23",
+          "primary_url": "https://docs.amd.com/r/en-US/ug583-ultrascale-pcb-design/Capacitor-Anti-Resonance",
+          "recorded_access_and_limits": "原厂在线正文及页头版次；并联去耦反谐振与损耗/阻尼。"
+        }
+      ]
+    },
+    "E03-08": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "AN-2162 / SNVA489C；Rev.C，2013-04修订",
+          "primary_url": "https://www.ti.com/lit/pdf/snva489",
+          "recorded_access_and_limits": "原厂PDF，输入滤波器和变换器负输入阻抗交互、阻尼；阻抗充分条件不等价必要条件。"
+        }
+      ]
+    },
+    "E03-09": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "SLVA477C；Rev.C，2026-09修订",
+          "primary_url": "https://www.ti.com/lit/pdf/slva477",
+          "recorded_access_and_limits": "原厂PDF及版本页；CCM Buck功率级计算适用边界，非完整补偿设计。"
+        }
+      ]
+    },
+    "E03-10": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "原厂技术文章Part 3；网页未核明确修订号",
+          "primary_url": "https://www.analog.com/en/resources/technical-articles/power-supply-loop-stability-compensation-part-3.html",
+          "recorded_access_and_limits": "原厂正文；PM/GM/fc设计目标及控制模式条件，不作为通用标准条款。"
+        }
+      ]
+    },
+    "E03-11": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "SSZTBJ1；网页未核明确修订号",
+          "primary_url": "https://www.ti.com/document-viewer/lit/html/SSZTBJ1/GUID-6BFEA9D3-E28A-4D2D-A6C3-3B91C338AEE7",
+          "recorded_access_and_limits": "原厂正文，LM1084稳定性和ESR实例；不能推广到所有LDO。"
+        }
+      ]
+    },
+    "E03-12": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "SCLA069；2024-08",
+          "primary_url": "https://www.ti.com/lit/pdf/scla069",
+          "recorded_access_and_limits": "官方6页PDF正文及页脚；带反馈确认的上/掉电实例。具体目标芯片时序必须另取Datasheet。"
+        }
+      ]
+    },
+    "E03-13": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "SSZT890；2017-11",
+          "primary_url": "https://www.ti.com/document-viewer/lit/html/SSZT890/GUID-C4D6D5FC-31DA-43CE-A515-71791439CEDA",
+          "recorded_access_and_limits": "原厂正文及发布日期；电源时序方法、单调性和上/掉电限制。"
+        }
+      ]
+    },
+    "E03-14": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 3,
+            "title": "电源、功率电子与PI/PDN"
+          },
+          "edition_and_identity": "SLUAA84A；Rev.A，2022-02修订",
+          "primary_url": "https://www.ti.com/lit/pdf/sluaa84",
+          "recorded_access_and_limits": "原厂PDF正文及页脚；低侧FET架构、通信回流等；并非通用电芯安全阈值来源。"
+        }
+      ]
+    },
+    "E04-01": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "MT-003；Rev.A，2008-10",
+          "primary_url": "https://www.analog.com/media/en/training-seminars/tutorials/MT-003.pdf",
+          "recorded_access_and_limits": "官方PDF，动态指标定义与测试条件；不将ENOB、静态分辨率和绝对准确度混为一谈。"
+        }
+      ]
+    },
+    "E04-02": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "AN-1401；网页未核明确修订号",
+          "primary_url": "https://www.analog.com/en/resources/app-notes/an-1401.html",
+          "recorded_access_and_limits": "原厂正文；仪表放大器内部节点余量和diamond plot，最终限值按具体型号。"
+        }
+      ]
+    },
+    "E04-03": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "SBOA418；2023-07",
+          "primary_url": "https://www.ti.com/lit/pdf/sboa418",
+          "recorded_access_and_limits": "官方14页PDF正文及页脚；推导限于有效频带内近似平坦阻性开环输出阻抗；复杂Zo不直接套公式。"
+        }
+      ]
+    },
+    "E04-04": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "MT-037；Rev.0，2008-10",
+          "primary_url": "https://www.analog.com/media/en/training-seminars/tutorials/MT-037.pdf",
+          "recorded_access_and_limits": "原厂PDF；输入失调及温漂机制。"
+        }
+      ]
+    },
+    "E04-05": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "AN-1308；网页未核明确修订号",
+          "primary_url": "https://www.analog.com/en/resources/app-notes/an-1308.html",
+          "recorded_access_and_limits": "原厂应用笔记正文；PWM共模阶跃恢复和电流检测误差，不从DC CMRR推断瞬态最大值。"
+        }
+      ]
+    },
+    "E04-06": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "MT-101；Rev.0，2009-03",
+          "primary_url": "https://www.analog.com/media/en/training-seminars/tutorials/MT-101.pdf",
+          "recorded_access_and_limits": "原厂PDF；PSRR随频率变化、输入输出折算和电源去耦。"
+        }
+      ]
+    },
+    "E04-07": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "MT-047；Rev.0，2008-10",
+          "primary_url": "https://www.analog.com/media/en/training-seminars/tutorials/MT-047.pdf",
+          "recorded_access_and_limits": "原厂PDF；电压、电流和电阻热噪声模型。"
+        }
+      ]
+    },
+    "E04-08": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "MT-048；Rev.0，2008-10",
+          "primary_url": "https://www.analog.com/media/en/training-seminars/tutorials/MT-048.pdf",
+          "recorded_access_and_limits": "原厂PDF；1/f、RMS、白噪声等效带宽。"
+        }
+      ]
+    },
+    "E04-09": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "在线文档§1.2；URL版本en-US-2；页面版本en-US-2；本次未核纸本文档修订号",
+          "primary_url": "https://onlinedocs.microchip.com/oxy/GUID-CDC7FB8C-8AE7-4D58-956F-BD0E8F76F317-en-US-2/GUID-8C0F2053-AC7F-4381-8A01-3025E69D28AA.html",
+          "recorded_access_and_limits": "官方正文RC采样建立模型；页面提供的未知内部R/C近似不能跨器件作为保证签核数据。"
+        }
+      ]
+    },
+    "E04-10": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "AN-0979；网页未核明确修订号",
+          "primary_url": "https://www.analog.com/en/resources/app-notes/an-0979.html",
+          "recorded_access_and_limits": "原厂正文，特定器件sinc³/⁴建立及异步阶跃；不推广到所有ΔΣ ADC。"
+        }
+      ]
+    },
+    "E04-11": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "原厂培训幻灯片；视频页发布2025-04-30；PDF本身未核明确修订号",
+          "primary_url": "https://www.ti.com/content/dam/videos/external-videos/en-us/8/3816841626001/6242062186001.mp4/subassets/adcs-sar-delta-sigma-noise-and-drive-considerations-presentation.pdf",
+          "recorded_access_and_limits": "官方54页培训PDF已打开；SAR/ΔΣ输入驱动和抗混叠。视频页日期不是PDF修订日期。"
+        }
+      ]
+    },
+    "E04-12": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "AN-82；在线入口an-82f；网页版本入口an-82f；本次未核正文修订日期",
+          "primary_url": "https://www.analog.com/en/resources/app-notes/an-82f.html",
+          "recorded_access_and_limits": "原厂正文；box-method温漂、长期稳定性和参考源选择边界。"
+        }
+      ]
+    },
+    "E04-13": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "Analog Dialogue原厂技术文章；网页未核明确修订号",
+          "primary_url": "https://www.analog.com/en/resources/analog-dialogue/articles/precision-successive-approximation-adcs.html",
+          "recorded_access_and_limits": "原厂正文；开关电容参考引脚动态负载、局部电容/缓冲稳定性；实例数值不跨器件推广。"
+        }
+      ]
+    },
+    "E04-14": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "AN-1373；网页未核明确修订号",
+          "primary_url": "https://www.analog.com/en/resources/app-notes/an-1373.html",
+          "recorded_access_and_limits": "原厂正文；Guard、低漏电与测量环境。不能由评估板结果证明目标PCB湿热性能。"
+        }
+      ]
+    },
+    "E04-15": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "SLLA284G；Rev.G，2023-09修订",
+          "primary_url": "https://www.ti.com/lit/pdf/slla284",
+          "recorded_access_and_limits": "原厂PDF；CMTI、工作隔离电压/试验耐压和PCB布局参数区分。"
+        }
+      ]
+    },
+    "E04-16": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "原厂规格解释页；网页未核明确修订号",
+          "primary_url": "https://www.renesas.com/en/products/interface/optoelectronics/explanation-photocoupler-optocoupler-specifications",
+          "recorded_access_and_limits": "原厂正文；CTR条件/寿命、寄生隔离电容、CMTI等。"
+        }
+      ]
+    },
+    "E04-17": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "MT-031；Rev.A，2008-10",
+          "primary_url": "https://www.analog.com/media/en/training-seminars/tutorials/MT-031.pdf",
+          "recorded_access_and_limits": "原厂PDF；AGND/DGND、实际回流、共阻抗和局部连接；不用于取消真正安全隔离屏障。"
+        }
+      ]
+    },
+    "E04-18": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "SBAS925A / ADS1119；Rev.A，2018-11修订",
+          "primary_url": "https://www.ti.com/lit/ds/symlink/ads1119.pdf",
+          "recorded_access_and_limits": "官方PRODUCTION DATA PDF；16-bit、2差分/4单端复用输入、非同时采样，用于身份解析例证。"
+        }
+      ]
+    },
+    "E04-19": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 4,
+            "title": "模拟、精密测量与混合信号"
+          },
+          "edition_and_identity": "ANO006；介绍页2022-02-16",
+          "primary_url": "https://www.we-online.com/en/support/knowledge/application-notes?d=ano006-lifetime-of-optocouplers",
+          "recorded_access_and_limits": "原厂应用笔记介绍页；CTR老化与工况依赖，未声称实际运行寿命模型。"
+        }
+      ]
+    },
+    "E05-01": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "UM10204；Rev 7.0; 2021-10-01",
+          "primary_url": "https://www.nxp.com/docs/en/user-guide/UM10204.pdf",
+          "recorded_access_and_limits": "官方PDF正文、时序表和上拉模型；这是抓取到的发布版，不代表所有器件都支持全部模式"
+        }
+      ]
+    },
+    "E05-02": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "SLLA272D；Rev D; 2021-05",
+          "primary_url": "https://www.ti.com/lit/an/slla272d/slla272d.pdf",
+          "recorded_access_and_limits": "官方正文；RS-485原厂指南，不替代TIA授权标准全文"
+        }
+      ]
+    },
+    "E05-03": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "SLLA270；2008-01",
+          "primary_url": "https://www.ti.com/lit/an/slla270/slla270.pdf",
+          "recorded_access_and_limits": "经典CAN物理层基础；其中旧版标准/距离表不能用于FD/XL认证"
+        }
+      ]
+    },
+    "E05-04": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "AN5543；Rev 5; 2025-11",
+          "primary_url": "https://www.st.com/resource/en/application_note/an5543-guidelines-for-enhanced-spi-communication-on-stm32-mcus-and-mpus-stmicroelectronics.pdf",
+          "recorded_access_and_limits": "官方PDF正文；搜索摘要曾显示Rev4，按实际PDF修订为Rev5"
+        }
+      ]
+    },
+    "E05-05": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "TJA1021；Rev 9; 2023-02-10",
+          "primary_url": "https://www.nxp.com/docs/en/data-sheet/TJA1021.pdf",
+          "recorded_access_and_limits": "官方Datasheet；型号后缀和工作条件受限"
+        }
+      ]
+    },
+    "E05-06": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "SNLA387；2021-06",
+          "primary_url": "https://www.ti.com/lit/an/snla387/snla387.pdf",
+          "recorded_access_and_limits": "官方Ethernet PCB检查表正文"
+        }
+      ]
+    },
+    "E05-07": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "SLUAA73；2020-07; descriptive title",
+          "primary_url": "https://www.ti.com/document-viewer/lit/html/sluaa73",
+          "recorded_access_and_limits": "官方正文；分配功率编码仅用于指定TPS2372/73"
+        }
+      ]
+    },
+    "E05-08": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "UG583；1.29; 2025-12-23",
+          "primary_url": "https://docs.amd.com/r/en-US/ug583-ultrascale-pcb-design",
+          "recorded_access_and_limits": "官方版次及相关章节；UltraScale系列平台规则"
+        }
+      ]
+    },
+    "E05-09": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "SNLA187A；Fourth edition; 2008",
+          "primary_url": "https://www.ti.com/lit/an/snla187a/snla187a.pdf",
+          "recorded_access_and_limits": "官方PDF；基础机制，不据此认定现行高速协议认证阈值"
+        }
+      ]
+    },
+    "E05-10": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "AN91445 / 001-91445；Rev *H; date not independently locked",
+          "primary_url": "https://www.infineon.com/assets/row/public/documents/cross-divisions/42/infineon-an91445-antenna-design-and-rf-layout-guidelines-applicationnotes-en.pdf",
+          "recorded_access_and_limits": "官方PDF；BLE参考结构和通用RF机理，跨频段/结构需重验"
+        }
+      ]
+    },
+    "E05-11": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "UBX-15030289；R03; 2019-10-16",
+          "primary_url": "https://content.u-blox.com/sites/default/files/products/documents/GNSS-Antennas_AppNote_(UBX-15030289).pdf",
+          "recorded_access_and_limits": "官方GNSS天线/RF应用笔记正文"
+        }
+      ]
+    },
+    "E05-12": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "SPRAAR7J；Rev J; 2023-02",
+          "primary_url": "https://www.ti.com/lit/an/spraar7j/spraar7j.pdf",
+          "recorded_access_and_limits": "官方正文；通用建议与芯片专属附录必须分开"
+        }
+      ]
+    },
+    "E05-15": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "AN4803；Rev 3; 2022-08",
+          "primary_url": "https://www.st.com/resource/en/application_note/dm00257177-high-speed-si-simulations-using-ibis-and-board-level-simulations-using-hyperlynx-si-on-stm32-mcus-and-mpus-stmicroelectronics.pdf",
+          "recorded_access_and_limits": "官方PDF正文；SI和IBIS方法"
+        }
+      ]
+    },
+    "E05-16": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "SPRACU9；2021-10; no revision suffix",
+          "primary_url": "https://www.ti.com/lit/an/spracu9/spracu9.pdf",
+          "recorded_access_and_limits": "官方10页PDF正文、CAN-FD接线/ACK/端接/调试章节；示例的速率不能代表所有CAN-FD物理层上限"
+        }
+      ]
+    },
+    "E05-17": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "ISO 11898-2；2026; Edition 4; published 2026-05-21",
+          "primary_url": "https://www.iso.org/standard/90697.html",
+          "recorded_access_and_limits": "官方元数据；2024版已撤销；付费电气条文未读取，不生成其具体阈值"
+        }
+      ]
+    },
+    "E05-18": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "IEEE 802.3bt；2018 amendment; approved 2018-09-27",
+          "primary_url": "https://www.ieee802.org/3/bt/",
+          "recorded_access_and_limits": "官方任务组确认2018-09-27批准；PoE并入后续IEEE802.3合集的具体适用版须项目锁定"
+        }
+      ]
+    },
+    "E05-19": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "USB 2.0 / USB2 Electrical Compliance Test Specification；Base and ECN bundle 2025-06-03; electrical compliance v1.08 directory date 2026-04-21",
+          "primary_url": "https://www.usb.org/documents?search=usb+2.0+specification",
+          "recorded_access_and_limits": "官方目录；未将ZIP内所有ECN逐条核验；基版发布日期2000不等于完整现行要求"
+        }
+      ]
+    },
+    "E05-20": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "MIPI D-PHY；v3.6; 2025-09",
+          "primary_url": "https://www.mipi.org/specifications/d-phy",
+          "recorded_access_and_limits": "官方Current Version元数据；会员全文未读取"
+        }
+      ]
+    },
+    "E05-21": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "MIPI C-PHY；v3.1; 2025-12",
+          "primary_url": "https://www.mipi.org/specifications/c-phy",
+          "recorded_access_and_limits": "官方Current Version元数据；会员全文未读取"
+        }
+      ]
+    },
+    "E05-22": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 5,
+            "title": "数字总线、高速SI与RF"
+          },
+          "edition_and_identity": "PCI Express Base；Revision 7.1; 2026-09-17",
+          "primary_url": "https://pcisig.com/specification/pci-express-base-specification-revision-71",
+          "recorded_access_and_limits": "官方现行条目元数据；须另锁目标代际、Base/CEM及适用ECN；会员正文未读取"
+        }
+      ]
+    },
+    "E06-01": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 6,
+            "title": "PCB叠层、Layout与热管理"
+          },
+          "edition_and_identity": "IPC-2152；2009-08 public preview",
+          "primary_url": "https://www.ipc.org/TOC/IPC-2152.pdf",
+          "recorded_access_and_limits": "范围/目录和部分定义，未读取全部载流图表；不从预览生成硬数值"
+        }
+      ]
+    },
+    "E06-02": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 6,
+            "title": "PCB叠层、Layout与热管理"
+          },
+          "edition_and_identity": "SPRA953D；Rev D; 2024-03",
+          "primary_url": "https://www.ti.com/lit/an/spra953d/spra953d.pdf",
+          "recorded_access_and_limits": "官方PDF正文；θ/Ψ应用边界"
+        }
+      ]
+    },
+    "E06-03": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 6,
+            "title": "PCB叠层、Layout与热管理"
+          },
+          "edition_and_identity": "SLMA002H；Rev H; 2018-07",
+          "primary_url": "https://www.ti.com/lit/an/slma002h/slma002h.pdf",
+          "recorded_access_and_limits": "官方PowerPAD正文；封装实例规则不可泛化到所有封装"
+        }
+      ]
+    },
+    "E06-04": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 6,
+            "title": "PCB叠层、Layout与热管理"
+          },
+          "edition_and_identity": "ADI技术文章，无独立文档号；2025-06-19",
+          "primary_url": "https://www.analog.com/cn/resources/technical-articles/how-to-accurately-estimate-ic-junction-temperature.html",
+          "recorded_access_and_limits": "原厂中文全文，与英文热指标指南交叉核验"
+        }
+      ]
+    },
+    "E06-05": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 6,
+            "title": "PCB叠层、Layout与热管理"
+          },
+          "edition_and_identity": "Isola FR408HR；Dynamic product page; no fixed revision",
+          "primary_url": "https://www.isola-group.com/pcb-laminates-prepreg/fr408hr-laminate-and-prepreg/",
+          "recorded_access_and_limits": "Dk/Df、构造和测试法；不能以动态页替代采购冻结的材料规范"
+        }
+      ]
+    },
+    "E06-06": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 6,
+            "title": "PCB叠层、Layout与热管理"
+          },
+          "edition_and_identity": "Rogers RO4350B；Product page; fixed revision not stated",
+          "primary_url": "https://www.rogerscorp.com/advanced-electronics-solutions/ro4000-series-laminates/ro4350b-laminates",
+          "recorded_access_and_limits": "Process/Design Dk等典型值；完整采购保证仍依实际材料规格"
+        }
+      ]
+    },
+    "E06-07": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 6,
+            "title": "PCB叠层、Layout与热管理"
+          },
+          "edition_and_identity": "UG583；1.29; 2025-12-23",
+          "primary_url": "https://docs.amd.com/r/en-US/ug583-ultrascale-pcb-design/PCB-Stackup-and-Layer-Order",
+          "recorded_access_and_limits": "叠层/电源平面/对称性正文；平台为UltraScale系列"
+        }
+      ]
+    },
+    "E06-08": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 6,
+            "title": "PCB叠层、Layout与热管理"
+          },
+          "edition_and_identity": "IPC-2223F / IPC-4204C；2026 release list; full standard text not accessed",
+          "primary_url": "https://www.electronics.org/recently-released-ipc-standards-and-documents",
+          "recorded_access_and_limits": "官方现行发布元数据；付费详细几何/可靠性条文未读取"
+        }
+      ]
+    },
+    "E06-09": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 6,
+            "title": "PCB叠层、Layout与热管理"
+          },
+          "edition_and_identity": "SPRAAR7J；Rev J; 2023-02",
+          "primary_url": "https://www.ti.com/lit/an/spraar7j/spraar7j.pdf",
+          "recorded_access_and_limits": "官方回流/过孔/背钻正文；不把建议当所有接口的硬条款"
+        }
+      ]
+    },
+    "E06-10": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 6,
+            "title": "PCB叠层、Layout与热管理"
+          },
+          "edition_and_identity": "Isola FR408HR；Rev F revision history 2024-06; dynamic footer last updated 2026-11-13",
+          "primary_url": "https://www.isola-group.com/wp-content/uploads/data-sheets/fr408hr-laminate-and-prepreg.pdf",
+          "recorded_access_and_limits": "官方4页PDF；区分修订史和网页生成/更新日期"
+        }
+      ]
+    },
+    "E06-11": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 6,
+            "title": "PCB叠层、Layout与热管理"
+          },
+          "edition_and_identity": "TI PCB Thermal Calculator；Online tool documentation; no fixed version stated; not executed",
+          "primary_url": "https://www.ti.com/en-us/design-development/design-simulation-tools/pcb-thermal-calculator",
+          "recorded_access_and_limits": "官方明确为quick estimate；没有运行该工具，不声称获得仿真结果"
+        }
+      ]
+    },
+    "E07-01": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "IEC 61000-4-2:2025；Ed3.0",
+          "primary_url": "https://webstore.iec.ch/en/publication/68954",
+          "recorded_access_and_limits": "官方版次、范围与产品委员会职责；未取付费全文"
+        }
+      ]
+    },
+    "E07-02": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "IEC 61000-4-4:2012；Ed3.0",
+          "primary_url": "https://webstore.iec.ch/en/publication/4222",
+          "recorded_access_and_limits": "官方 EFT 元数据/范围"
+        }
+      ]
+    },
+    "E07-03": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "IEC 61000-4-5:2014+AMD1:2017 CSV；Ed3.1",
+          "primary_url": "https://webstore.iec.ch/en/publication/61166",
+          "recorded_access_and_limits": "官方 Surge 范围；不含直接雷击/耐压替代"
+        }
+      ]
+    },
+    "E07-04": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "IEC 61000-4-6:2023；Ed5.0，RLV入口含正式标准",
+          "primary_url": "https://webstore.iec.ch/en/publication/86093",
+          "recorded_access_and_limits": "官方频段与适用性说明"
+        }
+      ]
+    },
+    "E07-05": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "IEC 61000-4-3:2020；Ed4.0",
+          "primary_url": "https://webstore.iec.ch/en/publication/59849",
+          "recorded_access_and_limits": "官方范围及版本变化"
+        }
+      ]
+    },
+    "E07-06": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "ISO 7637-2:2011；Ed3，2025复审确认；修订单仍在制订",
+          "primary_url": "https://www.iso.org/standard/50925.html",
+          "recorded_access_and_limits": "官方 current 状态与12/24 V范围"
+        }
+      ]
+    },
+    "E07-07": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "ISO 16750-2:2023；Ed5",
+          "primary_url": "https://www.iso.org/standard/76119.html",
+          "recorded_access_and_limits": "官方电气负荷范围；不覆盖 EMC"
+        }
+      ]
+    },
+    "E07-08": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "IEC 60664-1:2020+AMD1:2025 CSV；Ed3.1",
+          "primary_url": "https://webstore.iec.ch/en/publication/107319",
+          "recorded_access_and_limits": "官方范围/版本；数值距离表未取得"
+        }
+      ]
+    },
+    "E07-09": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "IEC 62368-1:2023；Ed4.0，Corrected version 2025-08",
+          "primary_url": "https://webstore.iec.ch/en/publication/69308",
+          "recorded_access_and_limits": "官方元数据/产品范围"
+        }
+      ]
+    },
+    "E07-10": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "ANSI/UL 62368-1；Ed4，2025-07-31",
+          "primary_url": "https://www.shopulstandards.com/ProductDetail.aspx?productId=UL62368-1_4_S_20250731",
+          "recorded_access_and_limits": "UL 官方 ACTIVE、范围、国家差异提示"
+        }
+      ]
+    },
+    "E07-11": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "TI SLVA680A；2022-04修订",
+          "primary_url": "https://www.ti.com/lit/an/slva680a/slva680a.pdf",
+          "recorded_access_and_limits": "原厂全文，重点§2及寄生残压"
+        }
+      ]
+    },
+    "E07-12": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "TI SDAA268；2026-06",
+          "primary_url": "https://www.ti.com/lit/an/sdaa268/sdaa268.pdf",
+          "recorded_access_and_limits": "原厂全文，CTI/海拔/绝缘案例；不替代采用标准"
+        }
+      ]
+    },
+    "E07-13": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "Würth ANP015d；2024-06-03",
+          "primary_url": "https://www.we-online.com/components/products/media/109029",
+          "recorded_access_and_limits": "原厂全文，单相滤波器和测量"
+        }
+      ]
+    },
+    "E07-14": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "Würth ANP137a；2026-02-17",
+          "primary_url": "https://www.we-online.com/components/products/media/893888",
+          "recorded_access_and_limits": "原厂全文，三相滤波器实证"
+        }
+      ]
+    },
+    "E07-15": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "Würth ANP139a；2026-08-26",
+          "primary_url": "https://www.we-online.com/components/products/media/923990",
+          "recorded_access_and_limits": "原厂全文，屏蔽/搭接/近远场实验"
+        }
+      ]
+    },
+    "E07-16": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "TI SNVA974A；2022-11修订",
+          "primary_url": "https://www.ti.com/lit/an/snva974a/snva974a.pdf",
+          "recorded_access_and_limits": "原厂全文，展频与RBW关系"
+        }
+      ]
+    },
+    "E07-17": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "ADI AN-1161；网页未明确当前修订号",
+          "primary_url": "https://www.analog.com/en/resources/app-notes/an-1161.html",
+          "recorded_access_and_limits": "原厂公开全文，特定组合的EMC测试"
+        }
+      ]
+    },
+    "E07-18": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "TI SNOAAA1；2023-11",
+          "primary_url": "https://www.ti.com/lit/ab/snoaaa1/snoaaa1.pdf",
+          "recorded_access_and_limits": "原厂全文，24 V系统未钳位抛负载示例"
+        }
+      ]
+    },
+    "E07-19": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "IEC 60664-3:2016；Ed3.0",
+          "primary_url": "https://webstore.iec.ch/en/publication/26148",
+          "recorded_access_and_limits": "官方涂覆/灌封Type1/Type2范围"
+        }
+      ]
+    },
+    "E07-20": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "CISPR 32:2015+AMD1:2019 CSV；Ed2.1",
+          "primary_url": "https://webstore.iec.ch/en/publication/65836",
+          "recorded_access_and_limits": "官方正式合并版元数据"
+        }
+      ]
+    },
+    "E07-21": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "CISPR 32:2026 PRV；Ed3.0预发布",
+          "primary_url": "https://webstore.iec.ch/en/publication/117658",
+          "recorded_access_and_limits": "FDIS投票期2026-10-30至12-11；不能当已正式发布"
+        }
+      ]
+    },
+    "E07-22": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "TDK G14/G20 MOV+GDT 原厂技术说明；2025发布产品系列",
+          "primary_url": "https://www.tdk-electronics.tdk.com/en/374108/tech-library/articles/products-technologies/products-technologies/tdk-combines-a-varistor-and-a-gas-discharge-tube-into-one-component-with-superior-performance/3654080",
+          "recorded_access_and_limits": "一手产品机理说明；具体型号额定须另取Datasheet"
+        }
+      ]
+    },
+    "E07-23": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 7,
+            "title": "EMC、瞬态与安规绝缘"
+          },
+          "edition_and_identity": "TI SLUP421；Power Supply Design Seminar；可见文档未确认修订日期",
+          "primary_url": "https://www.ti.com/lit/ml/slup421/slup421.pdf",
+          "recorded_access_and_limits": "原厂全文相关页，CTI/污染等级/绝缘判定流程；具体产品条文需对应版次"
+        }
+      ]
+    },
+    "E08-01": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "ISO 1101:2017；Ed4；2022复审确认现行",
+          "primary_url": "https://www.iso.org/standard/66777.html",
+          "recorded_access_and_limits": "官方元数据与GPS范围，未取付费全文"
+        }
+      ]
+    },
+    "E08-02": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "TE 114-161733；Rev1，2025-10-23",
+          "primary_url": "https://www.te.com/content/dam/te-com/documents/consumer-devices/global/product-spec-114-161733.pdf",
+          "recorded_access_and_limits": "原厂应用规范全文，配合/浮动/线缆条件"
+        }
+      ]
+    },
+    "E08-03": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "Murata Capacitor Guide；2022-07-27修订",
+          "primary_url": "https://article.murata.com/zh-cn/article/layout-helps-prevent-chip-mlcc-from-cracking",
+          "recorded_access_and_limits": "原厂中文全文；英文交叉核对：https://article.murata.com/en-us/article/layout-helps-prevent-chip-mlcc-from-cracking"
+        }
+      ]
+    },
+    "E08-04": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "IPC/JEDEC-9704A；2012-02；是否仍为最新需采购目录再确认",
+          "primary_url": "https://www.ipc.org/TOC/IPC-9704A.pdf",
+          "recorded_access_and_limits": "官方公开目录及范围/方法节选，不是全文；不提供跨封装统一允许应变"
+        }
+      ]
+    },
+    "E08-05": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "NDK Crystal Units—Precautions for Use；页面未给修订号",
+          "primary_url": "https://www.ndk.com/en/products/info/post_14.html",
+          "recorded_access_and_limits": "原厂全文；板弯、热循环、超声/腐蚀与型号差异"
+        }
+      ]
+    },
+    "E08-06": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "IEC 60068-2-6:2007；Ed7.0",
+          "primary_url": "https://webstore.iec.ch/en/publication/544",
+          "recorded_access_and_limits": "官方正弦振动元数据/范围"
+        }
+      ]
+    },
+    "E08-07": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "IEC 60068-2-27:2008；Ed4.0",
+          "primary_url": "https://webstore.iec.ch/en/publication/514",
+          "recorded_access_and_limits": "官方冲击元数据/范围"
+        }
+      ]
+    },
+    "E08-08": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "IEC 60068-2-64:2026；Ed3.0，RLV含正式标准",
+          "primary_url": "https://webstore.iec.ch/en/publication/117312",
+          "recorded_access_and_limits": "官方新版替代关系；随机振动方法元数据"
+        }
+      ]
+    },
+    "E08-09": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "IEC 60068-2-1:2025；Ed7.0",
+          "primary_url": "https://webstore.iec.ch/en/publication/82354",
+          "recorded_access_and_limits": "官方低温试验范围及新版替代关系"
+        }
+      ]
+    },
+    "E08-10": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "IEC 60068-2-2:2025；Ed6.0",
+          "primary_url": "https://webstore.iec.ch/en/publication/82355",
+          "recorded_access_and_limits": "官方干热试验范围及新版替代关系"
+        }
+      ]
+    },
+    "E08-11": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "IEC 60068-2-78:2025；Ed3.0，RLV含正式标准",
+          "primary_url": "https://webstore.iec.ch/en/publication/109062",
+          "recorded_access_and_limits": "官方恒定湿热范围，无冷凝条件"
+        }
+      ]
+    },
+    "E08-12": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "IEC 60664-3:2016；Ed3.0",
+          "primary_url": "https://webstore.iec.ch/en/publication/26148",
+          "recorded_access_and_limits": "官方涂覆/灌封绝缘保护范围"
+        }
+      ]
+    },
+    "E08-13": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "IEC 60529:1989+A1:1999+A2:2013 CSV；Ed2.2，包含截至2019勘误",
+          "primary_url": "https://webstore.iec.ch/en/publication/2452",
+          "recorded_access_and_limits": "官方IP范围、版次和勘误说明"
+        }
+      ]
+    },
+    "E08-14": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "TI CC2651R3SIPA Datasheet；SWRS278B，2023-08修订",
+          "primary_url": "https://www.ti.com/lit/ds/symlink/cc2651r3sipa.pdf",
+          "recorded_access_and_limits": "原厂全文；§11.6模块涂覆限制；2026封装附录不等于正文修订日期"
+        }
+      ]
+    },
+    "E08-15": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 8,
+            "title": "机电协同与环境可靠性"
+          },
+          "edition_and_identity": "NDK Crystal Oscillators—Precautions for Use；页面未给修订号",
+          "primary_url": "https://www.ndk.com/en/products/info/post_39.html",
+          "recorded_access_and_limits": "原厂全文；树脂封装须专项评价"
+        }
+      ]
+    },
+    "E09-01": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 9,
+            "title": "仿真建模与实测对齐"
+          },
+          "edition_and_identity": "ngspice manual；Version 47+ development; 2026-11-15",
+          "primary_url": "https://ngspice.sourceforge.io/docs/ngspice-manual.pdf",
+          "recorded_access_and_limits": "官方文档及DC/AC/瞬态/收敛章节；未安装/运行ngspice，不能推断下游工具版本"
+        }
+      ]
+    },
+    "E09-02": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 9,
+            "title": "仿真建模与实测对齐"
+          },
+          "edition_and_identity": "ADI技术文章，无独立文档号；2017-06-08",
+          "primary_url": "https://www.analog.com/en/resources/technical-articles/ltspice-worst-case-circuit-analysis-with-minimal-simulations-runs.html",
+          "recorded_access_and_limits": "原厂全文，角落与随机分析区分"
+        }
+      ]
+    },
+    "E09-03": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 9,
+            "title": "仿真建模与实测对齐"
+          },
+          "edition_and_identity": "ADI技术文章，无独立文档号；2021-08-01",
+          "primary_url": "https://www.analog.com/en/resources/technical-articles/how-to-model-statistical-tolerance-analysis.html",
+          "recorded_access_and_limits": "原厂全文，统计分布与WCA；本文未复制其例电路数值"
+        }
+      ]
+    },
+    "E09-04": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 9,
+            "title": "仿真建模与实测对齐"
+          },
+          "edition_and_identity": "ADI技术文章，无独立文档号；2025-11-19",
+          "primary_url": "https://www.analog.com/en/resources/technical-articles/random-numbers-in-ltspice.html",
+          "recorded_access_and_limits": "原厂全文，seed/重置行为；实际工具设置仍须读回"
+        }
+      ]
+    },
+    "E09-05": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 9,
+            "title": "仿真建模与实测对齐"
+          },
+          "edition_and_identity": "IBIS；8.0; ratified 2025-12-05",
+          "primary_url": "https://www.ibis.org/ver8.0/ver8_0.pdf",
+          "recorded_access_and_limits": "官方430页PDF可读取；相关格式/模型范围，不声称逐页完成全文认证审查"
+        }
+      ]
+    },
+    "E09-06": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 9,
+            "title": "仿真建模与实测对齐"
+          },
+          "edition_and_identity": "AN4803；Rev 3; 2022-08",
+          "primary_url": "https://www.st.com/resource/en/application_note/dm00257177-high-speed-si-simulations-using-ibis-and-board-level-simulations-using-hyperlynx-si-on-stm32-mcus-and-mpus-stmicroelectronics.pdf",
+          "recorded_access_and_limits": "官方PDF，IBIS与板级SI方法"
+        }
+      ]
+    },
+    "E09-07": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 9,
+            "title": "仿真建模与实测对齐"
+          },
+          "edition_and_identity": "Touchstone；2.1; ratified 2024-01-26",
+          "primary_url": "https://www.ibis.org/touchstone_ver2.1/touchstone_ver2_1.pdf",
+          "recorded_access_and_limits": "官方36页规范，格式、参考阻抗、端口/混模顺序"
+        }
+      ]
+    },
+    "E09-08": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 9,
+            "title": "仿真建模与实测对齐"
+          },
+          "edition_and_identity": "Keysight/Agilent ADS 2011 bbspice；2011-09",
+          "primary_url": "https://edadownload.software.keysight.com/eedl/ads/2011/pdf/bbspice.pdf",
+          "recorded_access_and_limits": "官方模型数学说明，奇异值无源判据；不是声称ADS2011为当前软件"
+        }
+      ]
+    },
+    "E09-09": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 9,
+            "title": "仿真建模与实测对齐"
+          },
+          "edition_and_identity": "Keysight PLTS N1930xB online help；Fixed revision not stated",
+          "primary_url": "https://helpfiles.keysight.com/csg/N1930xB/Analyzing/Data_Integrity_Check.htm",
+          "recorded_access_and_limits": "官方正文，因果/互易/修正方法；无源充分性采用E09-08的SVD表述"
+        }
+      ]
+    },
+    "E09-10": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 9,
+            "title": "仿真建模与实测对齐"
+          },
+          "edition_and_identity": "UG583；1.29; 2025-12-23",
+          "primary_url": "https://docs.amd.com/r/en-US/ug583-ultrascale-pcb-design",
+          "recorded_access_and_limits": "官方版次与PDN设计章节；平台适用范围受限"
+        }
+      ]
+    },
+    "E09-11": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 9,
+            "title": "仿真建模与实测对齐"
+          },
+          "edition_and_identity": "SPRA953D；Rev D; 2024-03",
+          "primary_url": "https://www.ti.com/lit/an/spra953d/spra953d.pdf",
+          "recorded_access_and_limits": "官方正文，热模型和边界条件"
+        }
+      ]
+    },
+    "E09-12": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 9,
+            "title": "仿真建模与实测对齐"
+          },
+          "edition_and_identity": "5991-0144；Landing page read; revision date not confirmed",
+          "primary_url": "https://www.keysight.com/us/en/assets/7018-03403/white-papers/5991-0144.pdf",
+          "recorded_access_and_limits": "官方落地页正文，近场定位与远场合规区分；并未读取全部白皮书附件"
+        }
+      ]
+    },
+    "E10-01": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 10,
+            "title": "软硬协同、Bring-up与EVT/DVT/PVT"
+          },
+          "edition_and_identity": "ST AN4488；Rev7，2018-10",
+          "primary_url": "https://www.st.com/resource/en/application_note/dm00115714.pdf",
+          "recorded_access_and_limits": "官方PDF相关供电、引脚、复位、启动章节；只用于适用STM32F4器件，不通推所有MCU。"
+        }
+      ]
+    },
+    "E10-02": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 10,
+            "title": "软硬协同、Bring-up与EVT/DVT/PVT"
+          },
+          "edition_and_identity": "Tektronix ABCs of Probes Primer；已读公开文件；封面具体修订号未核实",
+          "primary_url": "https://download.tek.com/document/02_ABCs-of-Probes-Primer.pdf",
+          "recorded_access_and_limits": "官方完整PDF读取，重点探头负载、接地引线和环路；短地弹簧与长鳄鱼夹地线不可混称。"
+        }
+      ]
+    },
+    "E10-03": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 10,
+            "title": "软硬协同、Bring-up与EVT/DVT/PVT"
+          },
+          "edition_and_identity": "NI Calibration Services Guard Band Implementation；官方页更新2024-09-20",
+          "primary_url": "https://www.ni.com/en/shop/services/hardware/calibration-services/calibration-services-guard-band-implementation.html",
+          "recorded_access_and_limits": "官方正文；本包区间三态是声明的项目决策规则，不声称为该文唯一处理法。"
+        }
+      ]
+    },
+    "E10-04": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 10,
+            "title": "软硬协同、Bring-up与EVT/DVT/PVT"
+          },
+          "edition_and_identity": "NIST/SEMATECH e-Handbook §7.2.4.1；在线手册，访问2026-11-19",
+          "primary_url": "https://itl.nist.gov/div898/handbook/prc/section2/prc241.htm",
+          "recorded_access_and_limits": "官方统计方法正文；零失效单侧上限公式由其二项模型推导，n=299仅为指定示例。"
+        }
+      ]
+    },
+    "E10-05": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 10,
+            "title": "软硬协同、Bring-up与EVT/DVT/PVT"
+          },
+          "edition_and_identity": "NIST/SEMATECH e-Handbook §8.4.5.1；在线手册，访问2026-11-19",
+          "primary_url": "https://www.itl.nist.gov/div898/handbook/apr/section4/apr451.htm",
+          "recorded_access_and_limits": "官方恒定失效率/零失效相关正文；不能套磨损阶段或未经验证的加速因子。"
+        }
+      ]
+    },
+    "E10-06": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 10,
+            "title": "软硬协同、Bring-up与EVT/DVT/PVT"
+          },
+          "edition_and_identity": "Keysight 5989-5765；Signal Integrity Analysis Series Part 3；修订日期未完整核验",
+          "primary_url": "https://www.keysight.com/es/en/assets/7018-08491/application-notes/5989-5765.pdf",
+          "recorded_access_and_limits": "URL返回官方落地页，使用其可见正文；未声称读取完整PDF附件。"
+        }
+      ]
+    },
+    "E10-07": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 10,
+            "title": "软硬协同、Bring-up与EVT/DVT/PVT"
+          },
+          "edition_and_identity": "ST STM32F4 Documentation；ES0182目录列V19，2026-07-19",
+          "primary_url": "https://www.st.com/en/microcontrollers-microprocessors/stm32f4-series/documentation.html",
+          "recorded_access_and_limits": "目录版本与实际取回PDF存在冲突，禁止把目录V19条款套到Rev18文件。"
+        }
+      ]
+    },
+    "E10-08": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 10,
+            "title": "软硬协同、Bring-up与EVT/DVT/PVT"
+          },
+          "edition_and_identity": "ST ES0182；本次取回PDF为Rev18，2025-02；最新正文未核验",
+          "primary_url": "https://www.st.com/resource/en/errata_sheet/es0182-stm32f405407xx-and-stm32f415417xx-device-errata-stmicroelectronics.pdf",
+          "recorded_access_and_limits": "实际PDF页脚核验；需绑定硅修订号，且与E10-07目录冲突必须在项目中解决。"
+        }
+      ]
+    },
+    "E10-09": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 10,
+            "title": "软硬协同、Bring-up与EVT/DVT/PVT"
+          },
+          "edition_and_identity": "ST UM1725；已核官方Rev8相关搜索正文；当前完整PDF版次未完整核验",
+          "primary_url": "https://www.st.com/resource/en/user_manual/um1725-description-of-stm32f4-hal-and-lowlayer-drivers-stmicroelectronics.pdf",
+          "recorded_access_and_limits": "官方正文索引片段核实复位HSI开启、HSE/PLL关闭和软件使能；完整PDF超过读取大小限制。不得宣称通读最新版。"
+        }
+      ]
+    },
+    "E11-01": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 11,
+            "title": "DFM/DFA/DFT与制造放行"
+          },
+          "edition_and_identity": "Ucamco Gerber Layer Format Specification；Revision2026.05",
+          "primary_url": "https://www.ucamco.com/en/gerber/downloads/",
+          "recorded_access_and_limits": "官方目录和当前格式PDF实际打开；格式正确不等于电气正确。"
+        }
+      ]
+    },
+    "E11-02": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 11,
+            "title": "DFM/DFA/DFT与制造放行"
+          },
+          "edition_and_identity": "ODB++Design Format Specification；Release8.1 Update4，2024-08",
+          "primary_url": "https://odbplusplus.com/wp-content/uploads/sites/2/2024/08/odb_spec_user.pdf",
+          "recorded_access_and_limits": "官方515页PDF版本及结构核验；旧FAQ8.1.2未覆盖实际8.1U4文件。"
+        }
+      ]
+    },
+    "E11-03": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 11,
+            "title": "DFM/DFA/DFT与制造放行"
+          },
+          "edition_and_identity": "IPC-2581；RevC，2020-11",
+          "primary_url": "https://www.ipc.org/TOC/IPC-2581C-toc.pdf",
+          "recorded_access_and_limits": "仅官方公开TOC/Scope，不声称读取完整付费格式规范。"
+        }
+      ]
+    },
+    "E11-04": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 11,
+            "title": "DFM/DFA/DFT与制造放行"
+          },
+          "edition_and_identity": "IPC Document Revision Table；核验2026-11-19，具体标准见附录展开表",
+          "primary_url": "https://www.ipc.org/ipc-document-revision-table",
+          "recorded_access_and_limits": "核各标准编号/修订/日期；动态目录可能落后新发布列表，存在冲突处明确保留。没有读取所列全部标准正文。"
+        }
+      ]
+    },
+    "E11-05": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 11,
+            "title": "DFM/DFA/DFT与制造放行"
+          },
+          "edition_and_identity": "TI SLUA271C；RevC，2023-12",
+          "primary_url": "https://www.ti.com/lit/pdf/slua271",
+          "recorded_access_and_limits": "官方正文已读§3/4/5；钢网AR约0.66、镍电铸0.57实验及aspect>1.5均有工艺前提。"
+        }
+      ]
+    },
+    "E11-06": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 11,
+            "title": "DFM/DFA/DFT与制造放行"
+          },
+          "edition_and_identity": "JLCPCB PCB Capabilities；动态页面，访问2026-11-19",
+          "primary_url": "https://jlcpcb.com/capabilities/pcb-capabilities/",
+          "recorded_access_and_limits": "官方当次服务能力，随铜厚/颜色/工序变化；Min.pad spacing与成品阻焊桥定义须区分。不是IPC通用条款。"
+        }
+      ]
+    },
+    "E11-07": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 11,
+            "title": "DFM/DFA/DFT与制造放行"
+          },
+          "edition_and_identity": "TI AN-2029 / SNOA550H；RevH，2020-06",
+          "primary_url": "https://www.ti.com/lit/pdf/snoa550",
+          "recorded_access_and_limits": "官方正文相关MSL、处理/回流和工艺限制；器件分类试验不等于生产炉温配方。"
+        }
+      ]
+    },
+    "E11-08": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 11,
+            "title": "DFM/DFA/DFT与制造放行"
+          },
+          "edition_and_identity": "Keysight 5989-5748；In-Circuit Probing Techniques for High-Speed PCBs；日期未核",
+          "primary_url": "https://www.keysight.com/us/en/assets/7018-01458/white-papers/5989-5748.pdf",
+          "recorded_access_and_limits": "官方落地摘要读取，未读取完整白皮书；2.54mm测试点经验值不是该页保证规格。"
+        }
+      ]
+    },
+    "E11-09": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 11,
+            "title": "DFM/DFA/DFT与制造放行"
+          },
+          "edition_and_identity": "IEEE 1149.1 / P1149.1；已发布1149.1-2013；P1149.1修订PAR获批2022-06-16",
+          "primary_url": "https://standards.ieee.org/ieee/1149.1/10977/",
+          "recorded_access_and_limits": "官方项目状态；修订项目不等于新版标准。产品还须提供BSDL及安全可测状态。"
+        }
+      ]
+    },
+    "E11-10": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 11,
+            "title": "DFM/DFA/DFT与制造放行"
+          },
+          "edition_and_identity": "IPC Recently Released Standards and Documents；2026目录",
+          "primary_url": "https://www.electronics.org/recently-released-ipc-standards-and-documents",
+          "recorded_access_and_limits": "官方目录核实IPC-2223F、4204C、J-STD-046A/048A等；优先于旧修订表对应过期行，但未读授权全文。"
+        }
+      ]
+    },
+    "E11-11": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 11,
+            "title": "DFM/DFA/DFT与制造放行"
+          },
+          "edition_and_identity": "JLCPCB Pick & Place File for PCB Assembly；更新2026-09-09",
+          "primary_url": "https://jlcpcb.com/help/article/pick-place-file-for-pcb-assembly",
+          "recorded_access_and_limits": "官方正文：CPL适用SMT及THT；坐标mm、角度逆时针。工序覆盖范围须按实际服务合同定义。"
+        }
+      ]
+    },
+    "E11-12": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 11,
+            "title": "DFM/DFA/DFT与制造放行"
+          },
+          "edition_and_identity": "Ucamco Gerber Layer Format Specification；Revision2026.05",
+          "primary_url": "https://www.ucamco.com/files/downloads/file_en/554/gerber-layer-format-specification-revision-2026-05_en.pdf?b998de78d4a6b87cd69d06cff46118e5=",
+          "recorded_access_and_limits": "官方PDF219页已打开，具体格式层语义作为来源；不复制全文。"
+        }
+      ]
+    }
+  },
+  "manufacturing_revisions": [
+    {
+      "identity": "IPC J-STD-001",
+      "edition": "J，2024-04；汽车附录JA，2025-09",
+      "recorded_limits": "焊接要求；附录与主标准适用关系必须匹配"
+    },
+    {
+      "identity": "IPC-A-610",
+      "edition": "J，2024-03",
+      "recorded_limits": "电子组件可接受性；不能独立证明电气设计正确"
+    },
+    {
+      "identity": "IPC-A-600",
+      "edition": "M，2025-05",
+      "recorded_limits": "印制板可接受性；绑定相应性能规范"
+    },
+    {
+      "identity": "IPC-6011",
+      "edition": "A，2025-02",
+      "recorded_limits": "印制板通用性能规范"
+    },
+    {
+      "identity": "IPC-6012",
+      "edition": "F，2023-09；FA汽车附录2025-12；FS航天附录2024-02",
+      "recorded_limits": "刚性PCB资格/性能，Class与附录从合同导入"
+    },
+    {
+      "identity": "IPC-2221",
+      "edition": "C，2023-12",
+      "recorded_limits": "通用PCB设计标准；绝缘不能仅据旧通用间距表替代产品安规"
+    },
+    {
+      "identity": "IPC-2222",
+      "edition": "B，2020-10",
+      "recorded_limits": "刚性PCB分规范"
+    },
+    {
+      "identity": "IPC-2223 / IPC-4204",
+      "edition": "F / C，2026新发布目录",
+      "recorded_limits": "软/软硬结合设计与材料；旧修订表2223E条目滞后"
+    },
+    {
+      "identity": "IPC-7525",
+      "edition": "C，2021-11",
+      "recorded_limits": "钢网设计指南；具体焊膏/设备/封装试验仍必要"
+    },
+    {
+      "identity": "IPC-7530",
+      "edition": "B，2025-01",
+      "recorded_limits": "温度曲线方法；不是所有器件通用炉温配方"
+    },
+    {
+      "identity": "IPC-7095",
+      "edition": "E，2024-09",
+      "recorded_limits": "BGA设计与装配实施方法"
+    },
+    {
+      "identity": "IPC-7351 / IPC-7352",
+      "edition": "7351B，2010-06标No Longer Maintained；7352原版2023-07",
+      "recorded_limits": "封装焊盘规则导入前确认项目采用关系与具体封装图"
+    },
+    {
+      "identity": "IPC/JEDEC J-STD-020",
+      "edition": "F，2022-11",
+      "recorded_limits": "非气密SMD的湿敏/回流敏感分类"
+    },
+    {
+      "identity": "IPC/JEDEC J-STD-033",
+      "edition": "D，2018-05，目录标No Longer Maintained",
+      "recorded_limits": "处理/包装/运输/使用要求；不能因此直接忽略MSL控制"
+    },
+    {
+      "identity": "IPC/WHMA-A-620",
+      "edition": "F，2025-10",
+      "recorded_limits": "线缆与线束组件要求/验收；适用总装线束时调用"
+    },
+    {
+      "identity": "IPC J-STD-046A / 048A",
+      "edition": "官方2026发布目录；ANSI标2026，部分JEDEC/ECIA发行标2025",
+      "recorded_limits": "PCN/停产通知；不得未经正文确认统一设置通知天数"
+    },
+    {
+      "identity": "IPC-2152",
+      "edition": "2009公开预览及目录",
+      "recorded_limits": "载流与温升；完整图表未取得，不生成伪通用闭式“标准公式”"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "schema": "hardware-spice-input-v1",
+  "netlist": "missing-model.cir",
+  "model_files": [],
+  "measurements": {
+    "peak": {"unit": "V", "min": 0.1, "max": 1}
+  }
+}

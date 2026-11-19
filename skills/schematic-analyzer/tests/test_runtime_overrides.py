@@ -18,7 +18,6 @@ from tools.role_classifier import classify_component
 
 
 CLI_PATH = REPO_ROOT / ".claude/skills/schematic-analyzer/scripts/schematic-cli.py"
-DENALI_ROOT = REPO_ROOT / "data/denali/RK3576.kicad_sch"
 
 
 def run_cli(*args: str) -> subprocess.CompletedProcess[str]:
@@ -200,19 +199,19 @@ def test_core_ranker_ignores_runtime_core_scoring_overlay(tmp_path: Path) -> Non
     assert core_candidates[0].reference == "X1"
 
 
-def test_analyzer_tracks_runtime_rule_overlay_sources(tmp_path: Path) -> None:
+def test_analyzer_tracks_runtime_rule_overlay_sources(tmp_path: Path, schematic_example) -> None:
     overlay = tmp_path / "context_only.yaml"
     overlay.write_text("roles: []\n", encoding="utf-8")
 
-    analyzer = SchematicAnalyzer(str(DENALI_ROOT), rule_paths=[str(overlay)])
+    analyzer = SchematicAnalyzer(str(schematic_example.root), rule_paths=[str(overlay)])
     analysis = analyzer.analyze(force=True)
 
     assert analysis.meta["rule_paths"] == [str(overlay)]
     assert analysis.meta["context_signature"]
 
 
-def test_analyzer_without_explicit_pattern_sources_does_not_load_builtin_patterns() -> None:
-    analyzer = SchematicAnalyzer(str(DENALI_ROOT))
+def test_analyzer_without_explicit_pattern_sources_does_not_load_builtin_patterns(schematic_example) -> None:
+    analyzer = SchematicAnalyzer(str(schematic_example.root))
     analysis = analyzer.analyze(force=True)
 
     assert analysis.meta["pattern_sources"] == []
@@ -226,7 +225,7 @@ def test_pattern_loader_without_explicit_sources_loads_nothing(tmp_path: Path) -
     assert loader.load() == []
 
 
-def test_cli_query_pattern_accepts_runtime_patterns_overlay(tmp_path: Path) -> None:
+def test_cli_query_pattern_accepts_runtime_patterns_overlay(tmp_path: Path, schematic_example) -> None:
     pattern_dir = tmp_path / "patterns"
     pattern_dir.mkdir()
     (pattern_dir / "custom_vbus.yaml").write_text(
@@ -260,7 +259,7 @@ def test_cli_query_pattern_accepts_runtime_patterns_overlay(tmp_path: Path) -> N
 
     result = run_cli(
         "query",
-        str(DENALI_ROOT),
+        str(schematic_example.root),
         "--pattern",
         str(pattern_dir / "custom_vbus.yaml"),
     )
@@ -273,7 +272,7 @@ def test_cli_query_pattern_accepts_runtime_patterns_overlay(tmp_path: Path) -> N
     assert "matches" in payload
 
 
-def test_query_pattern_uses_explicit_pattern_source_only(tmp_path: Path) -> None:
+def test_query_pattern_uses_explicit_pattern_source_only(tmp_path: Path, schematic_example) -> None:
     explicit_pattern = tmp_path / "explicit_only.yaml"
     explicit_pattern.write_text(
         "\n".join(
@@ -298,7 +297,7 @@ def test_query_pattern_uses_explicit_pattern_source_only(tmp_path: Path) -> None
 
     result = run_cli(
         "query",
-        str(DENALI_ROOT),
+        str(schematic_example.root),
         "--pattern",
         str(explicit_pattern),
     )

@@ -5,6 +5,10 @@ description: Build and verify a vendor-neutral PCB/PCBA manufacturing release fr
 
 # PCBA Fabrication Release
 
+[CAM 工件合同与读回](references/cam-readback.md)
+
+正式冻结用 `validate_release_manifest.py --formal` 绑定本版证据，保存的 Gerber/钻孔可由 [CAM 离线读回](scripts/check_cam.py) 核查。结果按已解析工件的覆盖范围交接。
+
 For a hardware/firmware product, bind the board revision to the intended firmware
 build, programming/calibration instructions and test compatibility in the handoff.
 Keep manufacturing-file checks, successful firmware build and physical validation
@@ -17,6 +21,8 @@ Read [references/release-checklist.md](references/release-checklist.md) and
 [references/eda-release-adapters.md](references/eda-release-adapters.md).
 
 ## Preflight
+
+制造数据和测试交接按 [DFM／DFT 核验](../hardware/references/dfm-dft-verification.md) 对照已确认的板厂工艺、实际出件与装配变体。项目有生产测试门槛时，冻结实际目标故障清单与证据，不把已放测试点当成已检出。
 
 1. Read repository rules, sourcing lock, circuit/layout gate results, approved
    waivers, native board/project files, fabrication constraints, quantities,
@@ -37,7 +43,8 @@ convention, DNP policy, polarity, and pin-1 evidence.
 
 For saved BOM and placement CSVs, run the [offline assembly check](references/assembly-check.md)
 to flag missing or repeated references, placement for DNP parts, and malformed
-placement fields. Bind its two hashes to the release revision.
+placement fields. The manifest builder and validator repeat this check against
+the release artifacts for `PASS` and bind the result to their two hashes.
 
 Inspect the generated files in an independent Gerber/assembly viewer. Compare
 outline and dimensions, layer count, copper/mask, drills, text, apertures,
@@ -51,7 +58,8 @@ Build `.pcba-workflow/release-manifest.json` with
 `scripts/build_release_manifest.py`. Supply an explicit revision for every
 artifact; the script rejects mixed revisions. Record:
 
-- source and derived artifact SHA-256, size, role, and revision;
+- source and derived artifact SHA-256, size, role, and revision, plus the
+  generated BOM/CPL reconciliation evidence for a `PASS` release;
 - board dimensions, layers, thickness, finish, stackup, controlled options,
   quantities, assembly side, and DNP policy;
 - ERC, raw connectivity, classified DRC, power, layout, DFM, and visual results;

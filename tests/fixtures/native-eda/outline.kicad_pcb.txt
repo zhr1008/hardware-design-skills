@@ -1,0 +1,11 @@
+(kicad_pcb
+  (version 20241229)
+  (generator "pcbnew")
+  (general (thickness 1.6))
+  (paper "A4")
+  (layers (0 "F.Cu" signal) (2 "B.Cu" signal) (25 "Edge.Cuts" user))
+  (setup (pad_to_mask_clearance 0))
+  (gr_rect (start 10 10) (end 30 20)
+    (stroke (width 0.05) (type default)) (fill none) (layer "Edge.Cuts")
+    (uuid "aa87a63a-86b0-41de-a6e0-646c8acbf015"))
+)

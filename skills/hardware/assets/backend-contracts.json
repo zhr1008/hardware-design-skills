@@ -1,0 +1,46 @@
+{
+  "schema": "hardware-backend-contracts-v1",
+  "backends": {
+    "kicad-cli": {
+      "kind": "local_cli",
+      "executables": ["kicad-cli"],
+      "version_command": ["version"],
+      "accepted_version": "(?:9|10)\\.[0-9]+\\.[0-9]+",
+      "scope": "KiCad ERC/DRC JSON",
+      "probe_scope": "native version command only",
+      "probe_side_effect": "none_expected"
+    },
+    "altium-monkey": {
+      "kind": "python_package",
+      "distribution": "altium-monkey",
+      "scope": "Altium saved files",
+      "probe_scope": "Python distribution metadata only",
+      "probe_side_effect": "none"
+    },
+    "components": {
+      "kind": "mcp",
+      "distribution": "component-sourcing-mcp",
+      "scope": "exact supplier part detail",
+      "probe_scope": "optional supplied runtime observation only",
+      "probe_side_effect": "none",
+      "required_tool": "szlcsc_get_part",
+      "required_parameters": {"identifier": "string", "refresh": "boolean", "include_procurement": "boolean"},
+      "required_arguments": ["identifier"]
+    },
+    "ngspice": {
+      "kind": "local_cli",
+      "executables": ["ngspice", "ngspice_con"],
+      "version_command": ["--version"],
+      "scope": "batch SPICE",
+      "probe_scope": "native version command only",
+      "probe_side_effect": "none_expected"
+    },
+    "gerbonara": {
+      "kind": "python_package",
+      "distribution": "gerbonara",
+      "scope": "Gerber and Excellon readback",
+      "probe_scope": "Python distribution metadata only",
+      "probe_side_effect": "none"
+    }
+  }
+}

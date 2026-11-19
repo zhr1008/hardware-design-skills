@@ -1,0 +1,21 @@
+# 仿真建模与实测对齐
+
+先给每个待验指标选定模型范围和验证工况。DC 检查工作点、导通状态和压降。AC 围绕其工作点检查局部线性小信号。瞬态检查启动、故障、非线性恢复与保护。周期控制环路使用具备该能力的平均或周期求解。热和 EMC 按真实边界采用相应的热流、场路模型。给出器件完整订购号、子电路针序、模型版本/哈希、网络/测试点映射、求解器、温频偏压和容差。成功退出后还要查收敛、完整时域、应有工况、非有限数及步长/网格收敛。 [ngspice 手册](https://ngspice.sourceforge.io/docs/ngspice-manual.pdf) · [ST AN4803](https://www.st.com/resource/en/application_note/dm00257177-high-speed-si-simulations-using-ibis-and-board-level-simulations-using-hyperlynx-si-on-stm32-mcus-and-mpus-stmicroelectronics.pdf)
+
+- WCCA 的顶点极值需要单调性或独立的范围论证，谐振、饱和或状态切换时查内部极值。统计仿真记录分布、批内/批间关系、温偏依赖、相关性、seed 和样本数。对于独立同分布的固定任务，零失败单侧置信上界为 `1−α^(1/n)`，仅适用于采样分布和模型所覆盖的机制。 [ADI 模型容差方法](https://www.analog.com/en/resources/technical-articles/how-to-model-statistical-tolerance-analysis.html)
+- IBIS 查 I/V、V/T、模型选择、引脚和封装，AMI 查初始化/时域接口、训练、采样和均衡。模型覆盖哪些电气行为要从说明和量测确认，另存不支持的故障、供电影响或频带。多端口 PDN 保留自阻抗与传输阻抗、负载端口位置及相关激励。 [IBIS 8.0](https://www.ibis.org/ver8.0/ver8_0.pdf) · [AMD UG583](https://docs.amd.com/r/en-US/ug583-ultrascale-pcb-design)
+
+## S 参数、参考面与物理一致性
+
+| 检查 | 要核对的事实 |
+| --- | --- |
+| 数据解析 | Touchstone 版本、频率单位、RI/MA/DB 格式、端口次序/正负配对、混模顺序、各端口参考阻抗、参考面和频带。找 VNA 校准、夹具及去嵌文件，保留原始和去嵌版本。 |
+| 无源、因果和互易 | 在相同实数正参考阻抗的功率归一化下，每个采样频点的无源检查用 `σmax(S)≤1+ε`，容差来自量测或拟合不确定度。连续频带和拟合模型还需要独立判断。只在物理上应互易时比 `Sij` 和 `Sji`。 |
+| 变换和边界 | `Z=Z0(I+S)(I−S)⁻¹` 需要统一实数正 Z0、相容波变量和可逆矩阵。缺低频/DC、有限带宽、窗和去嵌均可能带来前振铃。补零不增加真实带宽。不同或复数 Z0 使用相容的重归一化。 |
+| 变更可追溯 | 原始、去嵌、拟合、施加无源或因果修正后各自保留，量化相对原始数据及验证样本的偏差。记录校准标准、VNA 功率、夹具方向、检验件及端口参考面。 |
+
+[Touchstone 2.1](https://www.ibis.org/touchstone_ver2.1/touchstone_ver2_1.pdf) · [Keysight 模型完整性检查](https://helpfiles.keysight.com/csg/N1930xB/Analyzing/Data_Integrity_Check.htm) · [Keysight Broadband SPICE](https://edadownload.software.keysight.com/eedl/ads/2011/pdf/bbspice.pdf)
+
+## 系统台架对齐
+
+冻结板/BOM/固件、输入、温度、负载、活动状态。统一时间基准、供电参考、测点、共模/差分、探头负载、带宽/滤波与触发，再比较电压峰值/稳态误差、建立时间、相位/频率、眼图等预定指标。拟合参数从校准集取得，验证使用另一批工况或对象。时间平移或比例变换应来自实测时钟/探头/夹具校准。保留变换参数、变换前后数据和残差。缺同条件证据或不确定度跨限时待验证，报告模型与测量各自能支持的工况。仪器原始结果按 [实测验收](bench-results.md) 归档。

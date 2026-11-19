@@ -59,7 +59,10 @@ def reported_ignored_checks(report):
 
 
 def check(path, expected_kind):
-    raw = path.read_bytes()
+    return check_bytes(path.read_bytes(), expected_kind)
+
+
+def check_bytes(raw, expected_kind):
     report = json.loads(raw.decode("utf-8-sig"), object_pairs_hook=unique_mapping, parse_constant=reject_constant)
     if not isinstance(report, dict):
         raise ValueError("report must be a JSON object")
@@ -129,14 +132,27 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("report", type=Path, help="existing ERC or DRC JSON report")
     parser.add_argument("--kind", choices=("erc", "drc"), help="require a report of this kind")
+    parser.add_argument("--formal", action="store_true", help="emit a versioned evidence envelope")
     args = parser.parse_args(argv)
+    missing = False
+    raw = None
     try:
-        result = check(args.report, args.kind)
+        raw = args.report.read_bytes()
+        result = check_bytes(raw, args.kind)
     except (OSError, ValueError) as exc:
-        print(json.dumps({"status": "invalid_input", "error": str(exc)}, ensure_ascii=False), file=sys.stderr)
-        return 2
-    print(json.dumps(result, ensure_ascii=False, indent=2))
-    return {"no_reported_findings": 0, "review_required": 1, "coverage_incomplete": 2}[result["status"]]
+        result = {"status": "invalid_input", "error": str(exc)}
+        missing = isinstance(exc, FileNotFoundError)
+    output = result
+    stream = sys.stderr if result["status"] == "invalid_input" and not args.formal else sys.stdout
+    if args.formal:
+        sys.path.insert(0, str(Path(__file__).absolute().parents[2] / "hardware/scripts"))
+        from evidence_adapter import saved_kicad
+
+        digest = hashlib.sha256(raw).hexdigest() if raw is not None else None
+        output = saved_kicad(result, args.report, digest, missing=missing)
+    print(json.dumps(output, ensure_ascii=False, indent=2), file=stream)
+    return {"no_reported_findings": 0, "review_required": 1, "coverage_incomplete": 2,
+            "invalid_input": 2}[result["status"]]
 
 
 if __name__ == "__main__":

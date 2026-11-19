@@ -11,6 +11,16 @@ SCRIPT = SKILL / "scripts/knowledge.py"
 
 
 class EngineeringKnowledgeTest(unittest.TestCase):
+    def test_unified_bibliography_preserves_version_conflicts_and_catalog_access(self):
+        records = self.query("sources", "AN2867")["results"]
+        self.assertEqual({item["catalog"] for item in records}, {"rule_source", "handbook"})
+        local = next(item["record"] for item in records if item["catalog"] == "rule_source")
+        self.assertIn("24", local["edition"])
+        self.assertEqual(local["source_url_status"], "version_conflict")
+        exact = self.query("sources", "B01", "--limit", "1")["results"][0]
+        self.assertEqual(exact["id"], "B01")
+        self.assertFalse(exact["record"]["full_text_reviewed"])
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)

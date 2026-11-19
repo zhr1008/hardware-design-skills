@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hardware evidence envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "backend", "evidence_stage", "execution_status", "mutation_outcome",
+    "verification_status", "checks_executed", "checks_skipped", "inputs", "outputs",
+    "coverage", "native"
+  ],
+  "$defs": {
+    "text": {"type": "string", "pattern": "\\S"},
+    "artifacts": {
+      "type": "object",
+      "propertyNames": {"$ref": "#/$defs/text"},
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {"$ref": "#/$defs/text"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$", "minLength": 64, "maxLength": 64}
+        }
+      }
+    }
+  },
+  "properties": {
+    "schema": {"const": "hardware-evidence-envelope-v1"},
+    "backend": {"$ref": "#/$defs/text"},
+    "evidence_stage": {"enum": ["saved_artifact", "native_eda", "release_package", "bench_record", "simulation", "cam_readback"]},
+    "execution_status": {"enum": ["completed", "failed", "timed_out", "not_executed", "unsupported"]},
+    "mutation_outcome": {"enum": ["unchanged", "changed", "not_applicable", "outcome_unknown"]},
+    "verification_status": {
+      "enum": ["pass", "fail", "no_reported_findings", "review_required", "coverage_incomplete", "invalid", "missing", "blocked", "not_evaluated"]
+    },
+    "checks_executed": {"type": "array", "items": {"$ref": "#/$defs/text"}, "uniqueItems": true},
+    "checks_skipped": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["check", "reason"],
+        "properties": {"check": {"$ref": "#/$defs/text"}, "reason": {"$ref": "#/$defs/text"}}
+      },
+      "uniqueItems": true
+    },
+    "inputs": {"$ref": "#/$defs/artifacts"},
+    "outputs": {"$ref": "#/$defs/artifacts"},
+    "coverage": {"type": "object"},
+    "native": {"type": "object"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"verification_status": {"enum": ["pass", "fail", "no_reported_findings"]}}},
+      "then": {
+        "properties": {"execution_status": {"const": "completed"}, "checks_executed": {"minItems": 1}},
+        "anyOf": [{"properties": {"inputs": {"minProperties": 1}}}, {"properties": {"outputs": {"minProperties": 1}}}]
+      }
+    },
+    {
+      "if": {"properties": {"verification_status": {"enum": ["pass", "no_reported_findings"]}}},
+      "then": {"properties": {"mutation_outcome": {"not": {"const": "outcome_unknown"}}}}
+    }
+  ]
+}

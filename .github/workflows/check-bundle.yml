@@ -24,5 +24,6 @@ jobs:
       - run: python -X utf8 scripts/check_publication.py --tree HEAD
       - run: python -X utf8 -m pip install -r requirements-dev.txt
       - run: python -X utf8 scripts/validate_bundle.py
-      - run: python -X utf8 -m unittest discover -s tests
+      - name: Run top-level and specialist tests with skip reasons
+        run: python -X utf8 -m pytest -ra tests skills/schematic-analyzer/tests skills/hardware-project-library/tests
       - run: python -X utf8 skills/hardware/scripts/hardware_tool.py list --json

@@ -1,0 +1,30 @@
+{
+  "schema": "hardware-cam-input-v1",
+  "required_roles": ["outline", "front_copper", "plated_drill"],
+  "tolerance_mm": 0.001,
+  "layers": {
+    "outline": {
+      "path": "outline.gerber.txt",
+      "kind": "gerber",
+      "unit": "mm",
+      "sha256": "cf92aa27bdb905e138b2dec836c48e310f76d6ce96099f17299516af2889fcc8",
+      "bounds_mm": [-0.05, -0.05, 20.05, 10.05]
+    },
+    "front_copper": {
+      "path": "top.gerber.txt",
+      "kind": "gerber",
+      "unit": "mm",
+      "sha256": "20483f1355c305106dfa6f9898bd579a321fea1ec42c112788a02c8c017ff24b",
+      "bounds_mm": [2.5, 3.5, 3.5, 4.5]
+    },
+    "plated_drill": {
+      "path": "plated.excellon.txt",
+      "kind": "excellon",
+      "unit": "mm",
+      "sha256": "2ebb9ac736da706aac243c1b379fe8c691521693c78f66a52bdf29545871439f",
+      "bounds_mm": [2.6, 3.6, 17.4, 6.4],
+      "drills": 2,
+      "slots": 0
+    }
+  }
+}

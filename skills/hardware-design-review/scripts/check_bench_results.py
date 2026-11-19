@@ -10,6 +10,7 @@ import io
 import json
 from pathlib import Path
 import re
+import sys
 
 
 IDENTITY = ("board_id", "hardware_revision", "firmware_sha256")
@@ -160,7 +161,7 @@ def check(limits_raw, measurements_raw):
 
 
 def read_input(path):
-    if str(path).startswith(("\\", "//")) or not path.is_file():
+    if str(path).startswith(("\\", "//")) or (path.exists() and not path.is_file()):
         raise ValueError("输入需要可读取的本地普通文件")
     return path.read_bytes()
 
@@ -169,13 +170,27 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("--limits", required=True, type=Path)
     parser.add_argument("--measurements", required=True, type=Path)
+    parser.add_argument("--formal", action="store_true", help="emit a versioned evidence envelope")
     args = parser.parse_args()
+    missing = False
+    hashes = {}
     try:
-        report = check(read_input(args.limits), read_input(args.measurements))
+        limits = read_input(args.limits)
+        if args.formal:
+            hashes["limits"] = sha256(limits).hexdigest()
+        measurements = read_input(args.measurements)
+        report = check(limits, measurements)
     except (OSError, ValueError) as error:
         report = {"status": "invalid", "issues": [{"reason": str(error)}]}
-    print(json.dumps(report, ensure_ascii=False, indent=2))
-    return EXIT_CODES[report["status"]]
+        missing = isinstance(error, FileNotFoundError)
+    output = report
+    if args.formal:
+        sys.path.insert(0, str(Path(__file__).absolute().parents[2] / "hardware/scripts"))
+        from evidence_adapter import saved_bench
+
+        output = saved_bench(report, args.limits, args.measurements, report.get("sha256", hashes), missing=missing)
+    print(json.dumps(output, ensure_ascii=False, indent=2))
+    return EXIT_CODES["missing" if args.formal and missing else report["status"]]
 
 
 if __name__ == "__main__":

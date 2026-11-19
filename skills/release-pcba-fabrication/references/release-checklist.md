@@ -56,7 +56,16 @@ does not have to infer them:
   `power_connectivity`, `visual_mechanical_review`, `dfm_review`,
   `sourcing_lock_current`, and `revision_reconciled`;
 - boolean `design_critical_substitution_required`; when true, the separate
-  substitution approval and evidence must be present.
+  substitution approval and evidence must be present;
+- the BOM and CPL themselves must pass [offline reconciliation](assembly-check.md).
+  The builder stores `verification.assembly_check` with the result, the two
+  actual SHA-256 values, and any reviewed `--exclude` reference designators.
+  Use repeatable `--exclude` for intentional omissions listed in the BOM and
+  absent from the CPL. The validator rechecks the shipped CSVs and the recorded
+  hashes. Older v1 manifests without this record are rechecked directly using
+  DNP flags present in the BOM. If an older release needs explicit exclusions,
+  rebuild the manifest with the reviewed list. For an unsupported table format,
+  export supported BOM/CPL CSVs from the same frozen source and rebuild.
 
 Assembly placement, final-price, and payment approvals normally remain pending
 at fabrication release. They are not transferred from one another.

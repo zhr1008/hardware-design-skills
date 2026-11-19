@@ -26,7 +26,8 @@ Reuse existing task authorization; a stage transition is not a new permission pr
    evidence. Block only the dependent operation whose engineering evidence or
    authorization is genuinely missing; never improvise an approval.
 4. Initialize or validate `.pcba-workflow/program-state.json` with
-   `scripts/program_state.py`.
+   `scripts/program_state.py`. Its `scope: program_state` result reports the
+   state file's validity. Read individual `stages` entries for gate status.
 5. When the user requests a timelapse, tutorial, case study, or recorded demo,
    read [references/recorded-workflow.md](references/recorded-workflow.md) and
    initialize the hash-chained event log before the first design action.
@@ -57,6 +58,9 @@ before placement freeze.
 - Invalidate downstream gates after controlled data changes. Use
   `scripts/program_state.py invalidate --change ...`; do not manually preserve
   a stale PASS.
+- At manufacturing PASS, set the stage with `--release-manifest` and nonempty
+  `--evidence`. After a supplier-side placement correction, use the
+  [browser edit recovery procedure](references/stage-gates.md#browser-placement-recovery).
 - Keep substitution, assembly-placement, final-price, and payment approvals
   separate. Approval at one gate never implies another.
 - Respect user intent: review-only requests do not authorize design edits,

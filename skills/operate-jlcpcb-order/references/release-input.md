@@ -12,11 +12,13 @@ Before any upload, require:
   `layout_check_failures` equal zero;
 - circuit, layout, raw connectivity, power connectivity, visual/mechanical,
   DFM, sourcing freshness, and revision reconciliation equal `PASS`;
+- direct reconciliation of the frozen BOM and CPL CSVs, including any recorded
+  explicit exclusions, with both input hashes matching the listed artifacts;
 - positive board dimensions, layer count, thickness, PCB/assembly quantities,
   and declared finish and assembly side;
 - any required design-critical substitution separately approved with evidence.
 
-If the release specialist is installed, run its
-`scripts/validate_release_manifest.py`. Otherwise apply this same contract
-directly. Do not continue from `BLOCKED`, `USER_REVIEW`, a missing field, or a
-hash/revision mismatch.
+Run `release-pcba-fabrication/scripts/validate_release_manifest.py` or an
+equivalent check of the complete contract. A v1 manifest without a stored
+assembly record still requires direct validation of the listed BOM and CPL.
+Continue only with a verified `PASS` manifest and matching hashes.
