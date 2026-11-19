@@ -90,6 +90,24 @@ class HardwareToolRouting(unittest.TestCase):
             self.assertEqual(report["outputs"], [str(output)])
             self.assertFalse(output.parent.exists())
 
+    def test_native_runners_report_isolated_l2_output_without_launching(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            for command, name in (("kicad-native-check", "test.kicad_pcb"), ("spice-run", "test.json")):
+                with self.subTest(command=command):
+                    source = root / name
+                    source.write_text("", encoding="utf-8")
+                    output = root / command
+                    result = self.plan(command, source, "--output-dir", output, "--timeout", 5)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    plan = json.loads(result.stdout)
+                    self.assertEqual(plan["level"], "L2")
+                    self.assertEqual(plan["outputs"], [str(output)])
+                    self.assertEqual(plan["inputs"], [str(source)])
+                    self.assertFalse(output.exists())
+                    output.mkdir()
+                    self.assertEqual(self.plan(command, source, "--output-dir", output).returncode, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

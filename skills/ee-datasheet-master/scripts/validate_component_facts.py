@@ -135,18 +135,50 @@ def pdf_digest(path):
     return digest.hexdigest()
 
 
+def verify_pdf_pages(path, digest, facts):
+    try:
+        import pymupdf
+    except ImportError as error:
+        raise ValueError("页码校验需要数据手册专项的 PyMuPDF 后端") from error
+    raw = path.read_bytes()
+    if not raw.startswith(b"%PDF-") or hashlib.sha256(raw).hexdigest() != digest:
+        raise ValueError("本地 PDF 与已记录 SHA-256 不一致或缺少 PDF 文件标识")
+    try:
+        with pymupdf.open(stream=raw, filetype="pdf") as document:
+            if document.needs_pass or document.page_count < 1:
+                raise ValueError("PDF 受密码保护或没有可读取的页")
+            page_count = document.page_count
+    except RuntimeError as error:
+        raise ValueError(f"PDF 页树无法读取：{error}") from error
+    for fact in facts:
+        source = fact["source"]
+        if source is not None and source["page"] > page_count:
+            raise ValueError(f"{fact['id']} 的 PDF 页码 {source['page']} 超出原件 {page_count} 页")
+    return page_count
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("facts", type=Path)
     parser.add_argument("--pdf", type=Path)
+    parser.add_argument("--verify-pages", action="store_true", help="用原件核对每条定位是否在 PDF 页数范围内")
     for field in IDENTITY:
         parser.add_argument(f"--expected-{field}")
     args = parser.parse_args()
     try:
         data = read_json(args.facts)
         unknown = facts_contract(data, tuple(getattr(args, f"expected_{key}") for key in IDENTITY))
-        if args.pdf and (data["datasheet"] is None or pdf_digest(args.pdf) != data["datasheet"]["sha256"].lower()):
-            raise ValueError("本地 PDF 与已记录 SHA-256 不一致")
+        page_count = None
+        if args.verify_pages and not args.pdf:
+            raise ValueError("--verify-pages 需要 --pdf")
+        if args.pdf:
+            if data["datasheet"] is None:
+                raise ValueError("器件事实未记录对应 PDF 摘要")
+            digest = data["datasheet"]["sha256"].lower()
+            if args.verify_pages:
+                page_count = verify_pdf_pages(args.pdf, digest, data["facts"])
+            elif pdf_digest(args.pdf) != digest:
+                raise ValueError("本地 PDF 与已记录 SHA-256 不一致")
     except (OSError, ValueError) as error:
         print(json.dumps({"status": "invalid", "error": str(error)}, ensure_ascii=False))
         return 2
@@ -156,6 +188,7 @@ def main():
         "pdf_digest_verified": bool(args.pdf),
         "unknown_facts": unknown,
         "supported_count": len(data["facts"]) - len(unknown),
+        **({"pdf_page_count": page_count, "pdf_page_ranges_verified": True} if page_count is not None else {}),
     }, ensure_ascii=False, indent=2))
     return 1 if unknown else 0
 

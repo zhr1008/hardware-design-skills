@@ -95,6 +95,27 @@ class ReleaseGuard(unittest.TestCase):
         self.assertEqual(legacy.returncode, 1)
         self.assertIn("cpl_places_excluded_reference", " ".join(json.loads(legacy.stdout)["errors"]))
 
+    def test_formal_release_records_artifact_hashes_for_downstream_recheck(self):
+        checked = self.validate()
+        self.assertEqual(checked.returncode, 0, checked.stderr)
+        validator = RELEASE_SCRIPTS / "validate_release_manifest.py"
+        formal = run_cli(validator, self.manifest, "--confine-to-manifest-dir", "--formal")
+        self.assertEqual(formal.returncode, 0, formal.stderr)
+        record = json.loads(formal.stdout)
+        self.assertEqual(record["native"], json.loads(checked.stdout))
+        self.assertEqual({role: item["sha256"] for role, item in record["inputs"].items() if role != "manifest"},
+                         {f"package:{role}": item["sha256"].lower() for role, item in self.artifacts.items()})
+        path = self.root / "release-evidence.json"
+        path.write_text(formal.stdout, encoding="utf-8")
+        adapter = SKILLS / "hardware/scripts/evidence_adapter.py"
+        args = ("validate", path, "--verify-artifacts")
+        self.assertEqual(run_cli(adapter, *args).returncode, 0)
+        (self.root / self.artifacts["gerber"]["path"]).write_bytes(b"changed after validation")
+        changed = run_cli(adapter, *args)
+        self.assertEqual(changed.returncode, 2, changed.stderr)
+        self.assertEqual([item["role"] for item in json.loads(changed.stdout)["artifacts"]
+                          if item["status"] == "changed"], ["inputs.package:gerber"])
+
     def test_explicit_exclusion_is_bound_to_the_checked_pair(self):
         bom = VALID_BOM + b"TP1,false\n"
         self.artifacts["bom"] = artifact_record(self.root, "bom", bom)

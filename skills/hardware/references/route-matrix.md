@@ -34,7 +34,7 @@
 | AD 活动工程的连续操作 | 选 `mcp__eda_agent__*` 做工程身份与文档上下文确认、跨文档快照、原生编译/检查、相关对象迭代和导出。按本轮签名用 `app_context` 确认已连接项目和文档，再按需选择 `design_review_snapshot`、`proj_compile` 等，检查响应中的实际执行和原生结果。 |
 | AD 现场定向查询、批处理或 OutJob | 可选 `mcp__altium__*` 执行已明确的页/板/网络查询、原生 ERC/DRC、符号/封装批操作或指定 OutJob 容器，如 `get_schematic_data`、`build_schematic`、`run_output_jobs`。按实际签名与 `eda_agent` 择一承接同一组写入、保存和回读，留存输入与输出身份。 |
 | EasyEDA Pro | `easyeda-agent` 配当前可用的 `easyeda` CLI、daemon 和 Pro 宿主连接器。确认目标为专业版原生文档和正确项目/页，使用当前 typed 入口，以 `saved:true`、重载和新读回验收。若实际有匹配的设计执行会话，再按需选择 `autodesign`。标准版公开资产用于参考时标明来源和版本。 |
-| KiCad | 已有原生 ERC/DRC JSON 用 [`kicad-report-check`](local-tools.md) 读取，按报告工件、版本和覆盖范围写结论。需新结果时才用对应工程版本的 `kicad-cli` 运行，经授权向本地输出报告。编辑按实际可用的原生/IPC 路径或 `text-to-cad:pcb`，使用可能升级格式的编辑器前核对版本和副本。`eda_agent` 须证实连接正确的 KiCad 后端且有匹配签名。 |
+| KiCad | 已有原生 ERC/DRC JSON 用 [`kicad-report-check`](local-tools.md) 读取，按报告工件、版本和覆盖范围写结论。明确要求从保存态重跑时用 `kicad-native-check` 和对应工程版本的 CLI，在隔离目录取得 L2 证据。编辑按实际可用的原生/IPC 路径或 `text-to-cad:pcb`，使用可能升级格式的编辑器前核对版本和副本。`eda_agent` 须证实连接正确的 KiCad 后端且有匹配签名。 |
 
 切换 AD 路径前，先从已授权来源核对项目路径、落盘版本和前一动作结果。取得现场许可后，再读取活动文档和未保存状态。切换两套桥前应确认前一批写入、保存和读回已完成或已回退。必要时用用户授权的保存、重开或新读回建立基线，两个视图有差异时标清各自能支持的结论。现场结果核对实际执行标志、报告来源和规则，零违规须有规则实际运行的证据。跨平台转换是独立任务，需按目标格式重新核对层级、脚网、封装和板层。
 
@@ -65,7 +65,7 @@
 | 逐位号 BOM 资格、替代适用性和供货证据 | `qualify-pcba-sourcing` 负责资格结论，按需从 `component-sourcing` 取得精确身份及渠道证据。 |
 | 将电子 BOM 转换成物料档案 CSV，或补齐档案的渠道料号 | [bom-material-archive](../../bom-material-archive/SKILL.md) 保留模板字段、层级、位号及数量，必要时定向查料。纯 CSV 以已提供 BOM 和模板为输入，停在 CSV 读回。 |
 | PCBA 进度、版本、证据和变更传播 | `manage-pcba-program`。 |
-| 可编辑教程或解释用电路图／可执行电路仿真 | `draw-schemdraw-circuit` ／ `design-and-review-circuit` 配用户指定且已验证的求解器。原生 Multisim 工程及实验用 `multisim`。离线网表仿真、扫参与波形分析可用 `ltspice-mcp`，核对本机启用的后台引擎和任务授权的输入输出路径。 |
+| 可编辑教程或解释用电路图／可执行电路仿真 | `draw-schemdraw-circuit` ／ `design-and-review-circuit` 配用户指定且已验证的求解器。已有网表与命名量测合同的本地 ngspice 单次试验走 `spice-run`。原生 Multisim 工程及实验用 `multisim`。后台扫参与波形分析可用 `ltspice-mcp`，核对本机启用的引擎和任务授权的输入输出路径。 |
 | 固件设计、BSP 和驱动／单次构建、烧录、调试 | `embedded-firmware-design` ／ 工程匹配的 `build-*`、`flash-*`、`debug-*` 专项。需要识别工程或组织这些运行环节时用 `embed-ai-tool`。 |
 | 台架、总线、仪器／已有测试数据 | 优先处理已有数据。已有契约匹配的测量 CSV 和限值 JSON 时用 [`bench-check`](local-tools.md)。日志、波形和其他数据按格式用 `exploratory-data-analysis`、`matlab` 或适用的不确定度/统计专项。需新取证再按授权选串口、CAN/Modbus、逻辑分析仪或 VISA 专项。 |
 | 板框、外壳、夹具或工程图／文档和实验记录 | 工件匹配的 `text-to-cad` 专项或 `lab-hardware-cad` ／ 项目现有交接格式对应的文档或表格入口。 |

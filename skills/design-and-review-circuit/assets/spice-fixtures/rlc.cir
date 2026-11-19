@@ -1,0 +1,11 @@
+Series RLC underdamped step calibration
+V1 in 0 PULSE(0 1 10u 1n 1n 10m 20m)
+R1 in n1 100
+L1 n1 out 10m
+C1 out 0 100n
+.temp 25
+.options reltol=0.0001
+.tran 1u 2m 0 1u
+.measure tran peak MAX v(out) FROM=20u TO=300u
+.measure tran settled FIND v(out) AT=1.8m
+.end

@@ -15,6 +15,12 @@ python -X utf8 scripts/engineering_validation.py annular-ring --pad-min-mm 1.58 
 
 冻结记录使用实际交付文件的 Gerber／钻孔／机械数据、规则版本和对应证据。几何下界不足时暂停放行并回改尺寸或请 CAM 核实。还需检查孔铜、阻焊桥、塞孔、拼板、铜到板边及装配面；BOM/CPL 用同版同变体的装配预检。对实际工件，按项目认定的切片、测量或供应商工艺审核核对。 [IPC PCBA 标准指南，Production Cycle / Producibility Levels](https://www.ipc.org/sites/default/files/documents/PCBA-Checklist_0.pdf) · [制造放行](../../release-pcba-fabrication/SKILL.md)
 
+## DFA：钢网、焊盘与工艺窗口
+
+矩形直壁开口的面积比为 `LW/[2t(L+W)]`，宽厚比为 `min(L,W)/t`，三者用同一长度单位。将实际原厂封装推荐、焊盘/阻焊、过孔填塞与表面处理、钢网供应商能力及首件工艺窗口一起评审。TI SLUA271C §4.3 讨论常见面积比约 0.66 和更低面积比所需的钢网工艺。项目阈值以适用产线及已批准要求为准。 [TI SLUA271C](https://www.ti.com/lit/an/slua271c/slua271c.pdf)
+
+**合成例。** 0.25×0.30 mm 开口用 0.10 mm 钢网，面积比约 0.682、宽厚比 2.5。改用 0.12 mm 钢网后，面积比约 0.568、宽厚比约 2.08。若项目工艺筛查条件为 `面积比 ≥0.66` 且 `宽厚比 >1.5`，后一版面积比超筛查线。可复用 [`stencil-ratio`](model-checks.md) 计算。修正局部开口、钢网厚度或工艺时，检查大焊盘锡量与热焊盘分窗、相邻焊盘桥接和小件立碑。用 SPI 记录转移率与体积，按封装和缺陷类型选择 AOI、X-ray 或切片。对 MSL 保留实际包装标签、开封时间和烘烤工艺记录；器件分类回流曲线和生产炉温配方分开审批。 [TI SNOA550H](https://www.ti.com/lit/pdf/snoa550)
+
 ## DFT：可达性、结构故障与功能覆盖
 
 - **输入**。冻结 PCB 及变体、有效网表、BSDL、扫描链配置、测试点坐标、夹具/探针能力、测试程序版次、产品测试要求和故障清单。一项故障用稳定 ID 记录故障类型、位置、注入状态和证据。开路、短路、错料和功能边界按测试策略分别记录。同一个故障由 ICT、边界扫描、AOI 或功能测试同时覆盖时，在总覆盖中只计一次。

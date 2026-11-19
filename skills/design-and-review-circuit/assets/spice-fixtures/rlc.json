@@ -1,0 +1,9 @@
+{
+  "schema": "hardware-spice-input-v1",
+  "netlist": "rlc.cir",
+  "model_files": [],
+  "measurements": {
+    "peak": {"unit": "V", "min": 1.603, "max": 1.607},
+    "settled": {"unit": "V", "min": 0.999, "max": 1.001}
+  }
+}

@@ -185,7 +185,7 @@ python -X utf8 skills/hardware/scripts/backend_doctor.py
 
 ### 按工况找判据
 
-从 11 个工程域进入相应专题。随包的 96 条审查规则按 9 类主题组织，保留原件定位。手册索引另有 175 个来源编号，可查询版次、引用点及访问范围。若有自己的全文资料库，可用 `--library` 接入，按文档号、印刷页和 OCR 结果定位到原页。[工程域索引](skills/hardware/references/lifecycle-domain-index.md) · [来源索引](skills/hardware/references/source-index.md) · [自有资料库接入](skills/hardware/references/engineering-knowledge.md)
+从 11 个工程域进入相应专题。随包的 96 条审查规则按 9 类主题组织，保留原件定位。手册与补充研究索引共有 177 个来源编号，可查 AEC-Q100 Rev J1、Q200 Rev E 等资料的版次、引用点及访问边界。若有自己的全文资料库，可用 `--library` 接入，按文档号、印刷页和 OCR 结果定位到原页。[工程域索引](skills/hardware/references/lifecycle-domain-index.md) · [来源索引](skills/hardware/references/source-index.md) · [自有资料库接入](skills/hardware/references/engineering-knowledge.md)
 
 ```powershell
 python -X utf8 skills/hardware/scripts/knowledge.py sources AN2867 --limit 3
@@ -212,6 +212,8 @@ python -X utf8 skills/hardware/scripts/hardware_tool.py kicad-report-check board
 
 从保存态工件重新取证时，可以在隔离输出目录运行 KiCad ERC/DRC，使用 ngspice 执行受控网表并读回命名量测，或使用 Gerbonara 独立读回 Gerber 和 Excellon 的图层几何及孔槽。正式审查保留版次、实际运行条件、结果与缺项。[KiCad 原生检查](skills/pcb-layout-review/references/kicad-native-checks.md) · [SPICE 量测](skills/design-and-review-circuit/references/spice-readback.md) · [CAM 读回](skills/release-pcba-fabrication/references/cam-readback.md)
 
+收到上游的正式结果后，可用 `evidence_adapter.py validate evidence.json --verify-artifacts` 重读本地工件，发现文件缺失或字节变化时回到该专项复核。制造清单的正式读回记录清单本身和已核对的包内工件。器件资料有本地 PDF 时可额外核对定位页是否超出原件页数。[证据交接](skills/hardware/references/evidence-and-backends.md) · [器件事实](skills/ee-datasheet-master/references/component-facts.md)
+
 ## 固定离线工具速查
 
 从仓库根目录运行。预检示例中的 `bom.csv` 和输出目录按项目替换。
@@ -228,6 +230,8 @@ python -X utf8 skills/hardware/scripts/hardware_tool.py --plan bom-archive bom.c
 | `selection-export` | L2 | 从已核对 JSON 生成 AD HTML 或按需生成 Excel。补 Excel 可用 `--xlsx-only`。 |
 | `sourcing-lock-check` | L0 | 核对资格表字段、数量、费用及已记录证据的时效。 |
 | `kicad-report-check` | L0 | 读取现有 KiCad 9/10 ERC 或 DRC JSON，列出违规、排除、禁用规则与覆盖范围。支持 `--formal`。 |
+| `kicad-native-check` | L2 | 从保存态 KiCad 文件在隔离目录重跑 ERC 或 DRC，保存原生报告、源摘要和覆盖缺项。 |
+| `spice-run` | L2 | 在隔离目录用 ngspice 运行已核对的网表和模型，按量测合同保存结果。 |
 | `assembly-check` | L0 | 对照同版 BOM 与 CPL，核对位号、DNP、板面、坐标格式和单位。 |
 | `release-check` | L0 | 校验冻结制造包清单、版次、尺寸及 SHA-256，并对所列制造 BOM/CPL 重新做装配数据核对。支持 `--formal`。 |
 | `bench-check` | L0 | 按输入限值核验台架测量，标出超限、记录无效与缺项。支持 `--formal`。 |
@@ -257,6 +261,8 @@ python -X utf8 skills/hardware/scripts/hardware_tool.py --plan bom-archive bom.c
 ## 验证与测试
 
 Windows 和 Linux CI 检查技能元数据、相对链接、Python 语法、离线安装、固定工具和可发布内容。项目的原生 EDA、供应商和实体台架结果以实际工程的运行记录为准。
+
+原生测试包含 KiCad 自定义间距规则的正反对照以及 ngspice 的 RC、欠阻尼 RLC 和失败样本。有相应本地后端时，从版本报告和实际测量读回核对。仅安装开发依赖的环境会列出相应跳过原因。
 
 ```powershell
 python -X utf8 -m pip install -r requirements-dev.txt

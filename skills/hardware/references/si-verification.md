@@ -24,3 +24,15 @@ python -X utf8 scripts/engineering_validation.py rs485-stub --rise-ns 7 --veloci
 3. **示例验收**合成项目要求判决窗口的差模幅值 ≥250 mV、到采样点的稳定裕量 ≥100 ns，且共模落入所用收发器保证范围。230±10 mV 即使满足几何预检，其差模幅值仍确定超限；270±30 mV 跨过阈值，留待补证。其他条件逐项给结论，单项筛查结果只覆盖其输入。
 
 **板内高速互连对照。** AMD UG583 图 11 对同一 DDR4 命令／地址／控制信号给出有地缝合过孔和无过孔两种仿真，眼高分别为 180 mV 和 99 mV。在假设的 120 mV 眼高预算下，后者差 21 mV，前者多 60 mV。迁移到实际产品时按接口和控制器确定接收端、数据率、采样窗口、允许眼高/眼宽、码型、端接状态以及 PVT，按实际叠层与返回路径复算。对 TDR 的阻抗突变，将位置映射到连接器、过孔或跨参考平面处，并把实际相关区域交布局专项。 [AMD UG583 v1.29，General Memory Routing Guidelines 图 6、7、11](https://docs.amd.com/r/en-US/ug583-ultrascale-pcb-design/General-Memory-Routing-Guidelines) · [AMD UG583，Return Currents](https://docs.amd.com/r/en-US/ug583-ultrascale-pcb-design/Return-Currents)
+
+## 按接口选判据和负例
+
+| 接口 | 首先核算 | 失效定位与验收证据 |
+| --- | --- | --- |
+| I²C | 按总线模式、最快动作和最弱下拉器件分别计算 `Rp,min=(VDD,max−VOL,max)/IOL`、`Rp,max=tr,max/(0.8473·Cb,max)`。双上拉按并联后阻值，跨电平缓冲器按每段负载。 | 低电平余量不足先查过强上拉和器件灌电流。只有高电平爬升超时先查电容、线缆及模块叠加。测 SDA/SCL 两端实际边沿、低电平和时序。 [NXP UM10204 Rev. 7 §7.1](https://www.nxp.com/docs/en/user-guide/UM10204.pdf) |
+| SPI、UART | SPI 按实际 CPOL/CPHA、数据方向、主从时钟到输出延时、板线延时、建立/保持与抖动给接收窗。UART 按实际帧长、两端时钟容差、过采样方式与电平标准核累计相位误差。 | SPI 降频恢复时核截取的真实采样边沿、串联阻尼及 MISO 方向。UART 的帧错同时查极性、电平转换、地偏移和波特率。用接收端波形和协议解码区分物理层与固件配置。 |
+| CAN、RS-485 | 锁定线束/支线与两端端接、驱动边沿、传播延时、共模范围及接收器负载。CAN 仲裁段和 FD 数据段分别核采样与传播。RS-485 再查总线空闲偏置、DE 时间、终端与防护负载。 | 只在远节点、特定方向或新增分支后发生错误时，分别查反射、GND 参考和驱动切换时序。保存实际最大/最小网络拓扑、差模与共模、错误帧和采样点条件。 [TI SLLA272D](https://www.ti.com/lit/an/slla272d/slla272d.pdf) · [CAN 版次与访问](source-index.md#工程域的版本与访问边界) |
+| USB、Ethernet | 锁定代际、角色、连接器/线缆、收发器参考设计及合规夹具。Ethernet 先分 MDI 与 MAC 侧，磁件、Bob Smith 或屏蔽、带 PoE 的共模路径依实际方案审核。 | 链路正常仍要覆盖极限线缆及目标速率。USB 仅某方向失效先分开验证连接器/CC 与数据对，Ethernet 间歇掉链先记录 PHY 状态、实际拓扑、阻抗和回波证据。 [USB-IF 文档目录](https://www.usb.org/documents?search=usb+2.0+specification) · [IEEE 802.3bt 目录](https://www.ieee802.org/3/bt/) |
+| DDR、SERDES、RF | 先按代际及芯片约束分配损耗、阻抗、回流、过孔残桩及采样/抖动。DDR 分字节通道、命令地址与训练配置，RF 核参考面、校准与馈线/匹配。 | 眼图劣化可由损耗、反射、电源耦合、参考切换或配置触发。用 TDR/VNA、接收端眼图和 BER 及独立实测条件区分，交接实际层叠、参考面、终端和模型频带。 [AMD UG583](https://docs.amd.com/r/en-US/ug583-ultrascale-pcb-design) |
+
+**I²C 窗口算例。** 取合成 Fast-mode 总线 `VDD,max=3.6 V`、`VOL,max=0.4 V`、保证 `IOL=3 mA`、`Cb,max=200 pF`、`tr,max=300 ns`，电阻窗口约为 `1.067–1.770 kΩ`。`1.5 kΩ ±5%` 的实装窗 `1.425–1.575 kΩ` 落在其中。两块子板各保留一颗 `1.5 kΩ` 时，等效名义 750 Ω，最坏高电源条件下在 `VOL=0.4 V` 需约 `4.27 mA`，超出已给保证。使用 [`i2c-pullup`](model-checks.md) 复算每段实际总线，再以实装边沿、低电平和模式核验。若电阻或总线角落未知，记录需要补查的输入。

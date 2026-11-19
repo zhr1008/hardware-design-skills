@@ -46,6 +46,8 @@ description: "为电子电路、EDA、PCB、仿真、机械、采购、固件和
 | --- | --- |
 | 盘点保存的 AD 工程成员、多个图纸、板卡或定位位号 | `ad-saved` |
 | 汇总已有 KiCad ERC/DRC JSON 的严重度、排除项和覆盖 | `kicad-report-check` |
+| 从保存的 KiCad 文件生成新的 ERC/DRC 证据 | `kicad-native-check` |
+| 按已核对的网表和量测合同执行后台仿真 | `spice-run` |
 | 物料档案预检、批量映射或按已核对证据补 C 号并出 CSV | `bom-archive` |
 | 将现成的选型 JSON 转为底稿、HTML 或按需 Excel | `selection-export` |
 | 核对同一装配变体的 BOM、CPL 和不贴装位号 | `assembly-check` |

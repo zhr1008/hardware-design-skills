@@ -20,6 +20,12 @@ class EngineeringKnowledgeTest(unittest.TestCase):
         exact = self.query("sources", "B01", "--limit", "1")["results"][0]
         self.assertEqual(exact["id"], "B01")
         self.assertFalse(exact["record"]["full_text_reviewed"])
+        for identity, edition in (("AEC-Q100-REV-J1", "2026-03-24"), ("AEC-Q200-REV-E", "2023-03-20")):
+            entry = self.query("sources", identity, "--limit", "1")["results"][0]
+            self.assertEqual(entry["id"], identity)
+            original = entry["record"]["occurrences"][0]
+            self.assertIn(edition, original["edition_and_identity"])
+            self.assertIn("复访受限", original["recorded_access_and_limits"])
 
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()

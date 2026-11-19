@@ -160,7 +160,7 @@ def saved_kicad(report, path, digest, *, missing=False):
     )
 
 
-def saved_release(report, path, digest, *, identity, invalid=False, missing=False):
+def saved_release(report, path, digest, *, identity, invalid=False, missing=False, artifacts=None):
     status = report["status"]
     verified = not invalid and not missing
     return envelope(
@@ -171,7 +171,8 @@ def saved_release(report, path, digest, *, identity, invalid=False, missing=Fals
             skipped("repeat_eda_drc_or_approval", "发布检查读取已有验证和审批记录"),
             *([] if verified else [skipped("manifest_package_validation", "清单缺失或合同无效")]),
         ],
-        inputs={"manifest": artifact(path, digest)} if digest else {},
+        inputs={**({"manifest": artifact(path, digest)} if digest else {}),
+                **{f"package:{role}": item for role, item in (artifacts or {}).items()}},
         coverage={"scope": "清单合同、版次、文件尺寸与摘要、适用的 BOM/CPL 装配对账",
                   "release_identity": identity},
     )
@@ -194,6 +195,27 @@ def saved_bench(report, limits, measurements, hashes, *, missing=False):
     )
 
 
+def verify_artifacts(value):
+    from hardware_tool import local_file
+
+    results = []
+    for direction in ("inputs", "outputs"):
+        for label, item in value[direction].items():
+            result = {"role": f"{direction}.{label}", "expected_sha256": item["sha256"]}
+            try:
+                path = Path(item["path"])
+                if not path.is_absolute():
+                    raise ValueError("证据工件须使用本地绝对路径")
+                actual = artifact(local_file(path, input_file=False))["sha256"]
+                result.update(actual_sha256=actual, status="match" if actual == item["sha256"] else "changed")
+            except FileNotFoundError:
+                result["status"] = "missing"
+            except (OSError, ValueError) as error:
+                result.update(status="unreadable", reason=str(error))
+            results.append(result)
+    return results
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     commands = parser.add_subparsers(dest="adapter", required=True)
@@ -204,15 +226,24 @@ def main():
     bench = commands.add_parser("bench", allow_abbrev=False)
     bench.add_argument("limits")
     bench.add_argument("--measurements", required=True)
-    commands.add_parser("validate", allow_abbrev=False).add_argument("envelope", type=Path)
+    validator = commands.add_parser("validate", allow_abbrev=False)
+    validator.add_argument("envelope", type=Path)
+    validator.add_argument("--verify-artifacts", action="store_true", help="读回本机工件并核对 SHA-256")
     args = parser.parse_args()
     if args.adapter == "validate":
         try:
-            validate(strict_json(args.envelope.read_bytes()))
+            value = strict_json(args.envelope.read_bytes())
+            validate(value)
         except (OSError, ValueError) as error:
             parser.exit(2, f"无效证据包络：{error}\n")
-        print(json.dumps({"status": "valid_format", "schema": SCHEMA}))
-        return 0
+        result = {"status": "valid_format", "schema": SCHEMA}
+        if args.verify_artifacts:
+            result["artifacts"] = verify_artifacts(value)
+            result["status"] = ("artifacts_match" if result["artifacts"] and
+                                all(item["status"] == "match" for item in result["artifacts"])
+                                else "artifact_verification_incomplete")
+        print(json.dumps(result, ensure_ascii=False))
+        return 2 if result["status"] == "artifact_verification_incomplete" else 0
     options = {
         "kicad": lambda: [args.report, *([f"--kind={args.kind}"] if args.kind else [])],
         "release": lambda: [args.manifest, "--confine-to-manifest-dir"],

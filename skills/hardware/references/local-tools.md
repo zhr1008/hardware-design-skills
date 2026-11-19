@@ -8,6 +8,8 @@ python -X utf8 scripts/hardware_tool.py list --json
 python -X utf8 scripts/hardware_tool.py ad-saved "D:/project/Board.PrjPcb" --kind schematic --designator R12
 python -X utf8 scripts/hardware_tool.py ad-saved "D:/project/Board.PrjPcb" --document "sheets/Power.SchDoc" --json
 python -X utf8 scripts/hardware_tool.py kicad-report-check out/board-drc.json --kind drc
+python -X utf8 scripts/hardware_tool.py kicad-native-check board.kicad_pcb --output-dir out/kicad-run
+python -X utf8 scripts/hardware_tool.py spice-run experiment.json --output-dir out/spice-run
 python -X utf8 scripts/hardware_tool.py bom-archive BOM.csv
 python -X utf8 scripts/hardware_tool.py bom-archive BOM.xlsx --sheet BOM --evidence reviewed-parts.json --output out/archive.csv
 python -X utf8 scripts/hardware_tool.py selection-export selection.json --output out/ad
@@ -23,7 +25,9 @@ python -X utf8 scripts/hardware_tool.py bench-check validation/limits.json --mea
 | 子命令 | 执行与停点 |
 | --- | --- |
 | `ad-saved` | 只读已保存文件。项目调用按工程成员批查，可按文件和位号收窄，默认简要报告，`--json` 输出结构化明细。报告缺失、越界及无法解析的成员。保存态证据用于结构盘点，原生编译、ERC、DRC 和活动编辑态分别按各自入口处理。 |
-| `kicad-report-check` | 只读已有 KiCad ERC/DRC JSON。识别报告类型，核对问题、排除和覆盖范围。需要最新原生检查结果时，另按实际 CLI 和目标工件执行，再分析新报告。 |
+| `kicad-report-check` | 只读已有 KiCad ERC/DRC JSON。识别报告类型，核对问题、排除和覆盖范围。 |
+| `kicad-native-check` | 在新建隔离目录运行保存态 ERC/DRC，保留原文件、配置、报告和执行证据。`--plan` 先查看直接输入和输出范围，执行时由 [KiCad 专项](../../pcb-layout-review/references/kicad-native-checks.md) 解析库表和工程依赖。 |
+| `spice-run` | 使用 [SPICE 专项](../../design-and-review-circuit/references/spice-readback.md) 在新建隔离目录运行用户指定的已核对网表和模型，按约定量测限值输出证据。 |
 | `bom-archive` | 预检返回缺项与冲突。指定 `--output` 后由物料档案专项生成 UTF-8 BOM/CRLF CSV 并读回。详见 [BOM 批处理](../../bom-material-archive/references/bom-archive-tool.md)。 |
 | `selection-export` | 复用 [选型导出器](../../component-sourcing/references/ad-selection-export.md)。可用 `--draft --write-rows draft.json` 从候选保留证据并形成待核对底稿，正式出表使用已核对 JSON。Excel 按显式参数生成。更新已授权的现有表时加 `--replace-output`。 |
 | `sourcing-lock-check` | 核对已有资格表的字段、数量与证据时效。表内证据与本次真实供货查询各按实际记录。 |

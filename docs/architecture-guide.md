@@ -48,12 +48,14 @@ flowchart TD
   C --> D["采用判据<br/>对应实际位号、网络或布局区域"]
   D --> K["按模型和可达角点复算<br/>满足、越界或待定"]
   K --> E["对照实际工程证据<br/>ERC、DRC、仿真、实测"]
-  E --> F["记录判定和缺项"]
+  E --> F["保留执行范围、判定和缺项"]
+  F --> G["下游读回工件摘要和版次"]
+  G -. "证据缺失或变化" .-> B
 ```
 
 例如核对 ADC 前端，先按采样速率、信号带宽和驱动拓扑选采样建立、回冲和基准误差等规则。回查适用的原厂手册及来源页，把规则中的条件换成当前电路的器件、负载与测试工况。判断依据要写清文档版次、PDF 物理页和已确认的印刷页。
 
-规则与书目随包提供，`knowledge.py rules` 按工况选规则，`knowledge.py sources` 跨书目检索版次。已有本机全文索引时用 `--library` 接入。扫描件可以通过逐页 OCR 找页，公式、图表及单位以原页核对。综合评审汇集各专项的证据，给出本版可关闭的问题和仍待取证的项目。 [设计审查规则](../skills/hardware/references/design-review-basis.md) · [工程知识库用法](../skills/hardware/references/engineering-knowledge.md)
+规则与书目随包提供，`knowledge.py rules` 按工况选规则，`knowledge.py sources` 跨书目检索版次。已有本机全文索引时用 `--library` 接入。扫描件可以通过逐页 OCR 找页，公式、图表及单位以原页核对。综合评审汇集各专项的证据，给出本版可关闭的问题和仍待取证的项目。使用上游正式证据时重新核对已列工件的摘要，变化或缺失的证据由负责专项重新取得。 [设计审查规则](../skills/hardware/references/design-review-basis.md) · [工程知识库用法](../skills/hardware/references/engineering-knowledge.md) · [正式证据交接](../skills/hardware/references/evidence-and-backends.md)
 
 ## 器件选型与 BOM
 

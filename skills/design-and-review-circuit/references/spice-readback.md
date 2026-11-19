@@ -10,4 +10,8 @@ python -X utf8 -B scripts/run_spice.py assets/spice-fixtures/rc.json --output-di
 
 [夹具](../assets/spice-fixtures/rc.json)包含可用 `R × C` 独立算出的 1 ms RC 回归。另有[不可达量测](../assets/spice-fixtures/rc-missing.json)及[缺模型](../assets/spice-fixtures/missing-model.json)。结果只覆盖本次模型、激励和工况。波形导出、极限覆盖与硬件验收留在对应评审步骤。
 
+[串联 RLC](../assets/spice-fixtures/rlc.json)以 1 V 阶跃测电容两端的欠阻尼峰值与后段稳定值。对 100 Ω、10 mH、100 nF，`α=R/(2L)=5000 s⁻¹`，`ωd=√(1/(LC)−α²)≈31225 rad/s`，阶跃后的首峰约在 100.6 µs，解析峰值 `1+exp(−απ/ωd)≈1.605 V`。网表使用 1 ns 上升沿及 1 µs 最大步长，测试独立复算该解析值。带饱和、非线性损耗和复杂激励的实际电路应另用适用模型。
+
+通过总入口可调用 `hardware_tool.py spice-run <实验 JSON> --output-dir <新目录>`。固定批处理用于已核对的网表与模型。对陌生网表，先检查 `include` 依赖、外部输入和求解器特有指令，再决定是否运行。交给其他专项时保留量测定义、限值和原始日志，使用[正式检查证据](../../hardware/references/evidence-and-backends.md)重新核对工件摘要。
+
 [ngspice 批处理文档](https://ngspice.sourceforge.io/ngspice-control-language-tutorial.html)

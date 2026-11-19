@@ -230,7 +230,8 @@ def manifest_errors(data: dict, root: Path, *, confine: bool = False) -> list[st
     return contract_errors(data) + package_errors(data, root, confine=confine)
 
 
-def package_errors(data: dict, root: Path, *, confine: bool = False) -> list[str]:
+def package_errors(data: dict, root: Path, *, confine: bool = False,
+                   verified_artifacts: dict | None = None) -> list[str]:
     errors = []
     artifacts = data.get("artifacts") if isinstance(data.get("artifacts"), dict) else {}
     verified_paths = {}
@@ -258,6 +259,8 @@ def package_errors(data: dict, root: Path, *, confine: bool = False) -> list[str
             errors.append(f"{role}: size mismatch")
         elif actual == item.get("sha256"):
             verified_paths[role] = path
+            if verified_artifacts is not None:
+                verified_artifacts[role] = {"path": str(path.absolute()), "sha256": actual.lower()}
     if data.get("status") != "PASS":
         errors.append(f"manifest status is {data.get('status')!r}, not PASS")
     elif {"bom", "cpl"} <= verified_paths.keys():
@@ -284,6 +287,7 @@ def main() -> int:
     digest = None
     missing = False
     identity = {}
+    verified_artifacts = {} if args.formal else None
     try:
         raw = args.manifest.read_bytes()
         digest = hashlib.sha256(raw).hexdigest() if args.formal else None
@@ -291,7 +295,10 @@ def main() -> int:
         identity = {key: data[key] for key in ("release", "revision")
                     if isinstance(data.get(key), str) and data[key].strip()}
         structural = contract_errors(data)
-        errors = structural + package_errors(data, args.manifest.parent.resolve(), confine=args.confine_to_manifest_dir)
+        errors = structural + package_errors(
+            data, args.manifest.parent.resolve(), confine=args.confine_to_manifest_dir,
+            verified_artifacts=verified_artifacts,
+        )
         invalid = bool(structural)
         artifacts = data.get("artifacts") if isinstance(data.get("artifacts"), dict) else {}
         result = {
@@ -309,7 +316,8 @@ def main() -> int:
         sys.path.insert(0, str(Path(__file__).absolute().parents[2] / "hardware/scripts"))
         from evidence_adapter import saved_release
 
-        output = saved_release(result, args.manifest, digest, identity=identity, invalid=invalid, missing=missing)
+        output = saved_release(result, args.manifest, digest, identity=identity, invalid=invalid,
+                               missing=missing, artifacts=verified_artifacts)
     print(json.dumps(output, indent=2))
     return 0 if result["status"] == "PASS" else 1
 

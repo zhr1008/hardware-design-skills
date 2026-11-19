@@ -1,6 +1,7 @@
 import hashlib
 from importlib.util import find_spec
 import json
+import math
 import os
 from pathlib import Path
 import shutil
@@ -15,6 +16,7 @@ SKILLS = ROOT / "skills"
 FIXTURES = ROOT / "tests" / "fixtures" / "native-eda"
 SPICE = SKILLS / "design-and-review-circuit"
 CAM = SKILLS / "release-pcba-fabrication"
+ROUTER = SKILLS / "hardware/scripts/hardware_tool.py"
 KICAD_CLI = os.environ.get("HARDWARE_TEST_KICAD_CLI") or shutil.which("kicad-cli")
 KICAD_PYTHON = os.environ.get("HARDWARE_TEST_KICAD_PYTHON")
 NGSPICE_CLI = (os.environ.get("HARDWARE_TEST_NGSPICE_CLI") or
@@ -78,17 +80,17 @@ class NativeEdaContract(unittest.TestCase):
                 self.assertEqual(self.invoke(script, source, "--kicad-cli", KICAD_CLI, "--output-dir", dest)[0], 2)
 
     @unittest.skipUnless(NGSPICE_CLI, "需要 ngspice CLI 或 HARDWARE_TEST_NGSPICE_CLI")
-    def test_ngspice_rc_missing_measure_and_missing_model_use_real_solver(self):
-        script = SPICE / "scripts/run_spice.py"
+    def test_ngspice_rc_rlc_missing_measure_and_missing_model_use_real_solver(self):
         fixture_root = SPICE / "assets/spice-fixtures"
         for fixture, execution, verification in [
             ("rc", "completed", "pass"),
+            ("rlc", "completed", "pass"),
             ("rc-missing", "completed", "missing"),
             ("missing-model", "failed", "not_evaluated"),
         ]:
             with self.subTest(fixture=fixture):
                 dest = self.work / fixture
-                _, result = self.invoke(script, fixture_root / f"{fixture}.json",
+                _, result = self.invoke(ROUTER, "spice-run", fixture_root / f"{fixture}.json",
                                         "--ngspice-cli", NGSPICE_CLI, "--output-dir", dest)
                 self.assertEqual(result["execution_status"], execution)
                 self.assertEqual(result["verification_status"], verification)
@@ -97,6 +99,36 @@ class NativeEdaContract(unittest.TestCase):
                 if fixture == "rc":
                     measured = float(result["native"]["measurements"]["tau"]["value"])
                     self.assertAlmostEqual(measured, 1000 * 1e-6, delta=1e-6)
+                if fixture == "rlc":
+                    resistance, inductance, capacitance = 100, 10e-3, 100e-9
+                    damping = resistance / (2 * inductance)
+                    angular_frequency = math.sqrt(1 / (inductance * capacitance) - damping**2)
+                    expected_peak = 1 + math.exp(-damping * math.pi / angular_frequency)
+                    measured = float(result["native"]["measurements"]["peak"]["value"])
+                    self.assertAlmostEqual(measured, expected_peak, delta=0.002)
+
+    @unittest.skipUnless(KICAD_CLI, "需要 KiCad CLI 验证自定义规则实际执行")
+    def test_kicad_custom_rule_sentinel_detects_strict_edge_clearance(self):
+        board = self.fixture("pads.kicad_pcb")
+        board_digest = hashlib.sha256(board.read_bytes()).hexdigest()
+        rules = board.with_suffix(".kicad_dru")
+        for limit, violations in ((1, 0), (5, 3)):
+            with self.subTest(minimum_edge_clearance_mm=limit):
+                rule = f'(version 1)\n(rule "fixture_edge_clearance" (severity error) (constraint edge_clearance (min {limit}mm)))\n'
+                rules.write_text(rule, encoding="utf-8")
+                digest = hashlib.sha256(rules.read_bytes()).hexdigest()
+                output = self.work / f"sentinel-{limit}"
+                _, evidence = self.invoke(ROUTER, "kicad-native-check", board,
+                                          "--kicad-cli", KICAD_CLI, "--output-dir", output)
+                self.assertEqual(evidence["execution_status"], "completed")
+                self.assertEqual(evidence["inputs"][rules.name]["sha256"], digest)
+                self.assertEqual(hashlib.sha256(rules.read_bytes()).hexdigest(), digest)
+                self.assertEqual(evidence["inputs"][board.name]["sha256"], board_digest)
+                self.assertEqual(hashlib.sha256(board.read_bytes()).hexdigest(), board_digest)
+                report = json.loads((output / "drc.json").read_bytes())
+                matches = [item for item in report["violations"] if item["type"] == "copper_edge_clearance"
+                           and "fixture_edge_clearance" in item["description"]]
+                self.assertEqual(len(matches), violations, report["violations"])
 
     @unittest.skipUnless(find_spec("gerbonara"), "需要 Gerbonara 做独立 CAM 读回")
     def test_cam_gerber_and_excellon_geometry_and_negatives(self):

@@ -40,6 +40,14 @@ TOOLS = {
         "L0", "读取已有 KiCad ERC/DRC JSON 的问题、排除和覆盖范围",
         "pcb-layout-review/scripts/check_kicad_report.py",
     ),
+    "kicad-native-check": (
+        "L2", "在隔离副本运行 KiCad ERC 或 DRC 并保存报告",
+        "pcb-layout-review/scripts/run_kicad_checks.py",
+    ),
+    "spice-run": (
+        "L2", "用 ngspice 后台运行已核对的网表并验证约定量测",
+        "design-and-review-circuit/scripts/run_spice.py",
+    ),
     "bench-check": (
         "L0", "按明确的验收限值核对已有测量 CSV",
         "hardware-design-review/scripts/check_bench_results.py",
@@ -138,6 +146,14 @@ def make_parser():
 
     kicad = parsers["kicad-report-check"]
     kicad.add_argument("--kind", choices=("erc", "drc"), help="要求报告为指定检查类型")
+
+    for name, executable in (("kicad-native-check", "kicad-cli"), ("spice-run", "ngspice-cli")):
+        runner = parsers[name]
+        runner.add_argument("--output-dir", required=True, help="本次执行的新建本地目录")
+        runner.add_argument(f"--{executable}", help="显式指定本机可执行文件")
+        runner.add_argument("--timeout", type=int, help="本次执行的秒数上限")
+    parsers["kicad-native-check"].add_argument("--companion", action="append", default=[],
+                                               help="源目录内的伴随文件，可重复")
 
     bench = parsers["bench-check"]
     bench.add_argument("--measurements", required=True, help="已有的测量 CSV")
@@ -256,6 +272,28 @@ def prepare(args):
             command += [f"--format={args.format}"]
     elif name == "kicad-report-check" and args.kind:
         command += [f"--kind={args.kind}"]
+    elif name in {"kicad-native-check", "spice-run"}:
+        suffixes = {".kicad_pcb", ".kicad_sch"} if name == "kicad-native-check" else {".json"}
+        if source.suffix.casefold() not in suffixes:
+            raise ValueError(f"输入格式应为 {', '.join(sorted(suffixes))}")
+        outputs.append(local_file(args.output_dir, input_file=False))
+        command += [f"--output-dir={outputs[0]}"]
+        executable_key = "kicad-cli" if name == "kicad-native-check" else "ngspice-cli"
+        executable = getattr(args, executable_key.replace("-", "_"))
+        if executable:
+            executable_path = local_file(executable)
+            input_paths.append(executable_path)
+            command += [f"--{executable_key}={executable_path}"]
+        if args.timeout is not None:
+            if args.timeout < 1:
+                raise ValueError("--timeout 必须为正整数")
+            command += [f"--timeout={args.timeout}"]
+        for value in getattr(args, "companion", []):
+            companion = local_file(source.parent / value)
+            if not companion.is_relative_to(source.parent):
+                raise ValueError(f"伴随文件必须位于输入文件所在目录：{companion}")
+            input_paths.append(companion)
+            command += [f"--companion={companion}"]
     elif name == "bench-check":
         measurements = local_file(args.measurements, input_file=not formal)
         if source.suffix.casefold() != ".json" or measurements.suffix.casefold() != ".csv":

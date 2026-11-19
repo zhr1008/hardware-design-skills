@@ -555,9 +555,37 @@
             "number": 2,
             "title": "元器件工程与供应链"
           },
-          "edition_and_identity": "AEC-Q100；AEC-Q101；AEC-Q200；本次未核实现行版次",
+          "edition_and_identity": "AEC-Q100；AEC-Q101；AEC-Q200；手册当次未核实现行版次",
           "primary_url": "https://www.aecouncil.com/AECDocuments.html",
           "recorded_access_and_limits": "原站读取超时；检索未取得现行官方全文。仅保留官方待补证入口，不把二手Rev.J1/E等版本或具体阈值当已验证证据。"
+        }
+      ]
+    },
+    "AEC-Q100-REV-J1": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "AEC-Q100 Rev J1；2026-03-24",
+          "primary_url": "http://www.aecouncil.com/files/Documents/AEC%20Q100-Rev%20J1.pdf",
+          "recorded_access_and_limits": "2026-11-19 独立工程研究读取发布方原文表 1、§1.3.2–1.3.4、§2.4；主会话复访受限。环境等级和资格族要求按此版定位，项目仍需保存采用原件并核对实际订购配置及保证工况。"
+        }
+      ]
+    },
+    "AEC-Q200-REV-E": {
+      "kind": "technical_source",
+      "occurrences": [
+        {
+          "domain": {
+            "number": 2,
+            "title": "元器件工程与供应链"
+          },
+          "edition_and_identity": "AEC-Q200 Rev E；2023-03-20",
+          "primary_url": "http://www.aecouncil.com/Documents/AEC_Q200_Rev_E_Base_Document.pdf",
+          "recorded_access_and_limits": "2026-11-19 独立工程研究读取发布方原文 §1.5.2–1.5.5、§2.3；主会话复访受限。适用资格族、最低温度包络和试验与具体器件应用条件分别核对。旧 Rev D 报告按原版保留。"
         }
       ]
     },

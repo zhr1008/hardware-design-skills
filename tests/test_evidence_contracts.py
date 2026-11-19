@@ -1,4 +1,5 @@
 import hashlib
+from importlib.util import find_spec
 import json
 from pathlib import Path
 import subprocess
@@ -34,6 +35,36 @@ class EvidenceContracts(unittest.TestCase):
         path.write_text(json.dumps(value), encoding="utf-8")
         return path
 
+    @unittest.skipUnless(find_spec("pymupdf"), "需要 PyMuPDF 后端核对真实 PDF 页数")
+    def test_component_facts_can_verify_declared_pages_against_same_pdf_bytes(self):
+        import pymupdf
+
+        script = SKILLS / "ee-datasheet-master/scripts/validate_component_facts.py"
+        pdf = self.work / "datasheet.pdf"
+        with pymupdf.open() as document:
+            document.new_page()
+            document.save(pdf)
+        identity = {"manufacturer": "Fixture Co.", "mpn": "FIX-01", "package": "QFN-8"}
+        record = {
+            "schema": "hardware-component-facts-v1", "identity": identity,
+            "datasheet": {"kind": "manufacturer_datasheet", "revision": "A1",
+                          "url": "https://example.invalid/fixture.pdf", "applies_to": [identity],
+                          "sha256": hashlib.sha256(pdf.read_bytes()).hexdigest()},
+            "facts": [{"id": "pin1", "category": "pin", "status": "supported", "conditions": [],
+                       "value": {"number": "1", "name": "GND", "role": "ground"},
+                       "source": {"page": 1, "location": "Pin table"}}],
+        }
+        facts = self.json_file("pin-facts.json", record)
+        code, result = invoke(script, facts, "--pdf", pdf, "--verify-pages")
+        self.assertEqual(code, 0)
+        self.assertEqual(result["pdf_page_count"], 1)
+        record["facts"][0]["source"]["page"] = 2
+        self.json_file("pin-facts.json", record)
+        self.assertEqual(invoke(script, facts, "--pdf", pdf)[0], 0)
+        code, result = invoke(script, facts, "--pdf", pdf, "--verify-pages")
+        self.assertEqual(code, 2)
+        self.assertIn("超出原件 1 页", result["error"])
+
     def test_engaged_check_requires_artifact_and_stable_mutation(self):
         with self.assertRaises(ValueError):
             envelope(backend="checker", stage="saved_artifact", verification="pass",
@@ -65,6 +96,24 @@ class EvidenceContracts(unittest.TestCase):
         self.assertEqual(formal["checks_skipped"][0]["check"], "native_erc_drc")
         self.assertEqual(formal["inputs"]["report"]["sha256"], hashlib.sha256(report.read_bytes()).hexdigest())
         self.assertEqual(invoke(script, "--formal", self.work / "missing.json")[1]["verification_status"], "missing")
+
+    def test_evidence_reader_detects_byte_drift_and_missing_artifacts(self):
+        source = self.json_file("input.json", {"version": "A"})
+        report = self.json_file("report.json", {})
+        evidence = self.json_file("evidence.json", envelope(
+            backend="fixture", stage="simulation", verification="pass", native={}, executed=["measure"],
+            inputs={"source": artifact(source)}, outputs={"report": artifact(report)},
+        ))
+        script = HARDWARE / "evidence_adapter.py"
+        args = ("validate", evidence, "--verify-artifacts")
+        self.assertEqual(invoke(script, *args)[1]["status"], "artifacts_match")
+        self.json_file(source.name, {"version": "B"})
+        report.unlink()
+        code, result = invoke(script, *args)
+        self.assertEqual(code, 2)
+        self.assertEqual({row["role"]: row["status"] for row in result["artifacts"]},
+                         {"inputs.source": "changed", "outputs.report": "missing"})
+        self.assertEqual(invoke(script, "validate", evidence)[1]["status"], "valid_format")
 
     def test_release_bare_manifest_and_malformed_manifest_use_same_entry(self):
         script = SKILLS / "release-pcba-fabrication/scripts/validate_release_manifest.py"
