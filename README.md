@@ -79,20 +79,105 @@ python -X utf8 skills/hardware/scripts/backend_doctor.py
 
 ## 48 项技能速览
 
-下表可按工程阶段定位技能。每项的输入、交付物和上下游交接约定见[完整技能目录](docs/skill-catalog.md)。
+下表按工程阶段分成 10 个模块，每项技能均可单独调用。点击技能名直达使用说明，输入要求与上下游交接见[完整技能目录](docs/skill-catalog.md)。
 
-| 工程阶段 | 技能入口 |
+### 路由、需求与项目协作
+
+| 技能 | 核心职责 |
 | --- | --- |
-| 路由、需求与项目协作 | `hardware`、`plan-electronic-product`、`hardware-project-library`、`hardware-solution`、`manage-pcba-program` |
-| 电路图、电气设计与综合审查 | `draw-schemdraw-circuit`、`design-and-review-circuit`、`schematic-analyzer`、`schematic-humanizer`、`hardware-design-review` |
-| 原生 EDA、元件库与 PCB | `altium-library`、`altium-schematic-review`、`altium-pcb-review`、`easyeda-agent`、`autodesign`、`pcb-layout-review` |
-| 器件选型、Datasheet 与 BOM | `component-sourcing`、`ee-datasheet-master`、`bom-material-archive`、`qualify-pcba-sourcing` |
-| 机械、制造包与供应商 | `lab-hardware-cad`、`release-pcba-fabrication`、`operate-jlcpcb-order`、`fictiv` |
-| 固件设计与工具链路由 | `embedded-firmware-design`、`embed-ai-tool`、`workflow` |
-| 固件构建 | `build-keil`、`build-iar`、`build-idf`、`build-cmake`、`build-makefile`、`build-platformio` |
-| 固件烧录 | `flash-keil`、`flash-idf`、`flash-openocd`、`flash-jlink`、`flash-platformio` |
-| 固件与实时故障调试 | `debug-gdb-openocd`、`debug-jlink`、`debug-platformio`、`rtos-debug` |
-| 台架、通信协议与测量 | `serial-monitor`、`serial-shell`、`can-debug`、`modbus-debug`、`logic-analyzer`、`visa-debug` |
+| [`hardware`](skills/hardware/SKILL.md) | 根据任务、工程文件、EDA 平台和权限，选择专项技能、离线脚本或工程知识库。 |
+| [`plan-electronic-product`](skills/plan-electronic-product/SKILL.md) | 将产品想法和使用约束转成可验证的工程需求，交付 `product-brief.yaml` 与 `architecture.md`。 |
+| [`hardware-project-library`](skills/hardware-project-library/SKILL.md) | 查找并评估可复用的参考工程，记录来源、版本、验证状态和适用范围。 |
+| [`hardware-solution`](skills/hardware-solution/SKILL.md) | 统筹整板设计和改版，保持电路、PCB、机械和固件的供电、引脚与时序约定一致。 |
+| [`manage-pcba-program`](skills/manage-pcba-program/SKILL.md) | 在 `.pcba-workflow/` 跟踪 PCBA 各阶段的证据、放行状态以及变更后需要重验的项目。 |
+
+### 电路图、电气设计与综合审查
+
+| 技能 | 核心职责 |
+| --- | --- |
+| [`draw-schemdraw-circuit`](skills/draw-schemdraw-circuit/SKILL.md) | 用 Schemdraw 将已明确的电路拓扑画成示意图，交付 Python 源码及 SVG 或 PNG。 |
+| [`design-and-review-circuit`](skills/design-and-review-circuit/SKILL.md) | 按原理图、网表和工况做电气设计与专项审查，按需用计算或 SPICE 验证并在授权范围内修正。 |
+| [`schematic-analyzer`](skills/schematic-analyzer/SKILL.md) | 从 KiCad 工程或 OrCAD Capture XML 与 Allegro 网表中提取器件、网络、总线、层级和电源树。 |
+| [`schematic-humanizer`](skills/schematic-humanizer/SKILL.md) | 按功能重排原生原理图，并用视觉检查和重排前后的脚网对比验证结果。 |
+| [`hardware-design-review`](skills/hardware-design-review/SKILL.md) | 汇总同版电路、PCB、BOM、固件与测试证据，给出冻结判定（`Go / Hold / No-Go`）或定位板级故障。 |
+
+### 原生 EDA、元件库与 PCB
+
+| 技能 | 核心职责 |
+| --- | --- |
+| [`altium-library`](skills/altium-library/SKILL.md) | 制作和核验 Altium `.SchLib` 与 `.PcbLib`，对照原厂资料检查引脚、焊盘及机械尺寸。 |
+| [`altium-schematic-review`](skills/altium-schematic-review/SKILL.md) | 优先从保存的 `.PrjPcb` 与 `.SchDoc` 核对工程成员、引脚与网络、封装引用和器件适用性。 |
+| [`altium-pcb-review`](skills/altium-pcb-review/SKILL.md) | 只读审查 Altium `.PcbDoc` 的连通性、规则和可制造性，将发现定位到层、网络、器件或规则。 |
+| [`easyeda-agent`](skills/easyeda-agent/SKILL.md) | 通过嘉立创 EDA 专业版兼容 CLI 和连接器执行获准的原理图或 PCB 编辑，并读回保存结果及适用的 DRC 证据。 |
+| [`autodesign`](skills/autodesign/SKILL.md) | 在授权范围内协调目标 EDA 的多步设计会话，并检查实际保存的工程结果。 |
+| [`pcb-layout-review`](skills/pcb-layout-review/SKILL.md) | 审查、收尾、迁移或实现 PCB 布局布线，交付原生板或问题清单及连通、几何和规则证据。 |
+
+### 器件选型、Datasheet 与 BOM
+
+| 技能 | 核心职责 |
+| --- | --- |
+| [`component-sourcing`](skills/component-sourcing/SKILL.md) | 查具体料号、筛选标准阻容或核对库存与价格，形成实际选型清单时默认交付可逐格复制的 AD HTML 表，Excel 按需生成。 |
+| [`ee-datasheet-master`](skills/ee-datasheet-master/SKILL.md) | 从原厂 PDF 核实参数和引脚，逐字段标注完整 MPN、封装、文档版次、页码和工况。 |
+| [`bom-material-archive`](skills/bom-material-archive/SKILL.md) | 将 CSV 或 Excel BOM 转成物料档案 CSV，并读回核对位号、数量、层级和料号。 |
+| [`qualify-pcba-sourcing`](skills/qualify-pcba-sourcing/SKILL.md) | 逐位号核实原选料和替代料的规格、封装、引脚及装配适用性，交付资格结论和 `sourcing-lock.csv`。 |
+
+### 机械、制造包与供应商
+
+| 技能 | 核心职责 |
+| --- | --- |
+| [`lab-hardware-cad`](skills/lab-hardware-cad/SKILL.md) | 参数化设计夹具、支架和实验硬件，交付 CAD 源码、适用的 STEP/STL/DXF 工件及装配约束。 |
+| [`release-pcba-fabrication`](skills/release-pcba-fabrication/SKILL.md) | 整理同版 Gerber、钻孔、BOM/CPL 和图纸，生成 SHA-256 清单并核对 CAM 读回与装配证据。 |
+| [`operate-jlcpcb-order`](skills/operate-jlcpcb-order/SKILL.md) | 核对嘉立创 PCB/PCBA 的报价、钢网选项与贴装位置和方向，并按授权推进订单。 |
+| [`fictiv`](skills/fictiv/SKILL.md) | 对机械件做本地预检，再按授权处理 Fictiv 的 DFM 反馈、报价或订单。 |
+
+### 固件设计与工具链路由
+
+| 技能 | 核心职责 |
+| --- | --- |
+| [`embedded-firmware-design`](skills/embedded-firmware-design/SKILL.md) | 对照板级原理图、芯片资料和时序约定，实现或修正 MCU 驱动、BSP 与状态机。 |
+| [`embed-ai-tool`](skills/embed-ai-tool/SKILL.md) | 根据工程配置、SDK 和目标板，定位可用的构建、烧录、调试或采集入口。 |
+| [`workflow`](skills/workflow/SKILL.md) | 为构建、烧录、监控和调试生成离线步骤预览及缺项清单，供各专项按授权执行。 |
+
+### 固件构建
+
+| 技能 | 核心职责 |
+| --- | --- |
+| [`build-keil`](skills/build-keil/SKILL.md) | 用 Keil µVision 构建 `.uvprojx` 中的指定目标，记录日志和生成的 AXF、HEX 等产物。 |
+| [`build-iar`](skills/build-iar/SKILL.md) | 用 IAR Embedded Workbench 构建 `.ewp` 的指定配置，记录日志、链接映射和目标镜像。 |
+| [`build-idf`](skills/build-idf/SKILL.md) | 用 ESP-IDF 构建应用、Bootloader 和分区表，并记录烧录地址的来源。 |
+| [`build-cmake`](skills/build-cmake/SKILL.md) | 按项目工具链或 Preset 构建指定 CMake 目标，记录实际配置、日志和产物路径。 |
+| [`build-makefile`](skills/build-makefile/SKILL.md) | 核对目标和规则后执行 Makefile 构建，记录退出状态、日志与实际产物。 |
+| [`build-platformio`](skills/build-platformio/SKILL.md) | 按 `platformio.ini` 的指定环境构建固件，并记录该环境的构建结果和镜像。 |
+
+### 固件烧录
+
+| 技能 | 核心职责 |
+| --- | --- |
+| [`flash-keil`](skills/flash-keil/SKILL.md) | 核对镜像、下载器和 Flash 算法后按授权写入设备，记录实际写入、校验和复位结果。 |
+| [`flash-idf`](skills/flash-idf/SKILL.md) | 按 ESP-IDF 生成的镜像清单和地址烧录已确认的目标板，记录写入和校验证据。 |
+| [`flash-openocd`](skills/flash-openocd/SKILL.md) | 按确认的探针与目标配置用 OpenOCD 写入 Flash，记录校验结果和目标结束状态。 |
+| [`flash-jlink`](skills/flash-jlink/SKILL.md) | 核对精确 Device、调试接口、速率和镜像后，用 J-Link Commander 写入并校验。 |
+| [`flash-platformio`](skills/flash-platformio/SKILL.md) | 用指定环境的 PlatformIO 上传器写入固件，记录上传结果和实际执行的校验或复位。 |
+
+### 固件与实时故障调试
+
+| 技能 | 核心职责 |
+| --- | --- |
+| [`debug-gdb-openocd`](skills/debug-gdb-openocd/SKILL.md) | 用同版 ELF 配合 GDB 和 OpenOCD 提取调用栈、寄存器与故障线索。 |
+| [`debug-jlink`](skills/debug-jlink/SKILL.md) | 通过 J-Link GDB Server 观测目标运行态，记录获准的调试动作和状态变化。 |
+| [`debug-platformio`](skills/debug-platformio/SKILL.md) | 复用项目的 PlatformIO 调试配置，从故障寄存器和调用栈定位源码。 |
+| [`rtos-debug`](skills/rtos-debug/SKILL.md) | 结合同版 ELF、RTOS 配置和时序日志，定位任务阻塞、栈溢出、资源竞争或看门狗复位。 |
+
+### 台架、通信协议与测量
+
+| 技能 | 核心职责 |
+| --- | --- |
+| [`serial-monitor`](skills/serial-monitor/SKILL.md) | 解读串口启动及通信日志，或在授权范围内按指定端口、波特率与时限采集。 |
+| [`serial-shell`](skills/serial-shell/SKILL.md) | 向已确认的设备串口发送获准的 Shell 命令，保留原始输入、输出和结束状态。 |
+| [`can-debug`](skills/can-debug/SKILL.md) | 解读 CAN/CAN FD 抓包和 DBC 信号映射，按授权监听或发送指定帧。 |
+| [`modbus-debug`](skills/modbus-debug/SKILL.md) | 核对 Modbus RTU/TCP 的功能码、寄存器地址、端序和缩放，按授权执行现场读写。 |
+| [`logic-analyzer`](skills/logic-analyzer/SKILL.md) | 用数字通道捕获做协议解码和时序核查，按需用已配置的逻辑分析仪采集。 |
+| [`visa-debug`](skills/visa-debug/SKILL.md) | 对照仪器手册读取 SCPI 响应和分析波形，记录采样条件及获准的仪器操作。 |
 
 原生 EDA 按工程格式选择 Altium Designer、嘉立创 EDA 专业版（EasyEDA Pro）或 KiCad。Cadence OrCAD Capture XML 和 Allegro 网表组合可用于只读提取电路结构。具体需要的 CLI、连接器及版本见[运行依赖](docs/backends.md)。
 
