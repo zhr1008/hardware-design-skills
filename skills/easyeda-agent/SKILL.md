@@ -10,6 +10,8 @@ metadata:
 
 # EasyEDA Agent
 
+工程要求、风险和取舍由 [工程决策](../hardware/references/design-workflow.md) 先建立。本技能在已授权范围完成 EasyEDA 实施与实际连接、几何和保存回读，独立记录缺项。
+
 现场调用绑定工程、文档和当前焦点。空结果先核对象及覆盖，超时写入记 outcome_unknown，先读回再决定后续动作。模型自填批准字段无授权效力。
 
 ## 本地集成与版本边界（2026-11-12）

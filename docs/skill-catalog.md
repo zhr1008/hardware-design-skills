@@ -8,7 +8,7 @@
 
 | 技能 | 用途 | 输入与交付终点 | 交给谁或从谁接收 |
 | --- | --- | --- | --- |
-| [`hardware`](../skills/hardware/SKILL.md) | 判断任务归属、执行深度和操作权限 | 从请求、工件、平台、授权和目标产物出发，选择专项、固定批处理或规则与正文检索 | 按需派给下表专项，交接适用规则、工件读回、文档版次与页码、权限停点 |
+| [`hardware`](../skills/hardware/SKILL.md) | 主持规划、设计、改版和审查 | 从用户要求和工件建立可测目标，先查本地依据，再比较方案或评估工程 | 带着依据和判据调用专项，读回证据、处理反例并在目标停点交付 |
 | [`plan-electronic-product`](../skills/plan-electronic-product/SKILL.md) | 把产品想法和行为描述转成工程要求 | 接收目标、使用场景及商业和机械约束，交付 `product-brief.yaml` 与 `architecture.md` | 从参考库取适用资料，把供电、引脚、行为和可测条件交给系统、电路及固件设计 |
 | [`hardware-project-library`](../skills/hardware-project-library/SKILL.md) | 查找、评估和管理可复用参考工程 | 输入要复用的模块或指定资料，交付带来源、版本、适用边界和验证状态的参考记录 | 为需求、整板、电路和 PCB 提供有出处的基线，变更在派生工程中验证 |
 | [`hardware-solution`](../skills/hardware-solution/SKILL.md) | 统筹整板开发、软硬协同和改版 | 输入需求或既有工程，按目标推进到设计文件、固件与复核记录 | 跨阶段保持供电、引脚、时序与故障接口一致，把实现和验收交给相应站点 |

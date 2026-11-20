@@ -1,0 +1,927 @@
+{
+  "schema": "hardware-engineering-policy-v1",
+  "modes": {
+    "plan": [
+      "requirements",
+      "power-states",
+      "pre-mortem",
+      "practical-design"
+    ],
+    "design": [
+      "requirements",
+      "rating-limits",
+      "power-states",
+      "fault-propagation",
+      "pre-mortem",
+      "practical-design",
+      "verification-coverage"
+    ],
+    "review": [
+      "requirements",
+      "layout-coverage",
+      "rating-limits",
+      "power-states",
+      "fault-propagation",
+      "pre-mortem"
+    ],
+    "eco": [
+      "requirements",
+      "change-impact",
+      "component-qualification",
+      "commercial-fit",
+      "rating-limits",
+      "pre-mortem",
+      "practical-design"
+    ],
+    "verify": [
+      "requirements",
+      "verification-coverage",
+      "pre-mortem"
+    ],
+    "bringup": [
+      "requirements",
+      "power-states",
+      "measurement-integrity",
+      "hypotheses",
+      "pre-mortem"
+    ],
+    "release": [
+      "requirements",
+      "pre-mortem",
+      "rating-limits",
+      "fault-propagation",
+      "layout-coverage",
+      "component-qualification",
+      "assembly",
+      "factory-capability",
+      "test-coverage",
+      "release-identity"
+    ]
+  },
+  "targets": {
+    "formal_review": [
+      "requirements",
+      "pre-mortem"
+    ],
+    "handoff": [
+      "requirements",
+      "pre-mortem"
+    ],
+    "formal_eco": [
+      "change-impact",
+      "component-qualification",
+      "pre-mortem"
+    ],
+    "fabrication": [
+      "release-identity",
+      "factory-capability",
+      "assembly",
+      "test-coverage"
+    ],
+    "evt": ["verification-coverage", "measurement-integrity", "firmware-interface"],
+    "dvt": ["verification-coverage", "measurement-integrity", "test-coverage"],
+    "pvt": ["release-identity", "factory-capability", "assembly", "test-coverage", "production-evidence"],
+    "first_article": ["release-identity", "factory-capability", "assembly", "production-evidence"],
+    "production": [
+      "release-identity",
+      "factory-capability",
+      "assembly",
+      "test-coverage",
+      "production-evidence"
+    ]
+  },
+  "prototypes": {
+    "adc-front-end": {
+      "aliases": [
+        "ADC",
+        "SAR",
+        "精密采样",
+        "模拟前端",
+        "采样链",
+        "传感采集"
+      ],
+      "checks": [
+        "wcca",
+        "analog-drive",
+        "effective-capacitance",
+        "filter-stability",
+        "adc-timing",
+        "power-states",
+        "return-path"
+      ]
+    },
+    "switching-power": {
+      "aliases": [
+        "开关电源",
+        "Buck",
+        "Boost",
+        "DC/DC",
+        "反激",
+        "降压变换",
+        "DCDC"
+      ],
+      "checks": [
+        "power-stability",
+        "power-path",
+        "thermal",
+        "effective-capacitance",
+        "power-states",
+        "fault-propagation",
+        "return-path"
+      ]
+    },
+    "ldo": {
+      "aliases": [
+        "LDO",
+        "线性稳压"
+      ],
+      "checks": [
+        "power-stability",
+        "power-states",
+        "effective-capacitance",
+        "rating-limits",
+        "thermal",
+        "return-path"
+      ]
+    },
+    "high-current": {
+      "aliases": [
+        "大电流",
+        "功率回路",
+        "分流器",
+        "铜排"
+      ],
+      "checks": [
+        "power-path",
+        "thermal",
+        "rating-limits",
+        "fault-propagation",
+        "power-states"
+      ]
+    },
+    "isolation": {
+      "aliases": [
+        "隔离电源",
+        "隔离接口",
+        "隔离器",
+        "电气隔离",
+        "去掉隔离",
+        "取消隔离",
+        "爬电",
+        "高压接口",
+        "市电"
+      ],
+      "checks": [
+        "insulation",
+        "power-states",
+        "fault-propagation",
+        "rating-limits",
+        "return-path"
+      ]
+    },
+    "high-speed": {
+      "aliases": [
+        "高速",
+        "时钟",
+        "DDR",
+        "Ethernet",
+        "USB",
+        "RS-485",
+        "CAN总线"
+      ],
+      "checks": [
+        "return-path",
+        "layout-coverage",
+        "verification-coverage",
+        "edge-termination",
+        "power-states"
+      ]
+    },
+    "mixed-signal-mcu": {
+      "aliases": [
+        "MCU",
+        "混合信号",
+        "微控制器"
+      ],
+      "checks": [
+        "power-states",
+        "firmware-interface",
+        "return-path",
+        "effective-capacitance",
+        "practical-design"
+      ]
+    },
+    "battery-hotplug": {
+      "aliases": [
+        "电池",
+        "电瓶",
+        "热插拔",
+        "浪涌",
+        "反接"
+      ],
+      "checks": [
+        "power-states",
+        "rating-limits",
+        "power-path",
+        "thermal",
+        "fault-propagation"
+      ]
+    },
+    "motor-inductive": {
+      "aliases": [
+        "电机",
+        "感性负载",
+        "电磁阀",
+        "继电器线圈"
+      ],
+      "checks": [
+        "power-states",
+        "rating-limits",
+        "power-path",
+        "return-path",
+        "fault-propagation",
+        "thermal"
+      ]
+    },
+    "open-drain-bus": {
+      "aliases": ["I2C", "I²C", "SMBus", "开漏总线"],
+      "checks": ["bus-window", "power-states", "return-path", "practical-design"]
+    },
+    "multi-supply": {
+      "aliases": ["双电源", "双路供电", "外部供电", "独立供电", "异步供电"],
+      "checks": ["power-states", "fault-propagation", "rating-limits", "return-path", "firmware-interface"]
+    },
+    "manufacturing": {
+      "aliases": [
+        "制造",
+        "投板",
+        "量产",
+        "贴装",
+        "PVT试产",
+        "拼板"
+      ],
+      "checks": [
+        "assembly",
+        "factory-capability",
+        "test-coverage",
+        "layout-coverage",
+        "release-identity"
+      ]
+    }
+  },
+  "changes": {
+    "part": [
+      "component-qualification",
+      "wcca",
+      "rating-limits",
+      "power-stability",
+      "thermal",
+      "assembly"
+    ],
+    "production-config": [
+      "component-qualification",
+      "factory-capability"
+    ],
+    "pin-pad": [
+      "component-qualification",
+      "firmware-interface",
+      "layout-coverage",
+      "assembly"
+    ],
+    "filter": [
+      "filter-stability",
+      "effective-capacitance",
+      "wcca"
+    ],
+    "power": [
+      "power-states",
+      "power-stability",
+      "rating-limits",
+      "power-path"
+    ],
+    "layout": [
+      "return-path",
+      "layout-coverage",
+      "insulation",
+      "thermal",
+      "assembly"
+    ],
+    "firmware": [
+      "firmware-interface",
+      "adc-timing",
+      "measurement-integrity"
+    ],
+    "supplier": [
+      "component-qualification",
+      "commercial-fit",
+      "assembly"
+    ],
+    "price-stock": [
+      "commercial-fit"
+    ],
+    "bom-variant": [
+      "assembly",
+      "component-qualification",
+      "release-identity"
+    ],
+    "test-fixture": [
+      "test-coverage",
+      "measurement-integrity",
+      "production-evidence"
+    ],
+    "process": [
+      "factory-capability",
+      "assembly",
+      "thermal",
+      "insulation"
+    ],
+    "unknown": [
+      "change-impact"
+    ]
+  },
+  "checks": {
+    "requirements": {
+      "severity": "engineering",
+      "reason": "明确可测要求、对象与工况、来源范围和终点。区分保证值、假设和未知。",
+      "rules": [],
+      "references": [
+        "../plan-electronic-product/references/system-safety-and-requirements.md"
+      ],
+      "stages": [
+        "saved_artifact"
+      ],
+      "affects": []
+    },
+    "pre-mortem": {
+      "severity": "engineering",
+      "reason": "明确最可能或最严重失效、触发条件、被推翻的假设、反证和失败后的下一动作。比较可靠性、性能裕量、DFM/DFT、成本、供货和复杂度。",
+      "rules": [],
+      "references": [
+        "../plan-electronic-product/references/system-safety-and-requirements.md"
+      ],
+      "stages": [
+        "saved_artifact"
+      ],
+      "affects": []
+    },
+    "practical-design": {
+      "severity": "engineering",
+      "reason": "在安全边界内推进样机。权衡减料、常用封装/二供，保留能安全隔离的跳线或 0Ω、可测点及有具体用途的滤波/吸收位置。记录默认值和首板关闭方法。",
+      "rules": [],
+      "references": [
+        "references/dfm-dft-verification.md",
+        "../hardware-design-review/references/bring-up-troubleshooting.md"
+      ],
+      "stages": [
+        "saved_artifact"
+      ],
+      "affects": [
+        "test-coverage"
+      ]
+    },
+    "rating-limits": {
+      "severity": "redline",
+      "reason": "按工况核保证工作区与实际绝对额定值，包含组合应力。名义典型值不能关闭已触发的额定或故障检查。",
+      "rules": [
+        "absolute-max-is-not-operating"
+      ],
+      "references": [
+        "../design-and-review-circuit/references/power-and-analog-review.md",
+        "references/thermal-verification.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "simulation",
+        "bench_record"
+      ],
+      "affects": []
+    },
+    "power-states": {
+      "severity": "redline",
+      "reason": "检查上电、掉电、棕断和失联状态，外供 IO 与钳位回灌、复位默认态和实际返回路径。",
+      "rules": [],
+      "references": [
+        "../design-and-review-circuit/references/power-and-analog-review.md",
+        "../plan-electronic-product/references/system-safety-and-requirements.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "simulation",
+        "bench_record"
+      ],
+      "affects": [
+        "fault-propagation",
+        "firmware-interface",
+        "measurement-integrity"
+      ]
+    },
+    "fault-propagation": {
+      "severity": "redline",
+      "reason": "包络开路、短路、反接及保护单点故障。追踪能量、地、下游故障与安全最终状态。",
+      "rules": [
+        "transistor-soa"
+      ],
+      "references": [
+        "../design-and-review-circuit/references/power-and-analog-review.md",
+        "../plan-electronic-product/references/system-safety-and-requirements.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "native_eda",
+        "simulation",
+        "bench_record",
+        "cam_readback",
+        "release_package"
+      ],
+      "affects": []
+    },
+    "wcca": {
+      "severity": "engineering",
+      "reason": "使用项目工况的保证 min/max，核温漂、漏电、负载与可达角点，关联校准和参考端。",
+      "rules": [
+        "resistor-ratio-tolerance",
+        "resistor-self-heating-ratio"
+      ],
+      "references": [
+        "references/model-checks.md",
+        "../design-and-review-circuit/references/power-and-analog-review.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "simulation",
+        "bench_record"
+      ],
+      "affects": []
+    },
+    "analog-drive": {
+      "knowledge_theme": "analog",
+      "phase_actions": {
+        "plan": "分配稳定裕量、输出负载、允许过冲和建立时间，声明实际采集窗口及可测点。",
+        "design": "比较直驱、输出隔离和改反馈。分别验环路稳定性与接收点建立误差，记录反馈取样点及器件模型。",
+        "review": "沿输出到实际负载检查反馈取样点、串阻及采样电容。静态通过只覆盖静态范围，核动态缺项。",
+        "eco": "更换放大器、反馈/滤波、ADC 采样设置或负载寄生后，重验稳定性与接收点建立。",
+        "verify": "用适用的小信号方法验环路，用实际最大阶跃、负载和采集窗验时域误差，并注明模型盲区。",
+        "bringup": "分别观察运放输出及接收点，改变探测加载或采样条件，区分失稳、反冲与探头伪影。",
+        "release": "核冻结 BOM、原理图、板与采样配置仍在已验证范围；变化或未关闭动态缺项时保留证据缺口。"
+      },
+      "intent_keywords": ["运放","电压跟随器","容性负载","op amp","op-amp"],
+      "invalidated_by": ["part","pin-pad","filter","layout","firmware"],
+      "severity": "engineering",
+      "reason": "核共模、摆幅、有限带宽和输出阻抗、容性负载、过载与稳定；不要用理想跟随器覆盖布局或实际负载。",
+      "rules": [
+        "analog-capacitive-load",
+        "opamp-common-mode",
+        "opamp-linear-output",
+        "opamp-output-drive"
+      ],
+      "references": [
+        "../design-and-review-circuit/references/power-and-analog-review.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "simulation",
+        "bench_record"
+      ],
+      "affects": [
+        "adc-timing",
+        "filter-stability"
+      ]
+    },
+    "adc-timing": {
+      "severity": "engineering",
+      "reason": "核实际采集窗、通道切换与串扰、回冲、基准瞬态和抗混叠分配。",
+      "rules": [
+        "adc-acquisition-settling",
+        "adc-kickback-filter",
+        "adc-antialias-budget",
+        "reference-transient-load"
+      ],
+      "references": [
+        "references/engineering-budgets.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "simulation",
+        "bench_record"
+      ],
+      "affects": [
+        "verification-coverage",
+        "firmware-interface"
+      ]
+    },
+    "filter-stability": {
+      "severity": "engineering",
+      "reason": "核源/负载、有效容值、Q、环路和实际阻带。Sallen-Key 等规则按实际拓扑筛选。",
+      "rules": [
+        "filter-source-loading",
+        "filter-q-gain",
+        "filter-high-frequency-stopband"
+      ],
+      "references": [
+        "../design-and-review-circuit/references/power-and-analog-review.md",
+        "references/engineering-budgets.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "simulation",
+        "bench_record"
+      ],
+      "affects": [
+        "adc-timing",
+        "verification-coverage"
+      ]
+    },
+    "effective-capacitance": {
+      "severity": "engineering",
+      "reason": "用准确 MPN 的 DC 偏压、温度、老化和公差核实装电容，并纳入 ESR/ESL。",
+      "rules": [
+        "mlcc-effective-capacitance",
+        "capacitor-frequency-parasitics"
+      ],
+      "references": [
+        "../design-and-review-circuit/references/power-and-analog-review.md",
+        "references/engineering-budgets.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "simulation",
+        "bench_record"
+      ],
+      "affects": [
+        "filter-stability",
+        "power-stability",
+        "adc-timing"
+      ]
+    },
+    "power-stability": {
+      "severity": "engineering",
+      "reason": "核启动/恢复、负载阶跃、输出稳定窗口、源负载阻抗、反馈回路和降额。按实际拓扑用适用规则。",
+      "rules": [
+        "ldo-output-stability",
+        "pcb-pdn-impedance",
+        "switching-rms-stress"
+      ],
+      "references": [
+        "../design-and-review-circuit/references/power-and-analog-review.md",
+        "references/engineering-budgets.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "simulation",
+        "bench_record"
+      ],
+      "affects": [
+        "verification-coverage",
+        "power-states"
+      ]
+    },
+    "power-path": {
+      "severity": "engineering",
+      "reason": "核最小截面与热态电阻、接触电阻、回路寄生、熔断和实际 Kelvin 路径。",
+      "rules": [
+        "power-high-current-connections",
+        "current-sense-kelvin",
+        "gate-drive-return"
+      ],
+      "references": [
+        "references/model-checks.md",
+        "references/thermal-verification.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "simulation",
+        "bench_record"
+      ],
+      "affects": [
+        "thermal",
+        "fault-propagation",
+        "return-path"
+      ]
+    },
+    "thermal": {
+      "severity": "engineering",
+      "reason": "核封装的实际热路径、安装条件、占空、环境和 SOA，避免用名义热阻替代装机数据。",
+      "rules": [
+        "thermal-junction-budget",
+        "thermal-board-conditions"
+      ],
+      "references": [
+        "references/thermal-verification.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "simulation",
+        "bench_record"
+      ],
+      "affects": [
+        "rating-limits",
+        "assembly"
+      ]
+    },
+    "return-path": {
+      "severity": "engineering",
+      "reason": "检查真实参考平面、跨层与切割、共享地、保护回流及线缆。原理图上的地名不能证明实体回流。",
+      "rules": [
+        "pcb-return-path",
+        "mixed-signal-grounding",
+        "pcb-edge-rate"
+      ],
+      "references": [
+        "references/si-verification.md",
+        "references/engineering-verification.md"
+      ],
+      "stages": [
+        "native_eda",
+        "cam_readback",
+        "saved_artifact"
+      ],
+      "affects": [
+        "verification-coverage",
+        "measurement-integrity"
+      ]
+    },
+    "insulation": {
+      "severity": "redline",
+      "reason": "核已采用条款、装配公差后的间隙和爬电、保护回流、共模与高能故障。",
+      "rules": [
+        "ipc-conductor-spacing"
+      ],
+      "references": [
+        "references/insulation-verification.md",
+        "../plan-electronic-product/references/system-safety-and-requirements.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "native_eda",
+        "simulation",
+        "bench_record",
+        "cam_readback",
+        "release_package"
+      ],
+      "affects": [
+        "fault-propagation",
+        "assembly"
+      ]
+    },
+    "edge-termination": {
+      "knowledge_theme": "si",
+      "severity": "engineering",
+      "reason": "快边沿下端接、负载位置和传输线不连续会改变接收点波形；点对点源端串联是待比较的方法，按接口约束及接收点判据验收。",
+      "rules": ["si-source-termination"],
+      "references": ["references/si-verification.md"],
+      "stages": ["saved_artifact","simulation","bench_record"],
+      "affects": ["verification-coverage","measurement-integrity"],
+      "intent_keywords": ["源端端接","串联端接","时钟振铃","接收端振铃","重复跨越门限","二次过门限","过冲振铃"],
+      "invalidated_by": ["part","pin-pad","layout","firmware","test-fixture"],
+      "phase_actions": {
+        "plan": "冻结最快边沿、驱动与接收数、支线、走线长度、参考面及接收端判据。",
+        "design": "按实际阻抗、驱动强弱和拓扑选端接，预留近源调试位并核成本、边沿和时序。",
+        "review": "核近源端接、叠层阻抗、拓扑、支线及途中接收点；核接收端重复过门限风险。",
+        "eco": "叠层、走线、I/O 驱动强度、器件和测量治具变化时重验受影响接收点。",
+        "verify": "比较近端与各接收点，核高低转换、过冲、门限重复跨越和时序裕量。",
+        "bringup": "在驱动端和接收端对照短接地探测，区分真实反射与测量扰动。",
+        "release": "核冻结叠层、端接 BOM、布线及固件 I/O 设置与已验证工况一致。"
+      }
+    },
+    "emc-current-path": {
+      "knowledge_theme": "emc",
+      "severity": "engineering",
+      "reason": "屏蔽搭接、保护回流与外壳会重分配共模电流；比较不同注入点及受扰端，不能把单次屏蔽修改视为普遍修复。",
+      "rules": ["emc-shield-current-path"],
+      "references": ["references/emc-verification.md"],
+      "stages": ["saved_artifact","simulation","bench_record"],
+      "affects": ["verification-coverage","measurement-integrity"],
+      "intent_keywords": ["emc","emi","eft","电磁兼容","屏蔽层","屏蔽线","共模电流","静电复位","辐射超标","传导骚扰"],
+      "invalidated_by": ["part","pin-pad","layout","power","test-fixture","process"],
+      "phase_actions": {
+        "plan": "明确端口、线束、机壳和保护接地约束、注入点及功能判据，分配负责验证的环节。",
+        "design": "绘出干扰源至外壳、屏蔽、信号地及受扰节点的闭合回路，对照可选搭接和滤波。",
+        "review": "回查实体连接器、搭接、回流与布局寄生，按注入方向核有无新路径及对绝缘的影响。",
+        "eco": "屏蔽、外壳、连接器或回流改变时重开受影响端口验证，核绝缘与接地边界。",
+        "verify": "保持同一试验配置，在适用注入点和极性比较共模、供电及功能响应，按项目判据验收。",
+        "bringup": "保留复位、供电与耦合三条假设；一次改变一个安全受控变量，返回基线复验。",
+        "release": "校同版的线束、外壳、搭接工艺及端口测试证据。无目标场景覆盖则记待证。"
+      }
+    },
+    "layout-coverage": {
+      "severity": "engineering",
+      "reason": "核保存态版次、逻辑到实物、实际启用规则及检查覆盖。无报告问题只用于已核范围。",
+      "rules": [
+        "drc-rule-coverage"
+      ],
+      "references": [
+        "references/si-verification.md",
+        "references/dfm-dft-verification.md"
+      ],
+      "stages": [
+        "native_eda",
+        "cam_readback",
+        "saved_artifact"
+      ],
+      "affects": [
+        "release-identity"
+      ]
+    },
+    "firmware-interface": {
+      "severity": "engineering",
+      "reason": "核硬件默认态、时序、BSP 引脚/配置和同版固件；区分更换程序与改变板级复位条件。",
+      "rules": [],
+      "references": [
+        "../plan-electronic-product/references/system-safety-and-requirements.md",
+        "../hardware-design-review/references/bring-up-troubleshooting.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "native_eda",
+        "simulation",
+        "bench_record",
+        "cam_readback",
+        "release_package"
+      ],
+      "affects": [
+        "test-coverage",
+        "verification-coverage"
+      ]
+    },
+    "bus-window": {
+      "severity": "engineering",
+      "reason": "开漏总线用最坏电源、灌电流、允许上升时间和总线电容算上拉窗口。缺电容可按注明的有界假设交首板，预留上拉和测点；实际电容、波形及分电源状态复核。",
+      "rules": ["pcb-edge-rate"],
+      "references": ["references/model-checks.md", "references/si-verification.md"],
+      "stages": ["saved_artifact", "simulation", "bench_record"],
+      "affects": ["verification-coverage"]
+    },
+    "component-qualification": {
+      "severity": "engineering",
+      "reason": "逐位号绑定原厂完整 MPN、制造配置、必需脚位和 Pad、工况、寿命及资格实际覆盖。",
+      "rules": [],
+      "references": [
+        "references/component-qualification.md"
+      ],
+      "stages": [
+        "saved_artifact"
+      ],
+      "affects": [
+        "assembly",
+        "release-identity"
+      ]
+    },
+    "commercial-fit": {
+      "severity": "engineering",
+      "reason": "按真实库存池汇总数量，核报价记录、有效期、数量档、同量装配总成本与可用二供。",
+      "rules": [],
+      "references": [
+        "references/component-qualification.md"
+      ],
+      "stages": [
+        "saved_artifact"
+      ],
+      "affects": []
+    },
+    "change-impact": {
+      "severity": "engineering",
+      "reason": "对真实基线、变体、对象和属性做差分，冻结受影响结论并列可复用依据。",
+      "rules": [],
+      "references": [
+        "references/component-qualification.md",
+        "../plan-electronic-product/references/system-safety-and-requirements.md"
+      ],
+      "stages": [
+        "saved_artifact"
+      ],
+      "affects": []
+    },
+    "verification-coverage": {
+      "severity": "engineering",
+      "reason": "模型、版次、工况和量测要覆盖所声称的目标；必要时做宏模型、寄生、相关性或实测。",
+      "rules": [
+        "simulation-model-coverage",
+        "simulation-parasitic-layout"
+      ],
+      "references": [
+        "../hardware-design-review/references/simulation-correlation.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "native_eda",
+        "simulation",
+        "bench_record",
+        "cam_readback",
+        "release_package"
+      ],
+      "affects": []
+    },
+    "measurement-integrity": {
+      "severity": "engineering",
+      "reason": "核原始波形、板/固件身份、探头地/带宽/共模、定标与时间基准。比较同触发和参考面，保留测量伪影假设。",
+      "rules": [
+        "ripple-measurement-loop"
+      ],
+      "references": [
+        "../hardware-design-review/references/bring-up-troubleshooting.md",
+        "../hardware-design-review/references/simulation-correlation.md"
+      ],
+      "stages": [
+        "bench_record"
+      ],
+      "affects": []
+    },
+    "hypotheses": {
+      "severity": "engineering",
+      "reason": "给出可区分的物理、软件和测量假设，支持和反证，选择最小的可逆实验及停止条件。",
+      "rules": [],
+      "references": [
+        "../hardware-design-review/references/bring-up-troubleshooting.md"
+      ],
+      "stages": [
+        "saved_artifact"
+      ],
+      "affects": []
+    },
+    "assembly": {
+      "severity": "redline",
+      "reason": "核同版同变体 BOM/CPL、DNP、实际面、单位、朝向、pin1、装配几何和工艺极限。",
+      "rules": [
+        "ipc-land-density",
+        "ipc-assembly-courtyard",
+        "pcb-bow-twist-method"
+      ],
+      "references": [
+        "references/dfm-dft-verification.md",
+        "../release-pcba-fabrication/references/release-checklist.md"
+      ],
+      "stages": [
+        "release_package",
+        "cam_readback"
+      ],
+      "affects": [
+        "release-identity"
+      ]
+    },
+    "factory-capability": {
+      "severity": "engineering",
+      "reason": "核选定厂的工艺下界、层叠/成品铜、孔和钢网、机械公差及首件。",
+      "rules": [
+        "ipc-pth-hole-copper-tradeoff",
+        "msl-floor-life"
+      ],
+      "references": [
+        "references/dfm-dft-verification.md",
+        "../release-pcba-fabrication/references/release-checklist.md"
+      ],
+      "stages": [
+        "release_package",
+        "cam_readback",
+        "bench_record"
+      ],
+      "affects": [
+        "assembly",
+        "test-coverage"
+      ]
+    },
+    "test-coverage": {
+      "severity": "engineering",
+      "reason": "以产品故障分母核关键故障覆盖、可测节点和量测限。明确未测项目。",
+      "rules": [],
+      "references": [
+        "references/dfm-dft-verification.md",
+        "../hardware-design-review/references/bring-up-troubleshooting.md"
+      ],
+      "stages": [
+        "saved_artifact",
+        "bench_record"
+      ],
+      "affects": [
+        "release-identity"
+      ]
+    },
+    "release-identity": {
+      "severity": "redline",
+      "reason": "核冻结的同版工件、工厂/变体/批次/程序范围，与选定阶段相符。记录批准引用，按原渠道核实。",
+      "rules": [],
+      "references": [
+        "../release-pcba-fabrication/references/release-checklist.md"
+      ],
+      "stages": [
+        "release_package",
+        "cam_readback"
+      ],
+      "affects": []
+    },
+    "production-evidence": {
+      "severity": "engineering",
+      "reason": "按被验阶段绑定实物批次、首件、测试程序/工装、首过和返修数据，区分样机与量产。",
+      "rules": [],
+      "references": [
+        "references/dfm-dft-verification.md",
+        "../release-pcba-fabrication/references/release-checklist.md"
+      ],
+      "stages": [
+        "bench_record"
+      ],
+      "affects": [
+        "release-identity"
+      ]
+    }
+  }
+}

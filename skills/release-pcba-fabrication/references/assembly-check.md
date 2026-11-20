@@ -14,6 +14,8 @@ python -X utf8 skills/hardware/scripts/hardware_tool.py assembly-check BOM.csv -
 
 制造清单生成器在 `--status PASS` 时会直接核对清单所列 BOM 和 CPL，记录两件工件的实际 SHA-256 和显式排除位号。若上面的核对使用了 `--exclude "TP1,H1"`，生成同版清单时也传入相同的 `--exclude`，并以冻结版 DNP/装配说明为依据。校验器会从清单读回这些排除项并重新核对工件。
 
+`PASS` 要求 `constraints.assembly_sides` 与 CPL 中实际出现贴装件的板面完全一致。`Top` 或 `Bottom` 表示仅该面有贴装件，双面声明要求两面各有至少一件。空声明和零贴装目标均无法形成 `PASS` 的 PCBA 清单。生成和直接校验使用同一判定，旧版 v1 清单也从冻结 CPL 重新计算面计数。
+
 接着独立核验封装、引脚、原点、旋转方向、底面镜像和厂家贴装预览。发现方向差异时，先核对库和 PCB 放置，再检查导出坐标约定。修正源文件并重新生成对应的制造数据。表格核对只是其中一道检查。
 
 参见 [嘉立创 BOM/CPL 常见差异](https://jlcpcb.com/help/article/common-bom-and-cpl-matching-issues-and-explanations)、[贴装坐标约定](https://jlcpcb.com/help/article/pick-place-file-for-pcb-assembly)和 [KiCad CLI](https://docs.kicad.org/9.0/en/cli/cli.html)。

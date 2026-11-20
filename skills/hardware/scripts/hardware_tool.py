@@ -135,6 +135,7 @@ def make_parser():
     lock = parsers["sourcing-lock-check"]
     lock.add_argument("--max-age-days", type=int, default=14)
     lock.add_argument("--as-of", help="ISO 时间戳")
+    lock.add_argument("--formal", action="store_true", help="按正式资格、采购和报价证据校验")
 
     assembly = parsers["assembly-check"]
     assembly.add_argument("--cpl", required=True, help="同一版次和装配变体的坐标 CSV")
@@ -336,9 +337,18 @@ def main():
                 "outputs": [str(path) for path in outputs], "parameters": command,
             }, ensure_ascii=False))
             return 0
-        return subprocess.run(
-            [sys.executable, "-X", "utf8", "-B", str(script), *command], check=False,
-        ).returncode
+        invocation = [sys.executable, "-X", "utf8", "-B", str(script), *command]
+        if args.tool == "sourcing-lock-check" and args.formal:
+            from evidence_adapter import saved_sourcing, strict_json
+
+            outcome = subprocess.run(invocation, check=False, capture_output=True, encoding="utf-8")
+            if not outcome.stdout.strip():
+                raise ValueError(outcome.stderr.strip() or "未取得正式资格校核结果")
+            report = strict_json(outcome.stdout)
+            evidence = saved_sourcing(report, inputs[0])
+            print(json.dumps(evidence, ensure_ascii=False))
+            return outcome.returncode
+        return subprocess.run(invocation, check=False).returncode
     except (OSError, RuntimeError, ValueError) as exc:
         parser.exit(2, f"{args.tool} 预检失败：{exc}\n")
 

@@ -5,30 +5,35 @@ description: Turn an electronic product idea, behavior description, reverse-engi
 
 # Electronic Product Planner
 
+按 [工程决策](../hardware/references/design-workflow.md) 的 `start plan` 展开接口、电源、热、故障状态和验证分配。非关键未知可取有界默认并注明首板关闭方法。对比可取得的器件、调试可达性和代价。
+
 涉及安全目标、故障反应时间或可靠性分配时，按[系统安全与需求](references/system-safety-and-requirements.md)核口径、需求派生和上下游签收。
 
-Produce `.pcba-workflow/product-brief.yaml` and
-`.pcba-workflow/architecture.md`. Do not invent requirements merely to fill a
-template. A focused planning request ends at its requested output. For an already
-authorized full design, pass the brief forward without asking for permission again.
+Within the [hardware engineering workflow](../hardware/references/design-workflow.md),
+turn the supplied inputs into measurable requirements and interfaces. Deliver the
+requested plan directly when project records are outside scope. For an authorized
+recorded project, produce `.pcba-workflow/product-brief.yaml` and
+`.pcba-workflow/architecture.md`; leave unsupported fields open and pass the brief
+forward within the existing implementation authorization.
 
-Before inventing an architecture, inspect available company projects and relevant
-manufacturer designs through `hardware-project-library`. Keep source applicability,
-editable artifacts and measured validation separate. Record hardware/firmware
+Define requirements from the supplied inputs and reuse the applicable local knowledge.
+Consult `hardware-project-library` only when reference projects are needed and within
+the allowed sources. Keep applicability, editable artifacts and measured validation
+separate. Record hardware/firmware
 contracts for pin ownership, startup/fault states, power budgets and test access;
 `hardware-solution` coordinates implementation when the task spans those domains.
 
 ## Workflow
 
-1. Read repository instructions and all supplied descriptions, diagrams,
-   existing circuits, firmware behavior, mechanics, and commercial constraints.
+1. Read applicable instructions and relevant supplied or explicitly in-scope
+   requirements, diagrams, mechanics, firmware behavior and commercial constraints.
 2. Use [references/intake-checklist.md](references/intake-checklist.md) to
    distinguish known facts, design targets, assumptions, and unresolved choices.
-3. Copy [assets/product-brief.yaml](assets/product-brief.yaml) into the project
-   state directory and complete only supported fields.
+3. For a recorded project, use [assets/product-brief.yaml](assets/product-brief.yaml)
+   in the project state directory and complete supported fields.
 4. Describe system boundaries, actors, external connectors, major functional
    blocks, data and energy flow, operating modes, startup/shutdown/fault states,
-   and ownership of shared resources in `architecture.md`.
+   and ownership of shared resources. For a recorded project, use `architecture.md`.
 5. For every interface, record voltage domains, direction, protocol or bus,
    nominal rate, edge-rate uncertainty, topology, cable/connector environment,
    and protection expectations.
@@ -44,7 +49,7 @@ contracts for pin ownership, startup/fault states, power budgets and test access
 
 ## Gate
 
-Set `status: PASS` only when downstream circuit and sourcing specialists can
+For recorded project state, set `status: PASS` only when downstream circuit and sourcing specialists can
 work without guessing core behavior, power source, interfaces, physical limits,
 or production intent. Use `USER_REVIEW` for a decision awaiting the owner and
 `BLOCKED` for missing evidence that prevents safe progress.

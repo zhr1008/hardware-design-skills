@@ -14,6 +14,8 @@ metadata:
 
 # Schematic Analyzer
 
+工程深审把脚网、版次和未解析项交 [工程决策](../hardware/references/design-workflow.md)；纯读取、导出和报告提取保留短路径。
+
 For reusable or company projects, preserve the root sheet, hierarchy, revision and
 source hashes in `hardware-project-library`. Extract observed topology and roles
 separately from inferred intent. Keep no-connect markers, literal NC net names,

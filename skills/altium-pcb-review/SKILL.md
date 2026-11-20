@@ -5,6 +5,8 @@ description: 只读审查 Altium Designer 的保存版或已获准现场板卡�
 
 # Altium 板级审查
 
+工程审查承接 [风险与交接](../hardware/references/design-workflow.md)，输出当前板身份及可定位的网、层、回流和制造覆盖。保存态缺项先报告，升级仍须按权限。
+
 确认目标 `.PcbDoc`、项目身份、版次和保存态，优先用现有磁盘文件、报告和原生导出建立证据。只盘点板文件时直接运行 [保存文件读取](../component-sourcing/scripts/inspect_saved.py)，需要图纸上下文时用 [保存工程批查](../altium-schematic-review/scripts/inspect_saved_project.py)。
 
 1. 盘点层叠、板框、器件、焊盘、网络、走线与规则来源。把关键发现定位到层、网名、位号、坐标或规则。

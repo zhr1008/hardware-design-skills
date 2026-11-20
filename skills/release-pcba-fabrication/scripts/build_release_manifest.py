@@ -124,7 +124,9 @@ def main() -> int:
     if args.status == "PASS":
         try:
             exclusions = {ref for group in args.exclude for ref in parse_refs(group, grouped=True)}
-            verification[ASSEMBLY_CHECK_KEY] = assembly_check_record(artifacts, paths, exclusions)
+            verification[ASSEMBLY_CHECK_KEY] = assembly_check_record(
+                artifacts, paths, exclusions, manifest["constraints"]["assembly_sides"],
+            )
         except ValueError as exc:
             raise SystemExit(f"release manifest contract failed: {exc}") from exc
     args.output.parent.mkdir(parents=True, exist_ok=True)

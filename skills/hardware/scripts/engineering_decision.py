@@ -1,0 +1,372 @@
+"""Derive engineering checks and verify formal evidence without executing hardware tools."""
+
+from collections import deque
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+
+import evidence_adapter
+from hardware_tool import local_file
+
+
+SKILL = Path(__file__).resolve().parents[1]
+POLICY_FILE = SKILL / "assets/engineering-policy.json"
+CASE_VERSION = "hardware-engineering-case-v1"
+CHANGE_VERSION = "hardware-engineering-change-v1"
+DIGEST = re.compile(r"[0-9a-f]{64}\Z")
+IDENTITY = ("project", "revision", "variant")
+TARGET_MODES = {
+    "formal_review": {"review", "verify"},
+    "handoff": {"plan", "design", "review", "eco", "verify", "bringup", "release"},
+    "formal_eco": {"eco"},
+    "fabrication": {"release"},
+    "evt": {"verify", "bringup"},
+    "dvt": {"verify", "bringup"},
+    "pvt": {"release"},
+    "first_article": {"release"},
+    "production": {"release"},
+}
+MODEL_LIMITS = {
+    "nominal-only": ("补保证 min/max 和有界工况，重算可达角点。", None),
+    "margin-crosses-limit": ("证明角点可达性或用独立模型/量测缩小跨限区间。", None),
+    "device-dynamics": ("核原厂模型对相关动态的支持，执行适用瞬态/AC，或用实测验证。", ("simulation", "bench_record")),
+    "parasitics-dominate": ("用实际几何、寄生或夹具建模校核，保留提取和验证工况。", ("simulation", "bench_record", "cam_readback", "native_eda")),
+    "measurement-conflict": ("先消除测量伪影，做同参考面、同时间基准的独立对照。", ("bench_record",)),
+    "sample-required": ("当前判据要求代表性实物证据，离线阶段可交计划和剩余缺口。", ("bench_record",)),
+}
+REQUIRED_APPLICABILITY = {"requirements", "pre-mortem", "change-impact", "release-identity", "production-evidence"}
+BACKEND_CHECKS = {
+    "sourcing-lock-checker": {"component-qualification", "commercial-fit"},
+    "release-manifest-validator": {"release-identity", "assembly"},
+    "kicad-report-check": {"layout-coverage"},
+    "kicad-cli": {"layout-coverage"},
+    "bench-result-checker": {"verification-coverage", "test-coverage"},
+    "gerbonara": {"layout-coverage"},
+    "ngspice": {"rating-limits", "power-states", "fault-propagation", "wcca", "analog-drive",
+                "adc-timing", "filter-stability", "effective-capacitance", "power-stability",
+                "power-path", "thermal", "bus-window", "verification-coverage"},
+}
+
+
+def read_json(path):
+    return evidence_adapter.strict_json(path.read_text(encoding="utf-8-sig"))
+
+
+def policy():
+    data = read_json(POLICY_FILE)
+    if data.get("schema") != "hardware-engineering-policy-v1":
+        raise ValueError("不支持的工程策略版本")
+    return data
+
+
+def text(value):
+    return isinstance(value, str) and bool(value.strip())
+
+
+def matches(intent, alias):
+    if alias.isascii():
+        return re.search(r"(?<![a-z0-9])" + re.escape(alias) + r"(?![a-z0-9])",
+                         intent, flags=re.I) is not None
+    return alias.casefold() in intent.casefold()
+
+
+def select(policy_data, mode, prototypes, intent="", target=None, facts=None, model_limits=(),
+           carried_checks=()):
+    inferred = [
+        name for name, record in policy_data["prototypes"].items()
+        if any(matches(intent, alias) for alias in record["aliases"])
+    ]
+    examples = list(dict.fromkeys([*prototypes, *inferred]))
+    unknown = set(examples) - policy_data["prototypes"].keys()
+    if unknown:
+        raise ValueError(f"未知电路原型：{', '.join(sorted(unknown))}")
+    identifiers = list(policy_data["modes"][mode])
+    if target:
+        identifiers.extend(policy_data["targets"][target])
+    for name in examples:
+        identifiers.extend(policy_data["prototypes"][name]["checks"])
+    identifiers.extend(
+        key for key, check in policy_data["checks"].items()
+        if (any(matches(intent, term) for term in check.get("intent_keywords", ()))
+            or ("phase_actions" in check and key in carried_checks))
+    )
+    for item, value in (facts or {}).items():
+        if item not in policy_data["checks"]:
+            raise ValueError(f"未知风险事实：{item}")
+        if value not in ("present", "absent", "unknown"):
+            raise ValueError(f"风险事实状态无效：{item}")
+        if value != "absent":
+            identifiers.append(item)
+    required = []
+    for identifier in dict.fromkeys(identifiers):
+        row = policy_data["checks"][identifier]
+        required.append({
+            "id": identifier, "severity": row["severity"], "reason": row["reason"],
+            "rules": row["rules"], "references": row["references"],
+            **({"phase_action": row["phase_actions"][mode]} if "phase_actions" in row else {}),
+            **({"knowledge_theme": row["knowledge_theme"]} if "knowledge_theme" in row else {}),
+        })
+    return {
+        "prototypes": examples,
+        "prototype_matches": inferred,
+        "confirm_functional_scope": not examples,
+        "required_checks": required,
+        "required_rules": list(dict.fromkeys(rule for row in required for rule in row["rules"])),
+        "model_upgrades": [
+            {"trigger": name, "next": MODEL_LIMITS[name][0]} for name in dict.fromkeys(model_limits)
+        ],
+        "proceed_with_assumptions": (
+            "非关键缺项可用有来源或有界的工业假设推进，注明首板关闭方法、"
+            "可测点、隔离预留及零件供货。高后果待证项限制相关结论，独立部分继续。"
+        ),
+    }
+
+
+def inspect_baseline(value):
+    if not isinstance(value, dict) or any(not text(value.get(field)) for field in IDENTITY):
+        raise ValueError("基线需要明确 project/revision/variant")
+    return {field: value[field] for field in IDENTITY}
+
+
+def identity(scope):
+    return tuple(scope[field] for field in IDENTITY)
+
+
+def load_case(path, policy_data):
+    data = read_json(path)
+    if not isinstance(data, dict) or data.get("schema") != CASE_VERSION:
+        raise ValueError("工程记录 schema 无效")
+    if data.get("mode") not in policy_data["modes"]:
+        raise ValueError("工程记录的 mode 无效")
+    inspect_baseline(data.get("baseline"))
+    if not isinstance(data.get("intent", ""), str):
+        raise ValueError("intent 需要文字")
+    prototypes = data.get("prototypes", [])
+    if not isinstance(prototypes, list) or not all(text(item) for item in prototypes):
+        raise ValueError("prototypes 需要名称列表")
+    for key in ("facts", "artifacts", "evidence", "checks", "model_limits"):
+        if not isinstance(data.get(key, {}), dict):
+            raise ValueError(f"{key} 需要对象")
+    if any(not isinstance(row, dict) or row.get("status") not in ("open", "pass", "fail", "not_applicable")
+           for row in data.get("checks", {}).values()):
+        raise ValueError("每个工程检查需要明确的记录状态")
+    for check, flags in data.get("model_limits", {}).items():
+        if (check not in policy_data["checks"] or not isinstance(flags, list)
+                or any(not text(flag) or flag not in MODEL_LIMITS for flag in flags)):
+            raise ValueError(f"{check} 的模型边界无效")
+    return data
+
+
+def scoped_path(value, root):
+    if not text(value):
+        raise ValueError("证据缺文件路径")
+    path = Path(os.path.abspath(root / value))
+    if not path.is_relative_to(root):
+        raise ValueError("证据文件不在明确指定的工程范围内")
+    return local_file(path)
+
+
+def reference(spec, root):
+    if not isinstance(spec, dict) or not DIGEST.fullmatch(str(spec.get("sha256", ""))):
+        raise ValueError("证据或基线缺 SHA-256")
+    path = scoped_path(spec.get("path"), root)
+    with path.open("rb") as stream:
+        actual = hashlib.file_digest(stream, "sha256").hexdigest()
+    if actual != spec["sha256"]:
+        raise ValueError("文件内容与记录摘要不一致")
+    return str(path), actual
+
+
+def check_scope(raw, check, disposition):
+    if disposition == "not_applicable" and check in REQUIRED_APPLICABILITY:
+        raise ValueError("该正式检查必须有实际结论")
+    if raw["backend"] in BACKEND_CHECKS and check not in BACKEND_CHECKS[raw["backend"]]:
+        raise ValueError("该后端的检查范围不能用于这项工程结论")
+
+
+def bind(raw, baseline, check, condition, criterion, execution, disposition, stages):
+    evidence_adapter.validate(raw)
+    check_scope(raw, check, disposition)
+    if any(not text(item) for item in (condition, criterion, execution)):
+        raise ValueError("工况、判据和执行项不能为空")
+    if (raw["evidence_stage"] not in stages or raw["execution_status"] != "completed"
+            or raw["mutation_outcome"] == "outcome_unknown" or execution not in raw["checks_executed"]
+            or raw["verification_status"] != ("fail" if disposition == "fail" else "pass")):
+        raise ValueError("指定执行项、状态或证据层与工程结论不匹配")
+    original = raw["coverage"].get("engineering", {})
+    if not isinstance(original, dict) or not isinstance(original.get("checks", {}), dict):
+        raise ValueError("原证据的工程覆盖结构无效")
+    if original and any(original.get(key) != baseline[key] for key in IDENTITY):
+        raise ValueError("证据已绑定其他工程、版次或变体")
+    claim = {"condition": condition, "criterion": criterion, "execution": execution, "disposition": disposition}
+    existing = original.get("checks", {})
+    if check in existing and existing[check] != claim:
+        raise ValueError("证据已绑定该检查的另一工况或判据")
+    raw["coverage"]["engineering"] = {**baseline, "checks": {**existing, check: claim}}
+    return raw
+
+
+def make_proof(check, record, evidence, artifacts, baseline, root, stages, cache):
+    if not text(record.get("condition")) or not text(record.get("finding")):
+        raise ValueError("缺工况或观察结果")
+    if not text(record.get("criterion")):
+        raise ValueError("缺判据")
+    ids = record.get("evidence")
+    subjects = record.get("artifacts")
+    if not isinstance(ids, list) or not ids or any(not text(item) for item in ids):
+        raise ValueError("未提交证据引用")
+    if not isinstance(subjects, list) or not subjects or any(item not in artifacts for item in subjects):
+        raise ValueError("缺少已核对的基线工件")
+    required = {artifacts[item] for item in subjects}
+    expected = {"pass": "pass", "fail": "fail", "not_applicable": "pass"}[record["status"]]
+    for item in ids:
+        if item not in cache:
+            try:
+                path, _ = reference(evidence[item], root)
+                raw = read_json(Path(path))
+                evidence_adapter.validate(raw)
+                files = {
+                    reference(spec, root) for section in ("inputs", "outputs")
+                    for spec in raw[section].values()
+                }
+                cache[item] = (raw, files)
+            except (KeyError, ValueError, OSError) as exc:
+                cache[item] = str(exc)
+        proof = cache[item]
+        if isinstance(proof, str):
+            raise ValueError(f"{item}：{proof}")
+        raw, files = proof
+        check_scope(raw, check, record["status"])
+        cover = raw["coverage"].get("engineering")
+        if not isinstance(cover, dict) or any(cover.get(key) != baseline[key] for key in IDENTITY):
+            raise ValueError(f"{item} 未绑定同工程、版次和变体")
+        if (raw["evidence_stage"] not in stages or raw["execution_status"] != "completed"
+                or raw["mutation_outcome"] == "outcome_unknown"
+                or raw["verification_status"] != expected):
+            raise ValueError(f"{item} 的执行、证据类型或结果不能支撑结论")
+        observations = cover.get("checks", {})
+        if not isinstance(observations, dict):
+            raise ValueError(f"{item} 的检查覆盖无效")
+        claim = observations.get(check)
+        if not isinstance(claim, dict):
+            raise ValueError(f"{item} 未覆盖 {check}")
+        execution = claim.get("execution")
+        if execution not in raw["checks_executed"]:
+            raise ValueError(f"{item} 未实际执行所引检查")
+        if (claim.get("condition") != record["condition"] or claim.get("criterion") != record["criterion"]
+                or claim.get("disposition") != record["status"] or not required <= files):
+            raise ValueError(f"{item} 的工况、判据、适用性或工件不符")
+
+
+def accepted_stages(stages, flags):
+    permitted = set(stages)
+    for name in flags:
+        if MODEL_LIMITS[name][1] is not None:
+            permitted &= set(MODEL_LIMITS[name][1])
+    return permitted
+
+
+def assess(data, policy_data, target, root):
+    if data["mode"] not in TARGET_MODES[target]:
+        raise ValueError("工程 mode 与正式交付目标不匹配")
+    root = Path(os.path.abspath(root))
+    if root.drive.startswith("\\\\") or not root.is_dir():
+        raise ValueError("root 需要指定证据根目录")
+    baseline = inspect_baseline(data["baseline"])
+    chosen = select(policy_data, data["mode"], data.get("prototypes", []), data.get("intent", ""),
+                    target, data.get("facts"), carried_checks=data.get("checks", {}))
+    check_state = data.get("checks", {})
+    extra = set(check_state) - policy_data["checks"].keys()
+    if extra:
+        raise ValueError(f"不认识的工程检查：{', '.join(sorted(extra))}")
+    artifacts = {}
+    issues = {}
+    for key, spec in data.get("artifacts", {}).items():
+        try:
+            artifacts[key] = reference(spec, root)
+        except (ValueError, OSError) as exc:
+            issues[key] = str(exc)
+    results = []
+    cache = {}
+    for check in chosen["required_checks"]:
+        name = check["id"]
+        row = check_state.get(name)
+        status = "open"
+        reason = "缺可用的关闭记录"
+        if isinstance(row, dict) and row.get("status") in ("pass", "fail", "not_applicable"):
+            try:
+                flags = data.get("model_limits", {}).get(name, [])
+                if (row["status"] != "fail" and check["severity"] == "redline"
+                        and data.get("facts", {}).get(name) == "unknown"):
+                    raise ValueError("红线工况仍未确认")
+                if row["status"] != "fail" and any(flag in {"nominal-only", "margin-crosses-limit"} for flag in flags):
+                    raise ValueError("仍只有名义工况或保守区间跨限；先关闭模型边界再采用通过结论")
+                make_proof(name, row, data.get("evidence", {}), artifacts, baseline, root,
+                           accepted_stages(policy_data["checks"][name]["stages"], flags), cache)
+                status = row["status"]
+                reason = row["finding"]
+            except (ValueError, TypeError) as exc:
+                reason = str(exc)
+        results.append({"id": name, "status": status, "severity": check["severity"], "reason": reason,
+                        **({"phase_action": check["phase_action"]} if "phase_action" in check else {})})
+    hard_failure = any(row["status"] == "fail" for row in results)
+    open_check = any(row["status"] == "open" for row in results)
+    status = "blocked" if hard_failure else "needs_evidence" if open_check or issues else "covered"
+    return {
+        "schema": "hardware-engineering-assessment-v1", "target": target, "baseline": baseline,
+        "engineering_evidence": status, "artifact_issues": issues, "results": results,
+        "project_signoff": "verify_separately",
+        "operation_authorization": "check_user_or_host_separately",
+    }
+
+
+def impact(data, change, policy_data):
+    if not isinstance(change, dict) or change.get("schema") != CHANGE_VERSION:
+        raise ValueError("变更记录 schema 无效")
+    baseline = inspect_baseline(data["baseline"])
+    if identity(baseline) != identity(inspect_baseline(change.get("baseline"))):
+        raise ValueError("变更记录和冻结基线不同")
+    items = change.get("changes")
+    if not isinstance(items, list) or not items:
+        raise ValueError("未提供结构化变更")
+    planned = select(policy_data, data["mode"], data.get("prototypes", []), data.get("intent", ""),
+                     facts=data.get("facts"), carried_checks=data.get("checks", {}))
+    impacted = {}
+    for item in items:
+        if (not isinstance(item, dict) or not text(item.get("object")) or not text(item.get("variant"))
+                or "before" not in item or "after" not in item or item.get("kind") not in policy_data["changes"]):
+            raise ValueError("变更需要已知 kind、object、variant 与 before/after")
+        if item["before"] == item["after"]:
+            continue
+        variant = item["variant"]
+        obj = item["object"]
+        kind = item["kind"]
+        seeds = [*policy_data["changes"][kind], *(
+            check["id"] for check in planned["required_checks"]
+            if kind in policy_data["checks"][check["id"]].get("invalidated_by", ())
+        )]
+        if kind == "unknown":
+            seeds = list(dict.fromkeys(seeds + [row["id"] for row in planned["required_checks"]]))
+        queue = deque((name, [kind, name]) for name in seeds)
+        visited = set()
+        while queue:
+            name, path = queue.popleft()
+            if name in visited:
+                continue
+            visited.add(name)
+            impacted.setdefault((variant, obj, name), path)
+            queue.extend((out, [*path, out]) for out in policy_data["checks"][name]["affects"])
+    rows = [
+        {"variant": variant, "object": obj, "check": check, "path": path, "status": "recheck"}
+        for (variant, obj, check), path in impacted.items()
+    ]
+    affected = {row["check"] for row in rows if row["variant"] in (baseline["variant"], "*")}
+    return {
+        "schema": "hardware-engineering-impact-v1", "baseline": baseline,
+        "recheck": rows,
+        "invalidated_baseline_checks": sorted(affected & data.get("checks", {}).keys()),
+        "reuse_candidates": sorted(data.get("checks", {}).keys() - affected),
+        "reuse_requires_scope_check": True,
+    }

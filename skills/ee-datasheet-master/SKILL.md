@@ -7,6 +7,8 @@ metadata:
 
 # EE Datasheet Master
 
+字段结构通过后，按 [工程决策](../hardware/references/design-workflow.md) 核所需脚位、工况、保证值和原页。字段结构的有效性只支持资料结构，板上适用性另取证。
+
 For a hardware design, return the exact part, document revision/page, operating
 conditions and min/typ/max distinction with each extracted fact. Bind decisions
 to the hardware/firmware contract and reusable-reference record when available.

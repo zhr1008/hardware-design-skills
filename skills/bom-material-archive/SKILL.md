@@ -5,6 +5,8 @@ description: "以用户提供的电子 BOM 为基准，转换物料档案 CSV，
 
 # BOM 转物料档案
 
+正式 ECO 传递同版、同变体 BOM 与物料身份，按 [工程决策](../hardware/references/design-workflow.md) 区分档案、采购和制造输入。纯档案转换保持现有格式及路径。
+
 交付本地物料档案 CSV。以用户提交的 BOM 及本轮明确确认的更改为验收基准。用户本次指定的模板、库、渠道和字段要求优先。查料使用 [component-sourcing](../component-sourcing/SKILL.md) 的商品证据要求，AD 字段按 [AD 字段规则](../component-sourcing/references/ad-field-rules.md) 填写。
 
 默认范围是 BOM 格式转换和物料信息补齐，完成 CSV 读回即达到该任务的交付终点。位号、数量、用途及设计约束取自该 BOM 和用户补充。BOM 未给用途时，可填写器件功能或留空。原理图、网表、PCB、库、焊盘、实物和装配核对均按明确的工程需求另行路由。

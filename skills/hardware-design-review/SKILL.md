@@ -5,6 +5,8 @@ description: 组织电子硬件综合评审、冻结门禁和板级故障分析�
 
 # 硬件综合评审
 
+按 [工程决策](../hardware/references/design-workflow.md) 分辨单项读回、正式评审、验收和 Bring-up。先核触发风险、模式覆盖与反证。排障保留竞争假设、原始波形和伪影，给最小区分实验。正式 Go 范围须有 `assess` 与独立签核。
+
 做正式验收时，按[模型与实测对齐](references/simulation-correlation.md)核条件和偏差。首次上电、重复故障与测量伪影按[联调排障](references/bring-up-troubleshooting.md)规定的探点交接。已有台架记录可用 `check_bench_results.py --formal`。
 
 综合评审需按 [工程核验与交接](../hardware/references/engineering-verification.md) 复核已采用的限值、工况和单项证据。区间跨限、模型覆盖不足、资格未覆盖实际料号或故障覆盖缺证时保留待验证项。

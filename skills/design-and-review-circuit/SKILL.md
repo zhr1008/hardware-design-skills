@@ -5,6 +5,10 @@ description: Design, audit, or correct an electronic circuit from a product brie
 
 # Circuit Design Reviewer
 
+按 [工程决策](../hardware/references/design-workflow.md) 的原型风险，主动对照 WCCA、非理想动态与故障状态。方案反证后保留实用可测点和隔离/吸收预留。仿真交工况、步长、所测目标和模型未覆盖范围。
+
+工程设计、实质改版或审查先取得 [硬件设计流程](../hardware/references/design-workflow.md) 的要求、专项依据和判据。直接被点名且尚无这些输入时，按该流程主动补齐，再定器件和拓扑或下审查结论。复用已有同版证据。既定接线的制图和单点计算走各自短入口。
+
 [SPICE 实验合同与读回](references/spice-readback.md)
 
 电源环路、PDN、采样和时序预算见[电源与模拟审查](references/power-and-analog-review.md)。具备已审网表与测量合同的离线验收使用 [SPICE 批处理](scripts/run_spice.py)。
@@ -39,15 +43,17 @@ implementation. Continue through the requested native circuit deliverable.
 
 ## Establish truth
 
-1. Read repository instructions, product brief, architecture, sourcing lock,
-   native schematic or generator, netlist, BOM, datasheets, firmware-visible
-   behavior, and existing review notes.
+1. Use the applicable instructions and artifacts within the authorized source scope.
+   For an existing design, inspect the relevant brief, schematic or generator,
+   affected netlist, parts, interfaces and review evidence. For a standalone design,
+   use the agreed inputs and the local knowledge basis.
 2. Identify the electrical source of truth. When a generator owns the
    schematic, modify the generator rather than only generated files.
 3. Capture ERC/lint, connectivity, and protected PCB/layout hashes before any
    authorized correction.
-4. Use official manufacturer documents for exact orderable parts. Browse when
-   datasheets, standards, availability, or current guidance can have changed.
+4. Use official manufacturer documents for exact orderable parts. Reuse verified
+   local copies where applicable. Verify changing facts within the permitted sources;
+   record gaps when the task limits source access.
 5. Select the evidence path in
    [references/evidence-adapters.md](references/evidence-adapters.md); never
    claim an edit or verification stronger than the source permits.
@@ -58,9 +64,10 @@ implementation. Continue through the requested native circuit deliverable.
 
 涉及 SAR ADC 前端或电源瞬态预算时，引用 [工程预算](../hardware/references/engineering-budgets.md) 记录阶跃、实际采集窗或动态压降分配，交给 PCB 对应的网名、工况、测点与未验证项。
 
-Read [references/circuit-audit-checklist.md](references/circuit-audit-checklist.md)
-and produce `.pcba-workflow/circuit-review.md` from
-[assets/circuit-review.md](assets/circuit-review.md).
+Use [references/circuit-audit-checklist.md](references/circuit-audit-checklist.md)
+and deliver findings in the requested form. For an authorized recorded project,
+use [assets/circuit-review.md](assets/circuit-review.md) to write
+`.pcba-workflow/circuit-review.md`.
 
 - Explain operating principle and data/power/control flow in plain language.
 - Build a component-by-component function table, power tree, voltage-domain

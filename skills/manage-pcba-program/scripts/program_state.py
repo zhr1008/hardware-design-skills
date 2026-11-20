@@ -6,8 +6,10 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 from decimal import InvalidOperation
+import hashlib
 import json
 from pathlib import Path
+import subprocess
 import sys
 
 
@@ -19,6 +21,18 @@ STAGES = (
 STATUSES = {"PASS", "BLOCKED", "USER_REVIEW"}
 APPROVALS = ("design_critical_substitution", "assembly_placement", "final_price", "payment")
 RELEASE_EVIDENCE_ROLES = ("release_manifest", "cpl")
+DECISION_CLI = Path(__file__).absolute().parents[2] / "hardware/scripts/design_flow.py"
+ENGINEERING_STAGES = {"product_definition", "sourcing", "circuit", "placement", "routing", "manufacturing_release"}
+CHECK_STAGES = {
+    "commercial-fit": ("sourcing", "order"),
+    "component-qualification": ("sourcing", "manufacturing_release"),
+    "firmware-interface": ("circuit", "manufacturing_release"),
+    "layout-coverage": ("routing", "manufacturing_release"),
+    "return-path": ("routing", "manufacturing_release"),
+    "analog-drive": ("circuit", "manufacturing_release"),
+    "edge-termination": ("circuit", "routing", "manufacturing_release"),
+    "emc-current-path": ("circuit", "routing", "manufacturing_release"),
+}
 INVALIDATION = {
     "product-definition": STAGES,
     "netlist": STAGES[2:],
@@ -82,6 +96,60 @@ def has_evidence(value: object) -> bool:
     return isinstance(value, list) and bool(value) and all(
         isinstance(item, str) and item.strip() for item in value
     )
+
+
+def decision_result(*args):
+    result = subprocess.run([sys.executable, "-X", "utf8", "-B", str(DECISION_CLI), *map(str, args)],
+                            encoding="utf-8", capture_output=True, timeout=60, check=False)
+    if result.returncode:
+        raise ValueError(result.stdout.strip() or result.stderr.strip() or "engineering evidence not covered")
+    return json.loads(result.stdout)
+
+
+def evidence_root(state_dir: Path) -> Path:
+    return state_dir.parent if state_dir.name == ".pcba-workflow" else state_dir
+
+
+def case_record(path: Path, state_dir: Path, stage: str, project: str, release=None) -> dict:
+    root = evidence_root(state_dir)
+    path = path.resolve(strict=True)
+    if not path.is_relative_to(root):
+        raise ValueError("engineering case must be inside the project evidence root")
+    before = path.read_bytes()
+    target = "fabrication" if stage == "manufacturing_release" else "handoff"
+    verdict = decision_result("assess", "--target", target, "--case", path, "--root", root)
+    after = path.read_bytes()
+    if before != after or verdict["baseline"]["project"] != project:
+        raise ValueError("engineering case changed or points to another project")
+    if release is not None:
+        manifest = release["release_manifest"]
+        case = json.loads(after.decode("utf-8-sig"))
+        covered = case["checks"]["release-identity"]["artifacts"]
+        subjects = {
+            ((root / item["path"]).resolve(), item["sha256"].lower())
+            for item in (case["artifacts"][key] for key in covered)
+        }
+        matched = all(((state_dir / rec["path"]).resolve(), rec["sha256"].lower()) in subjects
+                      for rec in release.values())
+        if verdict["baseline"]["revision"] != manifest["revision"] or not matched:
+            raise ValueError("engineering case does not bind the current release and CPL")
+    return {"path": str(path.relative_to(root)), "sha256": hashlib.sha256(after).hexdigest(),
+            "target": target, "baseline": verdict["baseline"]}
+
+
+def propagate_invalidation(state, affected, design_critical):
+    for stage in affected:
+        state["stages"][stage] = {"status": "BLOCKED", "evidence": []}
+    approvals = []
+    if "assembly_placement" in affected:
+        approvals.append("assembly_placement")
+    if "order" in affected:
+        approvals.extend(("final_price", "payment"))
+    if design_critical:
+        approvals.append("design_critical_substitution")
+    for approval in approvals:
+        state["approvals"][approval] = "PENDING"
+        state["approval_evidence"][approval] = []
 
 
 def last_browser_edit(state: dict) -> dict:
@@ -180,7 +248,8 @@ def record_release(state: dict, manifest: Path, previous: Path | None, state_dir
     return records
 
 
-def validate(state: dict, state_dir: Path, verified_records: dict | None = None) -> list[str]:
+def validate(state: dict, state_dir: Path, verified_records: dict | None = None,
+             verified_case_stage=None) -> list[str]:
     errors: list[str] = []
     if state.get("schema") != "pcba-program-state-v1":
         errors.append("schema must be pcba-program-state-v1")
@@ -200,6 +269,19 @@ def validate(state: dict, state_dir: Path, verified_records: dict | None = None)
                        if stages.get(name, {}).get("status") != "PASS"]
             if missing:
                 errors.append(f"{stage}: prerequisites are not PASS: {missing}")
+        record = stages.get(stage, {}).get("engineering_case")
+        if stage in ENGINEERING_STAGES and status == "PASS" and state.get("formal_engineering") and record is None:
+            errors.append(f"{stage}: requires a formal engineering case")
+        if record is not None and stage != verified_case_stage:
+            try:
+                root = evidence_root(state_dir)
+                bound_release = ({key: state["artifacts"][key] for key in RELEASE_EVIDENCE_ROLES}
+                                 if stage == "manufacturing_release" else None)
+                actual = case_record(root / record["path"], state_dir, stage, state["project_id"], bound_release)
+                if actual != record:
+                    errors.append(f"{stage}: engineering case no longer matches its record")
+            except (ValueError, TypeError, KeyError, OSError, subprocess.TimeoutExpired) as exc:
+                errors.append(f"{stage}: invalid engineering case: {exc}")
     approvals = state.get("approvals", {})
     for name in APPROVALS:
         if approvals.get(name) not in {"PENDING", "APPROVED", "REJECTED"}:
@@ -252,10 +334,12 @@ def main() -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     init_p = sub.add_parser("init")
     init_p.add_argument("--project", required=True)
+    init_p.add_argument("--formal-engineering", action="store_true", help="Require covered case evidence for engineering PASS transitions.")
     set_p = sub.add_parser("set-stage")
     set_p.add_argument("--stage", choices=STAGES, required=True)
     set_p.add_argument("--status", choices=sorted(STATUSES), required=True)
     set_p.add_argument("--evidence", action="append", default=[])
+    set_p.add_argument("--engineering-case", type=Path, help="Recheck the case for this stage before recording PASS.")
     set_p.add_argument("--release-manifest", type=Path, help="Verified PASS manifest for the manufacturing release stage.")
     set_p.add_argument("--previous-release-manifest", type=Path,
                        help="Original frozen manifest for browser recovery when an older state lacks the pre-edit hashes.")
@@ -266,15 +350,22 @@ def main() -> int:
     inv_p = sub.add_parser("invalidate")
     inv_p.add_argument("--change", choices=sorted(INVALIDATION), required=True)
     inv_p.add_argument("--reason", required=True)
+    impact_p = sub.add_parser("invalidate-impact")
+    impact_p.add_argument("--case", type=Path, required=True)
+    impact_p.add_argument("--change-file", type=Path, required=True)
+    impact_p.add_argument("--reason", required=True)
     sub.add_parser("validate")
     args = parser.parse_args()
     state_dir = args.file.parent.resolve()
     verified_records = None
+    verified_case_stage = None
 
     if args.command == "init":
         if args.file.exists():
             raise SystemExit(f"refusing to overwrite existing state: {args.file}")
         state = initial(args.project)
+        if args.formal_engineering:
+            state["formal_engineering"] = True
     else:
         state = load(args.file)
         if args.command == "set-stage":
@@ -292,6 +383,15 @@ def main() -> int:
             elif args.release_manifest is not None or args.previous_release_manifest is not None:
                 raise SystemExit("release manifest arguments apply to manufacturing_release PASS")
             state["stages"][args.stage] = {"status": args.status, "evidence": args.evidence}
+            if args.engineering_case:
+                if args.status != "PASS" or args.stage not in ENGINEERING_STAGES:
+                    raise SystemExit("--engineering-case applies to engineering PASS transitions")
+                try:
+                    state["stages"][args.stage]["engineering_case"] = case_record(
+                        args.engineering_case, state_dir, args.stage, state["project_id"], verified_records)
+                    verified_case_stage = args.stage
+                except (ValueError, KeyError, OSError, subprocess.TimeoutExpired) as exc:
+                    raise SystemExit(str(exc)) from exc
         elif args.command == "set-approval":
             if args.status in {"APPROVED", "REJECTED"} and not has_evidence(args.evidence):
                 raise SystemExit("an approval decision requires nonempty --evidence text entries")
@@ -301,20 +401,8 @@ def main() -> int:
             state["approval_evidence"][args.approval] = args.evidence
         elif args.command == "invalidate":
             affected = INVALIDATION[args.change]
-            for stage in affected:
-                state["stages"][stage]["status"] = "BLOCKED"
-                state["stages"][stage]["evidence"] = []
-            if "assembly_placement" in affected:
-                state["approvals"]["assembly_placement"] = "PENDING"
-                state["approval_evidence"]["assembly_placement"] = []
-            if "order" in affected:
-                state["approvals"]["final_price"] = "PENDING"
-                state["approvals"]["payment"] = "PENDING"
-                state["approval_evidence"]["final_price"] = []
-                state["approval_evidence"]["payment"] = []
-            if args.change in {"product-definition", "netlist", "circuit", "mpn-package", "bom"}:
-                state["approvals"]["design_critical_substitution"] = "PENDING"
-                state["approval_evidence"]["design_critical_substitution"] = []
+            propagate_invalidation(state, affected, args.change in {
+                "product-definition", "netlist", "circuit", "mpn-package", "bom"})
             entry = {
                 "time_utc": now(), "change": args.change,
                 "reason": args.reason, "affected_stages": list(affected),
@@ -326,8 +414,36 @@ def main() -> int:
                 )
             state["invalidation_log"].append(entry)
             state["manual_browser_edits_present"] = browser_edits_pending(state)
+        elif args.command == "invalidate-impact":
+            try:
+                root = evidence_root(state_dir)
+                inputs = [path.resolve(strict=True) for path in (args.case, args.change_file)]
+                if any(not path.is_relative_to(root) for path in inputs):
+                    raise ValueError("impact inputs must be inside the project evidence root")
+                impact = decision_result("impact", "--case", inputs[0], "--change", inputs[1])
+                baseline = impact["baseline"]
+                stored = [data["engineering_case"]["baseline"] for data in state["stages"].values()
+                          if data.get("engineering_case")]
+                if baseline["project"] != state["project_id"] or baseline not in stored:
+                    raise ValueError("impact does not match a recorded engineering baseline")
+                rows = [row for row in impact["recheck"] if row["variant"] in (baseline["variant"], "*")]
+                affected = set(stage for row in rows for stage in CHECK_STAGES.get(row["check"], ("circuit",)))
+                for stage in STAGES:
+                    if any(dep in affected for dep in STAGE_PREREQUISITES.get(stage, ())):
+                        affected.add(stage)
+                if "manufacturing_release" in affected:
+                    affected.add("assembly_placement")
+                    affected.add("order")
+                propagate_invalidation(state, affected, any(row["check"] in {
+                    "component-qualification", "rating-limits", "fault-propagation"} for row in rows))
+                state["invalidation_log"].append({
+                    "time_utc": now(), "change": "engineering-impact", "reason": args.reason,
+                    "affected_stages": [stage for stage in STAGES if stage in affected], "impact": rows,
+                })
+            except (ValueError, KeyError, OSError, subprocess.TimeoutExpired) as exc:
+                raise SystemExit(str(exc)) from exc
 
-    errors = validate(state, state_dir, verified_records)
+    errors = validate(state, state_dir, verified_records, verified_case_stage)
     if not errors and args.command != "validate":
         save(args.file, state)
     print(json.dumps({

@@ -5,6 +5,8 @@ description: 根据功能和电气约束选器件或替代料，按精确 C 号�
 
 # 器件选型与采购
 
+精确查料维持短入口。替代、降本与 ECO 据 [工程决策](../hardware/references/design-workflow.md) 交完整料号、替换维度、保证值及适用条件。库存与报价独立于可替代结论，正式工程结论回流重验。
+
 按用户需要的证据和交付物选择能完成任务的最短流程。各层可直接进入，按本层停点交付。在线查料由独立的 Component Sourcing MCP 提供。阻容条件解析、品牌优先和增量核验的示例以 `v0.8.0-rc.7` 为准，调用时核对当前 `components` 的工具签名。 [独立 MCP 预发布版](https://github.com/zhr1008/component-sourcing-mcp/releases/tag/v0.8.0-rc.7)
 
 查询电阻、电容时，优先用 `scripts/query_passive_index.py` 查询用户提供的标准阻容 JSON 索引。按规格选型且适用风华优先时，传 `--preferred-brand 'FH(风华)'`。未提供索引或库内证据不足时，按所需证据查询国内立创和原厂。用户另行提供对应 `.IntLib` 时，可用索引中的 `symbol` 和 `footprint` 定位库件。 [标准库查询与外部检索](references/sourcing-queries.md#标准库优先与外部检索)

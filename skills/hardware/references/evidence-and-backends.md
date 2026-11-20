@@ -1,5 +1,7 @@
 # 正式检查证据与后端探测
 
+工程决策用 [正式工件与停点](design-workflow.md#正式工件与停点) 按版次/变体和实际工况消费证据。 `hardware_tool.py sourcing-lock-check LOCK.csv --formal` 包装专项 v2 的结果及同一次读取的 CSV 摘要，通过只表示资格与商务字段的适用检查。评估替料时用器件事实、原厂条款、CAD 映射和实际工况另行关闭电气问题。失败和缺据保留原字段及退出码。
+
 现有 KiCad 报告检查、制造清单验证和台架结果检查均接受 `--formal`。继续使用原有 JSON、清单与 CSV。省略该参数沿用原有输出。
 
 ```powershell

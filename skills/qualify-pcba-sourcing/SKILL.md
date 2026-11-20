@@ -15,14 +15,15 @@ new decision only when it crosses a reserved choice or changes agreed requiremen
 
 本技能承接逐位号资格和冻结判定。精确查料或补采购字段按 `component-sourcing` 的查料入口处理，物料档案映射交 `bom-material-archive`。已有选型证据可随工件版次和来源交接，补查受影响字段及过期库存/报价。已核实的选型数据需要导出 AD 表时，交回 `component-sourcing` 使用固定程序。
 
-Create `.pcba-workflow/sourcing-lock.csv` from
-[assets/sourcing-lock.csv](assets/sourcing-lock.csv). Stock and price are
-time-sensitive: browse current primary manufacturer and supplier sources rather
-than relying on model memory.
+正式冻结从 [sourcing-lock-v2.csv](assets/sourcing-lock-v2.csv) 创建
+`.pcba-workflow/sourcing-lock.csv`，每个冻结版次和装配变体单独建表。旧表仍可按
+[v1 模板](assets/sourcing-lock.csv) 的行级规则读取。按
+[资格范围与采购证据合同](references/sourcing-lock-evidence.md) 查询并独立记录原厂资格、
+渠道库存和报价的一手来源及适用范围。
 
 ## Workflow
 
-项目明确要求 AEC 或其它器件资格时，用 [器件资格与替换验收](../hardware/references/component-qualification.md) 核准型号、封装、适用制造配置、报告版本与工程温度/应力。把结论和证据定位记录在对应位号的资格引用中。资格缺证随本阶段未决项进入门禁，库存和价格可独立查询。
+项目明确要求 AEC 或其它器件资格时，用 [器件资格与替换验收](../hardware/references/component-qualification.md) 核准型号、封装、适用制造配置、报告版本与工程温度/应力。通过 PCN、来料追溯及供应约束确认订单可能用到的全部制造配置，按位号记录并逐项核对资格覆盖。同一完整料号的制造配置变化也需复核。资格缺证随本阶段未决项进入门禁，库存和价格可独立查询。
 
 1. Read the product brief, architecture, schematic/netlist, BOM, layout, and
    production quantity. Derive the actual requirement before comparing parts.
@@ -45,7 +46,7 @@ than relying on model memory.
 6. Classify each line `PASS`, `BLOCKED`, or `USER_REVIEW`. A critical alternate
    requires recorded design-owner authorization; reuse an existing authorization
    when it explicitly covers that substitution and its constraints.
-7. Run `scripts/validate_sourcing_lock.py` with a suitable live-data age limit.
+7. 正式冻结运行 `python -X utf8 scripts/validate_sourcing_lock.py <sourcing-lock.csv> --formal`，根据项目设置库存时效 `--max-age-days`。报价按各自有效期和适用数量档检查。
 
 ## Gate
 

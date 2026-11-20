@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""Validate sourcing-lock-v1 evidence, quantities, approvals, and cost."""
+"""Validate sourcing lock evidence, quantities, approvals, and cost."""
 
 from __future__ import annotations
 
 import argparse
 import csv
 import datetime as dt
+import hashlib
+import io
 import json
 import math
 import re
+from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -23,14 +27,37 @@ FIELDS = [
     "substitution_approved", "substitution_approval_evidence",
     "design_critical", "approval_required", "status", "evidence_url",
 ]
+QUALIFICATION_IDENTITY = {
+    "qualification_manufacturer": "manufacturer",
+    "qualification_mpn": "mpn",
+    "qualification_package": "package",
+}
+EVIDENCE_FIELDS = {
+    "qualification_scope", "production_configurations", "qualified_configurations",
+    *QUALIFICATION_IDENTITY, "qualification_evidence", "supplier", "stock_pool",
+    "quote_id", "quote_issued_at", "quote_valid_until", "quote_min_quantity",
+    "quote_max_quantity", "quote_evidence",
+}
+UNRESOLVED = {"", "-", "?", "*", "any", "all", "tbd", "unknown", "unspecified", "n/a", "待证", "待核实"}
 ROW_STATUSES = {"PASS", "BLOCKED", "USER_REVIEW"}
 LIFECYCLES = {"active", "nrnd", "eol", "obsolete", "last-time-buy", "unknown"}
 EVIDENCE_STATES = {"verified", "unverified", "missing", "not-required"}
 
 
-def parse_time(value: str) -> dt.datetime:
+@dataclass(frozen=True)
+class QuoteTerms:
+    issued: dt.datetime
+    expires: dt.datetime
+    minimum: int
+    maximum: int | None
+    price: float
+
+
+def parse_time(value: str, *, require_offset: bool = False) -> dt.datetime:
     parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
     if parsed.tzinfo is None:
+        if require_offset:
+            raise ValueError("timestamp requires a UTC offset")
         parsed = parsed.replace(tzinfo=dt.timezone.utc)
     return parsed.astimezone(dt.timezone.utc)
 
@@ -62,26 +89,140 @@ def decimal(row: dict[str, str], field: str, number: int, errors: list[str]) -> 
         return None
 
 
+def evidence_value(row: dict[str, str], field: str, number: int, pending: list[str]) -> str:
+    value = row.get(field, "").strip()
+    if value.casefold() in UNRESOLVED:
+        pending.append(f"row {number}: {field} evidence is missing")
+        return ""
+    return value
+
+
+def configuration_set(row: dict[str, str], field: str, number: int, pending: list[str]) -> set[str]:
+    value = evidence_value(row, field, number, pending)
+    configurations = set(references(value))
+    if value and (not configurations or any(
+        item.casefold() in UNRESOLVED or "*" in item or "?" in item for item in configurations
+    )):
+        pending.append(f"row {number}: {field} needs exact configuration IDs")
+        return set()
+    return configurations
+
+
+def check_qualification(row: dict[str, str], number: int, errors: list[str], pending: list[str]) -> None:
+    scope = evidence_value(row, "qualification_scope", number, pending)
+    evidence_value(row, "qualification_evidence", number, pending)
+    if scope == "required":
+        production = configuration_set(row, "production_configurations", number, pending)
+        covered = configuration_set(row, "qualified_configurations", number, pending)
+        if production and covered and (uncovered := production - covered):
+            errors.append(f"row {number}: production configurations outside qualification: {sorted(uncovered)}")
+        for field, identity_field in QUALIFICATION_IDENTITY.items():
+            value = evidence_value(row, field, number, pending)
+            if value and value != row.get(identity_field, "").strip():
+                errors.append(f"row {number}: {field} does not match selected {identity_field}")
+    elif scope == "not-required":
+        if row.get("production_configurations", "").strip():
+            configuration_set(row, "production_configurations", number, pending)
+        if any(row.get(field, "").strip() for field in ("qualified_configurations", *QUALIFICATION_IDENTITY)):
+            errors.append(f"row {number}: qualification coverage conflicts with not-required scope")
+    elif scope:
+        errors.append(f"row {number}: qualification_scope must be required or not-required")
+
+
+def quote_terms(
+    row: dict[str, str], number: int, as_of: dt.datetime, price: float | None,
+    errors: list[str], pending: list[str],
+) -> QuoteTerms | None:
+    dates = {}
+    for field in ("quote_issued_at", "quote_valid_until"):
+        if value := evidence_value(row, field, number, pending):
+            try:
+                dates[field] = parse_time(value, require_offset=True)
+            except (ValueError, OverflowError):
+                errors.append(f"row {number}: {field} must be an ISO timestamp with UTC offset")
+    issued = dates.get("quote_issued_at")
+    expires = dates.get("quote_valid_until")
+    if issued is not None and expires is not None and expires < issued:
+        errors.append(f"row {number}: quote_valid_until precedes quote_issued_at")
+    if issued is not None and as_of < issued:
+        errors.append(f"row {number}: quote is not yet valid")
+    if expires is not None and as_of > expires:
+        errors.append(f"row {number}: quote has expired")
+
+    minimum_text = evidence_value(row, "quote_min_quantity", number, pending)
+    maximum_text = evidence_value(row, "quote_max_quantity", number, pending)
+    minimum = integer(row, "quote_min_quantity", number, errors) if minimum_text else None
+    maximum = integer(row, "quote_max_quantity", number, errors) if maximum_text not in {"", "unbounded"} else None
+    if minimum is not None and maximum is not None and maximum < minimum:
+        errors.append(f"row {number}: quote_max_quantity is below quote_min_quantity")
+    evidence = evidence_value(row, "quote_evidence", number, pending)
+    if None in (issued, expires, minimum, price) or not evidence or (maximum is None and maximum_text != "unbounded"):
+        return None
+    return QuoteTerms(issued, expires, minimum, maximum, price)
+
+
+def check_purchase_groups(
+    stock_groups: dict[tuple[str, str, str], list[tuple[int, int, int, dt.datetime]]],
+    quote_groups: dict[tuple[str, str, str], list[tuple[int, int, QuoteTerms | None]]],
+    errors: list[str],
+) -> None:
+    for key, orders in stock_groups.items():
+        order_total = sum(quantity for _, quantity, _, _ in orders)
+        snapshots = {(stock, checked) for _, _, stock, checked in orders}
+        row_numbers = [number for number, _, _, _ in orders]
+        if len(snapshots) > 1:
+            errors.append(f"rows {row_numbers}: inventory pool {key!r} has conflicting stock snapshots")
+            continue
+        stock, _ = next(iter(snapshots))
+        if order_total > stock:
+            errors.append(f"rows {row_numbers}: inventory pool {key!r} stock {stock} is below "
+                          f"aggregate order quantity {order_total}")
+
+    for key, orders in quote_groups.items():
+        order_total = sum(quantity for _, quantity, _ in orders)
+        terms = {terms for _, _, terms in orders}
+        confirmed = terms - {None}
+        row_numbers = [number for number, _, _ in orders]
+        if len(confirmed) > 1:
+            errors.append(f"rows {row_numbers}: conflicting quote terms for {key!r}")
+        elif None not in terms:
+            quoted = next(iter(confirmed))
+            if order_total < quoted.minimum or (quoted.maximum is not None and order_total > quoted.maximum):
+                errors.append(f"rows {row_numbers}: aggregate order quantity {order_total} is outside quoted tier "
+                              f"for {key!r}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("csv_file", type=Path)
     parser.add_argument("--max-age-days", type=int, default=14)
     parser.add_argument("--as-of", help="ISO timestamp used for deterministic validation")
+    parser.add_argument("--formal", action="store_true", help="require configuration and supplier evidence")
     args = parser.parse_args()
     as_of = parse_time(args.as_of) if args.as_of else dt.datetime.now(dt.timezone.utc)
 
     errors: list[str] = []
     warnings: list[str] = []
-    with args.csv_file.open(newline="", encoding="utf-8-sig") as handle:
-        reader = csv.DictReader(handle)
+    pending: list[str] = []
+    scoped = args.formal
+    raw = None
+    rows = []
+    try:
+        raw = args.csv_file.read_bytes()
+        reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig"), newline=""), restval="")
         headers = reader.fieldnames or []
+        scoped = scoped or EVIDENCE_FIELDS.issubset(headers)
         missing = [field for field in FIELDS if field not in headers]
-        extra = [field for field in headers if field not in FIELDS]
+        extra = [field for field in headers if field not in FIELDS and (not scoped or field not in EVIDENCE_FIELDS)]
         if missing:
             errors.append(f"missing headers: {missing}")
         if extra:
             warnings.append(f"extra headers: {extra}")
+        if scoped and len(headers) != len(set(headers)):
+            errors.append("enhanced sourcing lock has duplicate headers")
         rows = list(reader)
+    except (OSError, UnicodeError, csv.Error) as error:
+        errors.append(f"cannot read sourcing lock: {error}")
 
     if not rows:
         errors.append("sourcing lock has no component rows")
@@ -90,8 +231,12 @@ def main() -> int:
     row_statuses: list[str] = []
     assembly_quantities: set[int] = set()
     currencies: set[str] = set()
+    stock_groups = defaultdict(list)
+    quote_groups = defaultdict(list)
     total_cost = 0.0
     for number, row in enumerate(rows, start=2):
+        if scoped and None in row:
+            errors.append(f"row {number}: contains values without CSV headers")
         refs = references(row.get("reference", ""))
         if not refs:
             errors.append(f"row {number}: reference is required")
@@ -199,6 +344,7 @@ def main() -> int:
             if lifecycle != "active":
                 errors.append(f"row {number}: PASS requires active lifecycle")
 
+        checked = None
         try:
             checked = parse_time(row.get("stock_checked_at", ""))
             age = as_of - checked
@@ -206,11 +352,26 @@ def main() -> int:
                 errors.append(f"row {number}: stock timestamp is in the future")
             elif age > dt.timedelta(days=args.max_age_days):
                 errors.append(f"row {number}: stock evidence is stale ({age.days} days)")
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, OverflowError):
             errors.append(f"row {number}: invalid stock_checked_at")
         if not row.get("datasheet_url", "").startswith(("https://", "http://")):
             errors.append(f"row {number}: datasheet_url must be an URL")
 
+        if scoped:
+            check_qualification(row, number, errors, pending)
+            supplier = evidence_value(row, "supplier", number, pending)
+            stock_pool = evidence_value(row, "stock_pool", number, pending)
+            sku = evidence_value(row, "supplier_part_number", number, pending)
+            evidence_value(row, "evidence_url", number, pending)
+            quote_id = evidence_value(row, "quote_id", number, pending)
+            terms = quote_terms(row, number, as_of, unit_price, errors, pending)
+            if supplier and sku and order_quantity is not None:
+                if stock_pool and stock is not None and checked is not None:
+                    stock_groups[supplier, sku, stock_pool].append((number, order_quantity, stock, checked))
+                if quote_id:
+                    quote_groups[supplier, sku, quote_id].append((number, order_quantity, terms))
+
+    check_purchase_groups(stock_groups, quote_groups, errors)
     if len(assembly_quantities) > 1:
         errors.append("assembly_quantity must be identical across sourcing rows")
     if len(currencies) > 1:
@@ -218,18 +379,22 @@ def main() -> int:
 
     if errors or "BLOCKED" in row_statuses:
         overall = "BLOCKED"
-    elif "USER_REVIEW" in row_statuses:
+    elif pending or "USER_REVIEW" in row_statuses:
         overall = "USER_REVIEW"
     else:
         overall = "PASS"
     result = {
-        "schema": "sourcing-lock-v1", "file": str(args.csv_file),
+        "schema": "sourcing-lock-v2" if scoped else "sourcing-lock-v1", "file": str(args.csv_file),
         "status": overall, "rows": len(rows), "references": len(seen),
         "assembly_quantity": next(iter(assembly_quantities)) if len(assembly_quantities) == 1 else None,
         "currency": next(iter(currencies)) if len(currencies) == 1 else None,
         "total_assembled_cost": round(total_cost, 6),
         "errors": errors, "warnings": warnings,
     }
+    if scoped:
+        result["pending"] = pending
+        result["sha256"] = hashlib.sha256(raw).hexdigest() if raw is not None else None
+        result["as_of"] = as_of.isoformat()
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0 if overall == "PASS" else 1
 

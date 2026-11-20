@@ -1,8 +1,8 @@
 # Hardware Design Skills
 
-面向电子硬件设计、固件与验证的 **48 项可独立调用技能**。可以在 Codex 里查器件、画电路、审查 PCB，也可以从需求推进到板级联调和制造包冻结。跨专项任务用 `$hardware`，由它根据目标工件、平台和授权选择入口。
+面向电子硬件设计、固件与验证的 **48 项可独立调用技能**。`$hardware` 负责规划、设计、深审、ECO、仿真验收、Bring-up 和制造放行。它先由实际电路原型展开风险，读本机依据，再完成工程取舍、实施和验收。查器件、按接线画图和报告转换可直达专项。
 
-[快速开始](#快速开始) · [使用示例](#在-codex-里怎么用) · [架构图](#架构与分工) · [48 项技能速览](#48-项技能速览) · [模块手册](docs/architecture-guide.md) · [更新日志](CHANGELOG.md)
+[v0.6.0 下载](https://github.com/zhr1008/hardware-design-skills/releases/tag/v0.6.0) · [快速开始](#快速开始) · [使用示例](#在-codex-里怎么用) · [架构图](#架构与分工) · [48 项技能速览](#48-项技能速览) · [模块手册](docs/architecture-guide.md) · [更新日志](CHANGELOG.md)
 
 ## 快速开始
 
@@ -27,10 +27,11 @@ python -X utf8 skills/hardware/scripts/backend_doctor.py
 
 ## 在 Codex 里怎么用
 
-知道要用哪个专项时可以直接点名。例如查料用 [component-sourcing](skills/component-sourcing/SKILL.md)，核对 PCB 布局用 [pcb-layout-review](skills/pcb-layout-review/SKILL.md)。涉及多个专项时，用 `$hardware` 说明目标、现有工件、平台和期望产物。
+描述你想完成的工程结果，例如设计目标、已有工件、平台以及期望产物。用 `$hardware` 启动工程规划、设计和审查。明确知道实施入口时也可点名专项，例如 [component-sourcing](skills/component-sourcing/SKILL.md) 查料，[pcb-layout-review](skills/pcb-layout-review/SKILL.md) 核布局。
 
 | 可以这样问 | 这次会交付什么 |
 | --- | --- |
+| 「按这些接口要求独立设计一个模拟前端，给原理图和验算。」 | 可测要求、本机原文、关键方案取舍、按指定格式实现的原理图和验证边界。 |
 | 「用 `$hardware` 画一张 RC 低通示意图，给 SVG。」 | Schemdraw 源码和 SVG。需要可编辑的工程原理图时，写明 Altium、EasyEDA Pro 或 KiCad。 |
 | 「只读核对这份保存的 Altium 工程，按页列出器件数。」 | 工程成员、保存态的器件明细和无法解析的文件。若还需要未保存的编辑内容，再申请现场读取。 |
 | 「审这路 ADC 前端，把需要验证的条件和资料页写出来。」 | 与器件和工况对应的规则、文档版次、物理页或印刷页，以及待计算或待测的项目。 |
@@ -46,18 +47,44 @@ python -X utf8 skills/hardware/scripts/backend_doctor.py
 
 ## 架构与分工
 
-![硬件技能包架构。路由按平台和权限选择专项，从规则与器件事实、工程验算或保存态后端取得证据，交付单项答复或正式审查记录。](docs/architecture/hardware-design-skills.png)
+### 工程任务如何推进
 
-- `$hardware` 根据目标、已有工件、EDA 平台和授权选择专项与交付停点。
+```mermaid
+flowchart TD
+  A["硬件任务"] --> Q{"需要工程判断？"}
+  Q -->|"输入和动作已明确"| FAST["专项直接交付<br/>查料、计算、绘图或读报告"]
+  Q -->|"规划、设计、改版或验收"| B["$hardware 定义可测要求与停点"]
+  B --> C["按电路原型展开风险<br/>查本地规则和原文"]
+  C --> D["比较方案、反证与验证判据"]
+  D --> E["按授权调用专项并读回工件"]
+  E --> F{"证据覆盖本次交付？"}
+  F -->|"支持"| G["交付工件、依据和待验证项"]
+  F -->|"发现反例"| D
+  D -->|"需要补证"| C
+  D -->|"仅规划"| G
+  F -->|"正式交接或放行"| S["assess 核对同版工件和检查范围"]
+  S --> G
+  S -. "ECO 或证据失效时按 impact 回流" .-> D
+```
+
+日常设计用轻量 `design_flow.py start <mode> --intent …`，直接取得按原型展开的风险检查和阅读链；例如 ADC 前端从运放与滤波追到转换器，再补供电和回流证据。正式评审、跨阶段交接、正式 ECO 和制造放行使用 `case.json`、`impact` 和 `assess`。项目签核与 L0–L3 操作授权按原渠道处理。 [工程知识地图](skills/hardware/references/knowledge-map.md) · [详细流程与离线命令](skills/hardware/references/design-workflow.md)
+
+### 实施工具与专项分布
+
+![v0.6.0 硬件技能包的快路径、工程判断、专项实施与证据回流](docs/architecture/hardware-design-skills.png)
+
+- `$hardware` 负责工程决策、证据与验收，按平台及权限调用实施入口。
 - `hardware-solution` 协调整板的供电、引脚、通信、机械和固件接口。
 - `manage-pcba-program` 管理 PCBA 阶段、工件版本与重验范围，阶段状态为 `PASS`、`BLOCKED` 或 `USER_REVIEW`。
 - `hardware-design-review` 汇总工程证据，给出 `Go`、`Hold` 或 `No-Go`，附判定范围与待核项。
+
+公开技能包随附 **98 条可查询规则**、来源书目、知识地图、脚本和合成夹具。用户自有资料可在本机接入，按原件版次和物理页回读。 [工程资料用法](skills/hardware/references/engineering-knowledge.md)
 
 ### 各模块怎么配合
 
 | 模块 | 接收什么，交付什么 |
 | --- | --- |
-| [任务路由与权限](docs/architecture-guide.md#任务路由与权限) | 根据工件状态和真实工具动作选入口。执行前检查许可，在用户要求的交付点停止。 |
+| [工程流程与权限](docs/architecture-guide.md#任务路由与权限) | 先定需求、查依据、作决策。实施时按工件和实际动作选择工具，按请求终点验收。 |
 | [需求与整板协调](docs/architecture-guide.md#需求与整板协调) | 把目标和参考工程转成可测要求与接口约束，交电路、PCB、固件和测试。 |
 | [工程知识与综合评审](docs/architecture-guide.md#工程知识与综合评审) | 查适用规则和资料页，按 [关键工况](skills/hardware/references/engineering-verification.md) 收集证据，给出通过、待验证或阻塞项。 |
 | [器件选型与 BOM](docs/architecture-guide.md#器件选型与-bom) | 用规格、订购 MPN 和渠道编号核对器件。把原厂脚位、封装和资格结果交给库、BOM 或制造。 |
@@ -85,7 +112,7 @@ python -X utf8 skills/hardware/scripts/backend_doctor.py
 
 | 技能 | 核心职责 |
 | --- | --- |
-| [`hardware`](skills/hardware/SKILL.md) | 根据任务、工程文件、EDA 平台和权限，选择专项技能、离线脚本或工程知识库。 |
+| [`hardware`](skills/hardware/SKILL.md) | 主持需求、知识取证、工程取舍、专项执行与验收，按许可采用工具。 |
 | [`plan-electronic-product`](skills/plan-electronic-product/SKILL.md) | 将产品想法和使用约束转成可验证的工程需求，交付 `product-brief.yaml` 与 `architecture.md`。 |
 | [`hardware-project-library`](skills/hardware-project-library/SKILL.md) | 查找并评估可复用的参考工程，记录来源、版本、验证状态和适用范围。 |
 | [`hardware-solution`](skills/hardware-solution/SKILL.md) | 统筹整板设计和改版，保持电路、PCB、机械和固件的供电、引脚与时序约定一致。 |

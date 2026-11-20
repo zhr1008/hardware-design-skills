@@ -10,6 +10,8 @@ metadata:
 
 # Fictiv: quote, order and troubleshoot custom parts
 
+本地制造准备按 [工程决策](../hardware/references/design-workflow.md) 核工艺窗口和冻结模型。远程上传、询价、提交和付款分别按动作许可。
+
 Requirements: network access, a browser automation tool, and the user's logged-in Fictiv account at app.fictiv.com. Optional DOM helpers use browser JavaScript. The local CAD preflight uses Python 3.10 or newer and the standard library.
 
 This skill operates Fictiv through its logged-in web app. The official sources reviewed on 2026-09-30 document browser workflows and a managed cXML Punchout integration, but no public customer API, SDK, authentication, endpoint, or pagination contract. Do not reverse-engineer private app calls. Use the logged-in web app at `https://app.fictiv.com` with browser tools. Prefer the user's own browser (e.g. Claude in Chrome), because that's where their Fictiv session lives. This skill tells you where everything is, what each state means, and where the money and legal decisions are, which need clear user authorization. Public-documentation review does not revalidate the September 2026 authenticated UI snapshot; verify current labels and selections before acting.

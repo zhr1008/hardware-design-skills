@@ -5,6 +5,8 @@ description: Coordinate an evidence-gated electronic product and PCBA workflow f
 
 # PCBA Program Manager
 
+工程决定由 [硬件工程流程](../hardware/references/design-workflow.md) 形成。新正式项目可用 `program_state.py init --formal-engineering`；工程阶段通过需 `set-stage --engineering-case` 重新核验。制造阶段再绑定当前 manifest 和 CPL。授权时用 `invalidate-impact --case … --change-file … --reason …` 消费当前版、当前变体的影响结果。旧项目状态仍可读并沿用原合同。状态记录与真实项目签核、现场/采购授权分别管理。
+
 Coordinate specialists; do not replace them. Default shared artifacts to
 `.pcba-workflow/` and use only `PASS`, `BLOCKED`, or `USER_REVIEW` for gate
 status.

@@ -6,6 +6,8 @@ description: >-
 
 # Altium 라이브러리 제작·검증
 
+正式替换先据 [工程决策](../hardware/references/design-workflow.md) 的影响面核实际脚位、焊盘、热和装配。交精确 MPN、库件哈希与厂家原页，既有只读和原库写入门禁适用。
+
 ## 本机 Codex 路由：磁盘文件优先
 
 凡是已有的 `.SchLib` / `.PcbLib` 文件，默认使用 `altium-offline-library` 的 `read_schlib`、`read_pcblib`、`validate_library`、`diff_libraries`、`render_symbol` / `render_footprint`。写库用用户指定的副本，写后重新读取。详见同级 [component-sourcing](../component-sourcing/SKILL.md) 的离线路径。

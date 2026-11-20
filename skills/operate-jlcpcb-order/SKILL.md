@@ -5,6 +5,8 @@ description: Operate and review a JLCPCB PCB/PCBA quote, optional physical-stenc
 
 # JLCPCB Order Operator
 
+接收已冻结的同版制造工件。按 [工程决策](../hardware/references/design-workflow.md) 分别核工程覆盖、项目签核和供应商动作授权。贴装差异回源修正，预览和报价按影响重验。
+
 Use the frozen source and existing session authorization. A request to design a
 board or prepare a quote does not authorize submission/payment. Once the user has
 authorized a concrete order action, do not invent another skill-level approval.

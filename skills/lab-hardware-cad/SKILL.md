@@ -14,6 +14,8 @@ Requirements: Python 3.11–3.14, build123d 0.13.0 for geometry, and matplotlib 
 
 # Lab Hardware CAD
 
+与电子板配合时承接 [工程决策](../hardware/references/design-workflow.md) 的装配、公差、热、隔离和可测性。返回原点、配合、干涉及工艺限制证据。
+
 装配基准、跨公差链、板弯及涂覆边界见 [PCB 机电参考](../pcb-layout-review/references/materials-mechanics-and-environment.md)。
 
 Design physical research hardware as **parametric Python source**, export STEP as the

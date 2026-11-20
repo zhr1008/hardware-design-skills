@@ -5,6 +5,8 @@ description: Build and verify a vendor-neutral PCB/PCBA manufacturing release fr
 
 # PCBA Fabrication Release
 
+正式冻结前用 [工程决策](../hardware/references/design-workflow.md) 的 `assess --target fabrication` 核同版工件及证据。首件/量产用独立 `production` 目标，绑定批次、工装和实际测试。校验文件、项目签核、供应商动作分别处理。
+
 [CAM 工件合同与读回](references/cam-readback.md)
 
 正式冻结用 `validate_release_manifest.py --formal` 绑定本版证据，保存的 Gerber/钻孔可由 [CAM 离线读回](scripts/check_cam.py) 核查。结果按已解析工件的覆盖范围交接。
@@ -67,8 +69,9 @@ artifact; the script rejects mixed revisions. Record:
 - substitution, placement, final-price, and payment approval state.
 
 Run `scripts/validate_release_manifest.py` after moving or packaging the
-release. A missing file, hash drift, mixed revision, stale sourcing lock, or
-failed required check blocks release.
+release. A missing file, hash drift, mixed revision, stale sourcing lock,
+assembly side mismatch, or failed required check blocks release. Verify that
+the declared assembly faces exactly match the placements in the frozen CPL.
 
 In a recorded workflow, append checkpoints for the frozen source revision,
 independent Gerber/drill inspection, BOM/CPL reconciliation, renders, and the

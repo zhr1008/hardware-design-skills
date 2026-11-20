@@ -5,6 +5,8 @@ description: Audit, finish, or port PCB placement and routing using circuit inte
 
 # PCB Layout Reviewer
 
+工程审查按 [工程决策](../hardware/references/design-workflow.md) 的 `start review` 展开实际回流、工艺下界、热、装配和可测性。回交网/层/位置和报告覆盖。机械或工艺变更通过 `impact` 分配重验。
+
 [KiCad 原生检查输入与局限](references/kicad-native-checks.md)
 
 特殊板材、软硬结合和装配板弯按[材料、机械与环境](references/materials-mechanics-and-environment.md)核对。已有 KiCad 报告以 `check_kicad_report.py --formal` 交接；需从保存态重新跑 ERC/DRC 时用 [受控 CLI](scripts/run_kicad_checks.py) 指定新的隔离目录。

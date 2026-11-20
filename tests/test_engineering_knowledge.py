@@ -65,15 +65,21 @@ class EngineeringKnowledgeTest(unittest.TestCase):
 
     def test_shipped_rules_have_source_metadata_and_filter_without_index(self):
         status = self.query("status")
-        self.assertEqual(status["review_rules"], 96)
+        self.assertEqual(status["review_rules"], 98)
         self.assertEqual(len(status["rule_domains"]), 9)
-        self.assertEqual(status["reference_sources"], 26)
+        self.assertEqual(status["reference_sources"], 29)
         rule, = self.query("rules", "--id", "pcb-return-path")["rules"]
         self.assertEqual(rule["domain"], "PCB与EMC")
         citation, = rule["evidence"]
         self.assertEqual((citation["pdf_page"], citation["printed_page"]), (75, "12-73"))
         self.assertIn("PCB设计", citation["source"]["display_title"])
         self.assertNotIn("text", citation)
+        for identifier, physical_page in (("si-source-termination", 202), ("emc-shield-current-path", 107)):
+            with self.subTest(rule=identifier):
+                added, = self.query("rules", "--id", identifier)["rules"]
+                evidence, = added["evidence"]
+                self.assertEqual(evidence["pdf_page"], physical_page)
+                self.assertEqual(evidence["source"]["access_status"], "metadata_only")
 
     def test_build_search_by_file_read_and_check_printed_page_version(self):
         self.assertEqual(self.query("build-index", private=True)["indexed_sections"], 3)

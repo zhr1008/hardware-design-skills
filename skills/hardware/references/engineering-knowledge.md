@@ -6,6 +6,8 @@
 
 ## 知识库命令
 
+[工程知识地图](knowledge-map.md) 按任务和硬件原型连接基础理论、设计参考、工程经验及规范。`design_flow.py start` 返回相应专题。要读某一层的原文，可用 `design_flow.py --library 库根 basis --theme filters --role design`，也可加 `--rule` 合并本次证据。持有再分发许可的文档可随完整技能目录存放，使用技能目录作为库根。只有书目或来源定位的项目会报告缺正文，由当前任务补证。
+
 从仓库根目录运行。使用 `--library` 时指定仓库外的本地资料目录。默认的 `find` 从规则附带的书目查找，指定目录后查询该目录的清单。
 
 ```powershell

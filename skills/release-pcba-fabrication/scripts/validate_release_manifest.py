@@ -76,14 +76,15 @@ def positive_integer(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
 
-def valid_assembly_sides(value: object) -> bool:
+def assembly_sides(value: object) -> set[str] | None:
     if isinstance(value, str):
-        items = [item.strip().title() for item in value.replace("+", ",").replace(";", ",").split(",") if item.strip()]
+        values = value.replace("+", ",").replace(";", ",").split(",")
     elif isinstance(value, list):
-        items = [str(item).strip().title() for item in value if str(item).strip()]
+        values = value
     else:
-        return False
-    return bool(items) and set(items) <= {"Top", "Bottom"}
+        return None
+    sides = {str(item).strip().lower() for item in values if str(item).strip()}
+    return sides if sides and sides <= {"top", "bottom"} else None
 
 
 def contract_object(data: dict, name: str, errors: list[str]) -> dict:
@@ -148,7 +149,7 @@ def contract_errors(data: dict) -> list[str]:
         if (not isinstance(finish, str) or not finish.strip() or
                 finish.strip().lower() in {"none", "tbd", "unknown"}):
             errors.append("PASS requires nonempty surface_finish")
-        if not valid_assembly_sides(constraints.get("assembly_sides")):
+        if assembly_sides(constraints.get("assembly_sides")) is None:
             errors.append("PASS assembly_sides must contain Top and/or Bottom")
         for name in sorted(ZERO_VERIFICATIONS):
             if not zero(verification.get(name)):
@@ -201,7 +202,8 @@ def parse_manifest(raw: bytes) -> dict:
     return data
 
 
-def assembly_check_record(artifacts: dict, paths: dict[str, Path], exclusions: set[str]) -> dict:
+def assembly_check_record(artifacts: dict, paths: dict[str, Path], exclusions: set[str],
+                          declared_sides: object) -> dict:
     try:
         if paths["bom"].samefile(paths["cpl"]):
             raise ValueError("BOM and CPL must be distinct files")
@@ -213,6 +215,12 @@ def assembly_check_record(artifacts: dict, paths: dict[str, Path], exclusions: s
         raise ValueError("BOM/CPL SHA-256 changed between artifact verification and assembly check")
     if result["status"] != "matched":
         raise ValueError(f"BOM/CPL reconciliation failed: {json.dumps(result['issues'], ensure_ascii=False)}")
+    expected = assembly_sides(declared_sides)
+    side_counts = result["cpl_side_counts"]
+    # Invalid declarations are reported by contract_errors, including an empty list.
+    if expected is not None and expected != set(side_counts):
+        declared = ", ".join(side.title() for side in sorted(expected))
+        raise ValueError(f"assembly_sides mismatch: declared {declared}; CPL side counts {json.dumps(side_counts)}")
     return {"status": result["status"], "sha256": hashes, "explicit_exclusions": sorted(exclusions)}
 
 
@@ -265,11 +273,13 @@ def package_errors(data: dict, root: Path, *, confine: bool = False,
         errors.append(f"manifest status is {data.get('status')!r}, not PASS")
     elif {"bom", "cpl"} <= verified_paths.keys():
         verification = data.get("verification")
+        constraints = data.get("constraints")
+        declared_sides = constraints.get("assembly_sides") if isinstance(constraints, dict) else None
         try:
             exclusions = set()
             if isinstance(verification, dict) and ASSEMBLY_CHECK_KEY in verification:
                 exclusions = assembly_exclusions(verification[ASSEMBLY_CHECK_KEY], artifacts)
-            assembly_check_record(artifacts, verified_paths, exclusions)
+            assembly_check_record(artifacts, verified_paths, exclusions, declared_sides)
         except ValueError as exc:
             errors.append(str(exc))
     return errors

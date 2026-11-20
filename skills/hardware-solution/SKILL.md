@@ -1,16 +1,20 @@
 ---
 name: hardware-solution
-description: 将电子产品需求推进到可交付的电路、PCB、固件和验证证据。用于整板开发、软硬协同、基于参考设计的改版和跨阶段交付。
+description: 在硬件工程流程中负责整板架构、软硬接口和跨阶段协同，将供电、引脚、时序、机械及验证条件落实到电路、PCB、固件和台架交接。
 ---
 
 # 电子硬件系统设计
+
+整板合同覆盖先后供电/棕断、真实回流、固件和制造变体。按 [工程决策](../hardware/references/design-workflow.md) 把可测约束、风险与跨域影响交给实施者。正式交接以同版工件过 `assess`，批准独立核查。
+
+承接 [硬件设计流程](../hardware/references/design-workflow.md) 已建立的要求和依据，负责整板接口、架构与跨系统取舍。直接被点名的整板规划或设计，从该流程的要求和依据阶段启动。把整板接口、原理图及验证边界交回当前任务，复用已有记录与证据。
 
 先确定这次的交付终点和约束。核对供电、接口、环境、尺寸、成本、产量和验收工况。改版任务先读取获授权的源和版次，列出需要保留的接口与已知问题。整板用一个主 EDA 平台。
 
 | 阶段 | 进入条件和交付证据 |
 | --- | --- |
 | 可测需求和接口 | 用 `plan-electronic-product` 明确指标，把电源状态、引脚、连通、时序和故障边界写入接口记录。 |
-| 方案与选型 | 需要参考设计时用 `hardware-project-library` 核实来源和适配范围。用 `component-sourcing` 支持具体选型，按假设、原厂证据和计算记录工程取舍。 |
+| 方案与选型 | 沿用适用知识和已核实资料。确有需要且获准查参考工程时，用 `hardware-project-library` 核实来源和适配范围。具体选型交 `component-sourcing`，用项目要求、原厂证据和计算记录取舍。 |
 | 电路与板级实现 | 用 `design-and-review-circuit` 做设计，通过目标平台生产可编辑源，读回连接后交 `pcb-layout-review` 处理板约束。 |
 | 固件与台架 | 用 `embedded-firmware-design` 依据同版接口实现驱动与状态机。构建、烧录和采样按平台选择专项。 |
 | 冻结或制造 | 需要资格状态时用 `qualify-pcba-sourcing`，制造资料用 `release-pcba-fabrication`，综合状态交 `hardware-design-review`。 |

@@ -48,7 +48,9 @@ does not have to infer them:
   `sourcing_lock`;
 - constraints: positive `board_width_mm`, `board_height_mm`, `layer_count`,
   `thickness_mm`, `quantity_pcbs`, and `quantity_assembled` (assembled cannot
-  exceed PCB quantity), plus nonempty `surface_finish` and `assembly_sides`;
+  exceed PCB quantity), plus nonempty `surface_finish` and `assembly_sides`.
+  The declared assembly faces must exactly match the occupied faces in the
+  verified CPL. A double-sided release requires a placement on each face;
 - zero-valued checks: `unexplained_raw_disconnects`, `real_drc_errors`, and
   `layout_check_failures`. These require exact numeric zero; booleans and
   nonzero values are invalid;

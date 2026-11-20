@@ -23,6 +23,8 @@ TI SLVA432 的控制模式表述有冲突。按精确控制器、调制方法和
 
 ## 模拟、传感、基准和转换
 
+交接 `analog-capacitive-load` 时，在原理图标反馈取样点、输出隔离位置和接收负载。环路稳定与接收点建立各有工况、判据和证据。保留对哪个信号节点验证的结论及最坏采集窗；改运放、负载、串阻、反馈或采样配置后按影响重验。 [规则、原图与定位](../../hardware/references/knowledge-map.md#analog)
+
 1. 从传感器量程与源阻抗开始，逐级核共模、线性输出、摆幅/电流、过载恢复、前端保护、漏电和温漂。用最坏工况的保证值展开失调、偏置、参考、增益、驱动与校准后的误差。噪声统一输入或输出参考端，按有效带宽积分并处理相关项。
 2. 对 SAR 分别验证采集窗口、源阻抗与开关电容回冲/R-C 稳定性、参考脉冲与码型。对 ΔΣ 检查数字滤波的群延迟、复用切换丢弃样本和事件相位。软件报告频率和输入通道阶跃后的首个有效码各自取证。稳态 1 LSB 预算不自动覆盖切换恢复。
 3. 高阻、微弱信号和高分辨率通道重点检查回流、Guard/Kelvin、漏电、热电偶和测试夹具负载。保存负载和输入共模跃变、参考端、采样触发以及数据有效时间窗口，说明误差是否受温湿度、滤波、标定版本或仪器影响。 [TI 容性负载](https://www.ti.com/document-viewer/lit/html/SSZT999) · [ADI SAR 驱动](https://www.analog.com/en/resources/analog-dialogue/articles/front-end-amp-and-rc-filter-design.html) · [ADI 参考端 AN-931](https://www.analog.com/en/resources/app-notes/an-931.html) · [ADI ΔΣ AN-1265](https://www.analog.com/en/resources/app-notes/an-1265.html)

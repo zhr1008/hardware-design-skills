@@ -1,0 +1,887 @@
+{
+  "schema_version": 1,
+  "roles": {
+    "theory": "基础理论",
+    "design": "设计参考",
+    "practice": "工程经验与实测",
+    "authority": "标准与规范"
+  },
+  "by_mode": {
+    "plan": [
+      "architecture"
+    ],
+    "design": [
+      "architecture"
+    ],
+    "review": [
+      "architecture"
+    ],
+    "eco": [
+      "substitution"
+    ],
+    "verify": [
+      "simulation"
+    ],
+    "bringup": [
+      "bench"
+    ],
+    "release": [
+      "manufacturing"
+    ]
+  },
+  "by_topic": {
+    "analog": [
+      "analog"
+    ],
+    "sampling": [
+      "conversion"
+    ],
+    "filtering": [
+      "filters"
+    ],
+    "power": [
+      "power",
+      "pdn"
+    ],
+    "current-sense": [
+      "power-path",
+      "analog"
+    ],
+    "interfaces": [
+      "si"
+    ],
+    "layout": [
+      "layout"
+    ],
+    "thermal": [
+      "thermal"
+    ],
+    "insulation": [
+      "protection"
+    ],
+    "fabrication": [
+      "manufacturing"
+    ]
+  },
+  "by_prototype": {
+    "adc-front-end": [
+      "analog",
+      "filters",
+      "conversion"
+    ],
+    "switching-power": [
+      "power",
+      "pdn",
+      "thermal"
+    ],
+    "ldo": [
+      "power",
+      "thermal"
+    ],
+    "high-current": [
+      "power-path",
+      "thermal"
+    ],
+    "isolation": [
+      "protection",
+      "layout"
+    ],
+    "high-speed": [
+      "si",
+      "layout"
+    ],
+    "mixed-signal-mcu": [
+      "mcu",
+      "pdn"
+    ],
+    "battery-hotplug": [
+      "power-path",
+      "protection"
+    ],
+    "motor-inductive": [
+      "power-path",
+      "protection",
+      "thermal"
+    ],
+    "open-drain-bus": [
+      "open-drain"
+    ],
+    "multi-supply": [
+      "power",
+      "mcu"
+    ],
+    "manufacturing": [
+      "manufacturing"
+    ]
+  },
+  "themes": {
+    "architecture": {
+      "title": "需求、架构与工程预算",
+      "domains": [
+        1,
+        8,
+        10
+      ],
+      "related": [
+        "substitution",
+        "power",
+        "layout",
+        "bench"
+      ],
+      "reference": "../plan-electronic-product/references/system-safety-and-requirements.md",
+      "further_reading": [
+        ["practice", "LIBD243F46ECCFA0C86", 58, "复核电源总体方案怎样拆到电源树和各用电域。"],
+        [
+          "practice",
+          "LIB4F27955FAC9AAEE4",
+          1,
+          "比较既有研发工序与本项目的工件和责任分配。"
+        ]
+      ],
+      "deliverable": "写出接口、工况、故障反应、成本和验证责任的分配。明确项目指定的安全条款与版本。",
+      "sources": {
+        "theory": [
+          "LIB67FA153DEF754367",
+          403,
+          "从产品安全、设计限制和实际使用环境确定边界。"
+        ],
+        "design": [
+          "LIB38DDD865A3CF6C44",
+          [
+            "需求"
+          ],
+          "把产品约束拆成设计与交接责任。"
+        ],
+        "practice": [
+          "LIB7FA418B1CAC5D1F3",
+          28,
+          "从下游 CAM 可复查性倒推文件与接口交付。"
+        ]
+      }
+    },
+    "analog": {
+      "title": "运放、精密调理与容性负载",
+      "intent_keywords": ["运放", "电压跟随器", "跟随器", "容性负载", "相位裕度", "op amp", "op-amp"],
+      "domains": [
+        4,
+        9
+      ],
+      "related": [
+        "filters",
+        "conversion",
+        "power-path",
+        "layout"
+      ],
+      "reference": "../design-and-review-circuit/references/power-and-analog-review.md",
+      "further_reading": [
+        ["theory", "LIB3259382AC060C32C", 153, "先建立理想运放基准，再用实际输出阻抗、增益和电源约束修正。"],
+        [
+          "theory",
+          "LIB416391577A04EE34",
+          10,
+          "从反馈、补偿和噪声导读定位更详细的模型。"
+        ]
+      ],
+      "deliverable": "沿实际信号路径验输入共模、输出摆幅、误差及容性负载。用负载/反馈拓扑和噪声增益选择稳定性模型。",
+      "sources": {
+        "theory": [
+          "LIB9A35763CE3BAF0CE",
+          18,
+          "区分信号增益与噪声增益，确定反馈分析口径。"
+        ],
+        "design": [
+          "LIBA56469486BFACE53",
+          87,
+          "核对输出阻抗与容性负载产生的额外极点。"
+        ],
+        "practice": [
+          "LIB416391577A04EE34",
+          508,
+          "打开图 7.79 对照环路注入接法和相位曲线，按本次器件模型与负载复验。"
+        ]
+      }
+    },
+    "filters": {
+      "title": "滤波、整流与抗混叠",
+      "intent_keywords": ["sallen-key", "赛伦-凯", "二阶有源低通", "抗混叠", "有源滤波"],
+      "domains": [
+        4,
+        9
+      ],
+      "related": [
+        "analog",
+        "conversion",
+        "simulation"
+      ],
+      "reference": "references/engineering-budgets.md",
+      "further_reading": [
+        ["theory", "LIB0AB14B26C37B72C6", 187, "对照一阶与二阶阶跃响应，把滤波指标和建立时间一起检查。"],
+        [
+          "practice",
+          "LIBF1C470EF4FA6403D",
+          2,
+          "需要绝对值或整流时，核全波整流接法、零交越和负载限制。"
+        ]
+      ],
+      "deliverable": "比较无源 RC、Sallen–Key、MFB 等适用条件。把信号带宽、Q、公差、增益和高频阻带与采集建立分别验算。",
+      "sources": {
+        "theory": [
+          "LIBD3F1DB5447640381",
+          313,
+          "从无源滤波和源负载关系建立基准；同卷 PDF 326 进入有源滤波。"
+        ],
+        "design": [
+          "LIB1CD93742F903265E",
+          8,
+          "按低通实际接法选择传递函数并核对增益和 Q。"
+        ],
+        "practice": [
+          "LIB1CD93742F903265E",
+          11,
+          "配合下一页，检查有限输出阻抗造成的高频阻带回升。"
+        ]
+      }
+    },
+    "conversion": {
+      "title": "ADC、采样瞬态与基准",
+      "domains": [
+        3,
+        4,
+        10
+      ],
+      "related": [
+        "analog",
+        "filters",
+        "pdn",
+        "layout"
+      ],
+      "reference": "references/engineering-budgets.md",
+      "deliverable": "交付输入阶跃、采样窗口、反冲与参考误差预算，并把布板与固件采样条件写进验证。",
+      "sources": {
+        "theory": [
+          "LIBEF20A8142AFDE953",
+          251,
+          "用下册 251–252 对照 SAR；PDF 262 看 ΔΣ，228 看总体指标。"
+        ],
+        "design": [
+          "LIB25B949C3FD903BCD",
+          7,
+          "核对直接驱动 SAR 的取样速率和输入网络边界，比较缓冲方案。"
+        ],
+        "practice": [
+          "LIB285167C2B3A553CF",
+          3,
+          "用 PSRR 和供电噪声注入实例判断杂散如何进入频谱。"
+        ]
+      }
+    },
+    "power": {
+      "title": "稳压、启动与环路",
+      "domains": [
+        3
+      ],
+      "related": [
+        "power-path",
+        "pdn",
+        "thermal",
+        "protection"
+      ],
+      "reference": "../design-and-review-circuit/references/power-and-analog-review.md",
+      "further_reading": [
+        ["theory", "LIBEEB29BE86714E5F8", 115, "涉及交直流变换时查逆变工作原理，结合实际拓扑区分分析边界。"],
+        ["design", "LIBB7F925FC4BD01ACD", 18, "用基本降压工作原理回查电感电流和能量传递。"],
+        [
+          "design",
+          "LIB1BC9FDA239E3D65D",
+          2,
+          "核低压差稳压器的限制和指标定义。"
+        ],
+        [
+          "design",
+          "LIB5B32175F25F12BF4",
+          2,
+          "把非隔离开关电源的热环路和回流对应到具体布板。"
+        ]
+      ],
+      "deliverable": "比较 LDO 与开关方案；核 dropout、有效输出电容、环路、起停与负载跃变。",
+      "sources": {
+        "theory": [
+          "LIBEF20A8142AFDE953",
+          43,
+          "第 9 章对照线性与开关稳压；PDF 18 查线性稳压器。"
+        ],
+        "design": [
+          "LIBFCC84967BE0FA465",
+          [
+            "反馈",
+            "稳定"
+          ],
+          "定位补偿与环路稳定分析，按拓扑和工作模式核原页。"
+        ],
+        "practice": [
+          "LIBEEF92A895999FC2A",
+          10,
+          "看反相 EVM 关断和环路实测，回读其测量参考地与工况。"
+        ]
+      }
+    },
+    "pdn": {
+      "title": "PI／PDN、去耦和跨域耦合",
+      "further_reading": [
+        ["design", "LIBA60DE39D573074BD", 162, "沿电流分布核旁路电容和实际供电回流路径。"]
+      ],
+      "domains": [
+        3,
+        4,
+        6
+      ],
+      "related": [
+        "power",
+        "conversion",
+        "layout",
+        "thermal"
+      ],
+      "reference": "references/engineering-budgets.md",
+      "deliverable": "以实际电流谱和容许纹波确定目标阻抗，核 MLCC 偏压、ESR/ESL、反谐振与板级回路。",
+      "sources": {
+        "theory": [
+          "LIB8552726900704857",
+          [
+            "目标阻抗"
+          ],
+          "把电源端口阻抗与负载电流瞬态联系起来。"
+        ],
+        "design": [
+          "LIBBEFD7D5D63EFCC0E",
+          75,
+          "核对去耦、电源和地的板级路径及安装寄生。"
+        ],
+        "practice": [
+          "LIB285167C2B3A553CF",
+          4,
+          "用高速 ADC 供电耦合实例安排频域与时域对照测量。"
+        ]
+      }
+    },
+    "power-path": {
+      "title": "大电流、分流采样、热插拔与感性负载",
+      "further_reading": [
+        ["theory", "LIBEEA716A29C674816", 46, "按功率二极管和开关 RLC 模型追踪换流与寄生回路。"],
+        ["design", "LIB526C51562C4DD2B7", 241, "对照功率模块短路关断的回路与保护时序。"]
+      ],
+      "domains": [
+        3,
+        4,
+        6,
+        7
+      ],
+      "related": [
+        "analog",
+        "thermal",
+        "protection"
+      ],
+      "reference": "../design-and-review-circuit/references/power-and-analog-review.md",
+      "deliverable": "画出主电流、Kelvin 采样、浪涌及续流路径；分别核算接触电阻、热态损耗、故障能量和 SOA。",
+      "sources": {
+        "theory": [
+          "LIBEF20A8142AFDE953",
+          76,
+          "从储能元件和负载状态建立接通、关断的能源边界。"
+        ],
+        "design": [
+          "LIB232DB3CA78D251E4",
+          [
+            "current",
+            "sense"
+          ],
+          "定位传感链路中与本任务相符的电流检测方法。"
+        ],
+        "practice": [
+          "LIB22FC79AA115366B6",
+          181,
+          "对照 IGBT 保护案例，按实际器件和负载判断短路关断与能量。"
+        ]
+      }
+    },
+    "protection": {
+      "title": "绝缘、故障传播、EMC 与瞬态保护",
+      "domains": [
+        1,
+        7,
+        8
+      ],
+      "related": [
+        "power-path",
+        "layout",
+        "bench"
+      ],
+      "reference": "references/insulation-verification.md",
+      "further_reading": [
+        [
+          "practice",
+          "LIBD30CFFC395AB1628",
+          142,
+          "对照共模路径案例，重新按本项目端口及试验布置判定。"
+        ]
+      ],
+      "deliverable": "画保护回流和跨边界能量路径；核项目适用安全/EMC 标准的受控版次及适用条文。",
+      "sources": {
+        "theory": [
+          "LIBEF20A8142AFDE953",
+          199,
+          "对照光耦和继电器的隔离机理及跨隔离寄生。"
+        ],
+        "design": [
+          "LIB414236C18903E248",
+          4,
+          "检视连接器到 TVS 再到参考导体的回路电感。"
+        ],
+        "practice": [
+          "LIBEF20A8142AFDE953",
+          62,
+          "用实际转换器示例追踪绝缘、噪声路径及保护分工。"
+        ],
+        "authority": [
+          "LIBAAB1225C22702881",
+          [
+            "electrical",
+            "clearance"
+          ],
+          "核对所收录的 IPC-2221B 适用范围；产品安规按项目规范另验。"
+        ]
+      }
+    },
+    "si": {
+      "title": "信号完整性、端接、时钟与高速接口",
+      "intent_keywords": ["信号完整性", "串联端接", "源端端接", "传输线", "过冲", "振铃", "TDR", "眼图"],
+      "domains": [
+        5,
+        6,
+        9
+      ],
+      "related": [
+        "layout",
+        "open-drain",
+        "bench"
+      ],
+      "reference": "references/si-verification.md",
+      "further_reading": [
+        ["practice", "LIBD087BD06F81C65CA", 52, "查看反射与端接，对照接收端波形及阻抗变化。"],
+        [
+          "design",
+          "LIB01E52E8263E9D803",
+          187,
+          "查看经典的电源平面参考与传输线布局实例。"
+        ],
+        [
+          "practice",
+          "LIB72BAB27F552C7A13",
+          243,
+          "对照阻抗测量、眼图和误码率的测试口径。"
+        ]
+      ],
+      "deliverable": "以最快边沿、拓扑及传输线估算反射、串扰和时序；接收端读回有效参考面和时序裕量。",
+      "sources": {
+        "theory": [
+          "LIB8552726900704857",
+          [
+            "反射"
+          ],
+          "定位阻抗不连续、反射和传播机理。"
+        ],
+        "design": [
+          "LIB01E52E8263E9D803",
+          202,
+          "打开图 6.8 核源端端接与波形，结合实际驱动输出阻抗和线路特性阻抗。"
+        ],
+        "practice": [
+          "LIBEF20A8142AFDE953",
+          170,
+          "用数字探测实例确认探头连接及参考位置影响。"
+        ]
+      }
+    },
+    "layout": {
+      "title": "叠层、回流、板材与机电接口",
+      "domains": [
+        5,
+        6,
+        7,
+        8,
+        11
+      ],
+      "related": [
+        "si",
+        "pdn",
+        "thermal",
+        "manufacturing"
+      ],
+      "reference": "../pcb-layout-review/references/materials-mechanics-and-environment.md",
+      "further_reading": [
+        ["design", "LIB4B5F961A3E10B21E", 69, "从过孔模型检查过孔寄生及参考路径。"],
+        [
+          "authority",
+          "LIB1606396D89A2555F",
+          11,
+          "定位 IPC-4101B 材料规范结构，取用前核项目指定的版次和材料分规范。"
+        ]
+      ],
+      "deliverable": "把关键网参考面、换层回流、层叠、板厂厚度公差和机电装配约束落到同一版 PCB。",
+      "sources": {
+        "theory": [
+          "LIB67FA153DEF754367",
+          7,
+          "区分电源、信号和机壳回路，识别共阻抗。"
+        ],
+        "design": [
+          "LIBBEFD7D5D63EFCC0E",
+          [
+            "return current",
+            "ground plane"
+          ],
+          "按换层和参考平面核对实际回流。"
+        ],
+        "practice": [
+          "LIB7FA418B1CAC5D1F3",
+          121,
+          "检查铺铜不均带来的制造风险，结合板厂实际叠层。"
+        ]
+      }
+    },
+    "emc": {
+      "title": "EMC 排障、线缆屏蔽与共模路径",
+      "intent_keywords": ["EMC", "EMI", "辐射超标", "辐射发射", "传导骚扰", "屏蔽层", "共模电流", "EFT", "静电复位"],
+      "domains": [6, 7, 9, 10],
+      "related": ["protection", "layout", "bench", "si"],
+      "reference": "references/emc-verification.md",
+      "deliverable": "区分共模与差模，画干扰源、耦合路径、回路和受扰点。按同一工况记录基线、最小改变及复验结果。",
+      "sources": {
+        "theory": ["LIBD30CFFC395AB1628", 32, "区分共模电流与差模电流，跟踪回到参考导体的路径。"],
+        "design": ["LIB414236C18903E248", 4, "若涉及瞬态保护，对照连接器、TVS 与参考导体的回路寄生。"],
+        "practice": ["LIBD30CFFC395AB1628", 107, "打开图 3.14 和 3.15，比较不同注入位置与屏蔽接法；PDF 106 是案例起页。"]
+      }
+    },
+    "thermal": {
+      "title": "热设计、降额与测量边界",
+      "domains": [
+        3,
+        6,
+        8,
+        9
+      ],
+      "related": [
+        "power-path",
+        "power",
+        "layout",
+        "bench"
+      ],
+      "reference": "references/thermal-verification.md",
+      "deliverable": "交付损耗、传热边界、稳态及瞬态温度预算和实测对照；按数据手册额定值与任务剖面判定。",
+      "sources": {
+        "theory": [
+          "LIBEF20A8142AFDE953",
+          35,
+          "比较热阻网络、散热器和热环境。"
+        ],
+        "design": [
+          "LIB8AB81B5A351132AE",
+          8,
+          "核对 ΨJT 的意义和壳顶测温与结温推算的关系。"
+        ],
+        "practice": [
+          "LIB72A3036CA3917D82",
+          5,
+          "看瞬态热阻测量如何受时间分辨率与早期数据影响。"
+        ]
+      }
+    },
+    "mcu": {
+      "title": "MCU、逻辑电平、时钟及上电状态",
+      "further_reading": [
+        ["design", "LIB21C1420D58D94C93", 4, "按目标外设及封装找 MCU 候选，随后回具体型号的原厂数据手册。"]
+      ],
+      "domains": [
+        3,
+        5,
+        10
+      ],
+      "related": [
+        "power",
+        "open-drain",
+        "conversion",
+        "bench"
+      ],
+      "reference": "../embedded-firmware-design/SKILL.md",
+      "deliverable": "同步供电、复位、时钟、引脚默认态、掉电反灌与固件启动依赖。",
+      "sources": {
+        "theory": [
+          "LIBEF20A8142AFDE953",
+          154,
+          "比较逻辑电平接口；PDF 367 进入微控制器架构。"
+        ],
+        "design": [
+          "LIB7704A013F43FC4B5",
+          9,
+          "用供电域实例定位 VDDA、内核供电和去耦；其他系列回实际手册。"
+        ],
+        "practice": [
+          "LIB7704A013F43FC4B5",
+          19,
+          "把 BOR/PVD 和复位边界转成启动及掉电验证条件。"
+        ]
+      }
+    },
+    "open-drain": {
+      "title": "I²C 等开漏总线",
+      "domains": [
+        5,
+        10
+      ],
+      "related": [
+        "si",
+        "mcu",
+        "power"
+      ],
+      "reference": "references/model-checks.md",
+      "deliverable": "按实际 I²C 模式、总线电容、各端口灌电流与断电状态验上拉窗口。",
+      "sources": {
+        "theory": [
+          "LIBEF20A8142AFDE953",
+          154,
+          "确认数字 I/O 的逻辑系列与电平参考。"
+        ],
+        "design": [
+          "LIB84DA7D3745364E88",
+          3,
+          "按 RC 上升时间与低电平驱动能力分别计算上下限。"
+        ],
+        "practice": [
+          "LIB84DA7D3745364E88",
+          5,
+          "用原厂算例复算阻值和电容，保留本设计的实测确认条件。"
+        ],
+        "authority": [
+          "LIBDC91F00F65584E06",
+          43,
+          "按 NXP 规范表 10 和项目速率核电平、时序、电容；查所用器件保证值。"
+        ]
+      }
+    },
+    "substitution": {
+      "title": "器件事实、替料与合格边界",
+      "domains": [
+        2,
+        3,
+        8,
+        11
+      ],
+      "related": [
+        "architecture",
+        "thermal",
+        "manufacturing"
+      ],
+      "reference": "references/component-qualification.md",
+      "further_reading": [
+        [
+          "theory",
+          "LIB1CF567BEE4AD4D6E",
+          207,
+          "检查多通道架构与器件替换引入的共因失效假设。"
+        ],
+        [
+          "authority",
+          "LIB17B47726EE23463E",
+          4,
+          "核寿命与偏置试验条件，确认能否支持所需资格结论。"
+        ]
+      ],
+      "deliverable": "绑定完整 MPN、封装、保证值与工况；记录资格覆盖、替代影响和需要复验的下游证据。",
+      "sources": {
+        "theory": [
+          "LIB67FA153DEF754367",
+          97,
+          "从被动元件的实际特性识别容差、损耗及寄生。"
+        ],
+        "design": [
+          "LIBB0463C6DB85D0C6D",
+          10,
+          "先对齐数据手册测试条件，再比较保证值。"
+        ],
+        "practice": [
+          "LIB72A3036CA3917D82",
+          4,
+          "用热阻抗测试方法检查换封装或热边界导致的旧证据失效。"
+        ]
+      }
+    },
+    "simulation": {
+      "title": "仿真模型与实测对齐",
+      "further_reading": [
+        ["practice", "LIB97FF5766600D9B61", 117, "核支路、负载与传播延迟的匹配算例。"],
+        ["practice", "LIB9A3C724B774D60FD", 93, "对照 ADS 传输线模型输入与端接设置。"]
+      ],
+      "domains": [
+        4,
+        5,
+        9
+      ],
+      "related": [
+        "analog",
+        "si",
+        "thermal",
+        "bench"
+      ],
+      "reference": "../hardware-design-review/references/simulation-correlation.md",
+      "deliverable": "记录模型能力、激励、测点和验收容差，分开列模型缺项、拟合样本与独立验证。",
+      "sources": {
+        "theory": [
+          "LIB9A35763CE3BAF0CE",
+          18,
+          "对照理想增益和反馈实际需要覆盖的模型项。"
+        ],
+        "design": [
+          "LIB2E20EB7FC8D4D89E",
+          3,
+          "核对仿真模型的准确性、适用范围与收敛。"
+        ],
+        "practice": [
+          "LIBEEF92A895999FC2A",
+          10,
+          "用原厂环路实测的接法、波形和工况设计对照实验。"
+        ]
+      }
+    },
+    "bench": {
+      "title": "Bring-up、测量伪影和故障定位",
+      "further_reading": [
+        ["practice", "LIBE3D9F8B21381E696", 239, "用稳压电路典型故障建立可隔离的测点与优先顺序。"]
+      ],
+      "domains": [
+        7,
+        9,
+        10
+      ],
+      "related": [
+        "power",
+        "pdn",
+        "mcu",
+        "si",
+        "thermal"
+      ],
+      "reference": "../hardware-design-review/references/bring-up-troubleshooting.md",
+      "deliverable": "保留竞争假设与安全止点；核测量参考地、探头负载、带宽和时序，选择最小区分实验。",
+      "sources": {
+        "theory": [
+          "LIB67FA153DEF754367",
+          7,
+          "识别测量连接加入的新回流和共阻抗。"
+        ],
+        "design": [
+          "LIBEF20A8142AFDE953",
+          170,
+          "参考数字信号探测方法核对测量伪影。"
+        ],
+        "practice": [
+          "LIBEEF92A895999FC2A",
+          8,
+          "参考 EVM 的分负载测量及启动、关断观察；保持假设可区分。"
+        ]
+      }
+    },
+    "manufacturing": {
+      "title": "DFM／DFA／DFT、装配与制造冻结",
+      "domains": [
+        6,
+        8,
+        10,
+        11
+      ],
+      "related": [
+        "layout",
+        "substitution",
+        "bench"
+      ],
+      "reference": "references/dfm-dft-verification.md",
+      "further_reading": [
+        ["authority", "LIB642BAD1C294F7428", 6, "对照焊接温度曲线变量；以实际焊料、器件和工厂批准窗口作验收。"],
+        [
+          "design",
+          "LIB5413E51D58056400",
+          450,
+          "以焊接与装配章节检查返工条件，再合入对应的裸板和装配板测试计划。"
+        ],
+        [
+          "authority",
+          "LIBCE41CE2AA51654A9",
+          15,
+          "先核中文节选封面与正文覆盖，再取项目规定标准和等级。"
+        ]
+      ],
+      "deliverable": "核同版 CAM、BOM 与 CPL、板厂/装配窗口、测试覆盖及量产证据；下游缺陷回流到源工件。",
+      "sources": {
+        "theory": [
+          "LIB67FA153DEF754367",
+          54,
+          "关联 PCB 互连、材料和制造结构。"
+        ],
+        "design": [
+          "LIB7FA418B1CAC5D1F3",
+          135,
+          "核阻焊和装配设计，使用实际工厂窗口作判定。"
+        ],
+        "practice": [
+          "LIB7FA418B1CAC5D1F3",
+          30,
+          "按 CAM/DFM 回读方式复核所交文件和方向。"
+        ],
+        "authority": [
+          "LIB92C29CD0A7B77614",
+          2,
+          "查弓曲扭曲试验方法。具体接受准则由适用合同、产品及板厂确认。"
+        ]
+      }
+    }
+  },
+  "bibliography": {
+    "LIB01E52E8263E9D803": "高速数字设计Howard著 沈立译",
+    "LIB1606396D89A2555F": "IPC-4101B 刚性多层印制板基材规范 英文",
+    "LIB17B47726EE23463E": "JESD22-A108F 温度偏置与工作寿命试验 英文",
+    "LIB1BC9FDA239E3D65D": "理解LDO基本概念 中文",
+    "LIB1CD93742F903265E": "TI SLOA024B Sallen-Key电路分析",
+    "LIB1CF567BEE4AD4D6E": "可靠性概论",
+    "LIB22FC79AA115366B6": "IGBT驱动与保护电路设计及应用电路实例(第2版)",
+    "LIB232DB3CA78D251E4": "ADI 线性电路设计手册 第3章 传感器",
+    "LIB25B949C3FD903BCD": "TI 模拟工程师电路设计指导手册 数据转换器",
+    "LIB285167C2B3A553CF": "ADI MS-2210 高速ADC的电源设计",
+    "LIB2E20EB7FC8D4D89E": "ZHCT853 使用PSpice-for-TI仿真模拟电源与信号链 中文",
+    "LIB38DDD865A3CF6C44": "硬件十万个为什么(开发流程篇)",
+    "LIB414236C18903E248": "TI SLVA680A ESD保护布局指南",
+    "LIB416391577A04EE34": "模拟电路设计 - 分立与集成",
+    "LIB4F27955FAC9AAEE4": "硬件产品研发流程",
+    "LIB5413E51D58056400": "印制电路板 设计、制造、装配与测试",
+    "LIB5B32175F25F12BF4": "非隔离式开关电源的PCB布局考虑",
+    "LIB67FA153DEF754367": "电路设计师手册 第4版 英文",
+    "LIB72A3036CA3917D82": "AN2015-10 瞬态热测量与热等效电路模型 Infineon 中文",
+    "LIB72BAB27F552C7A13": "高速数字接口原理与测试指南",
+    "LIB7704A013F43FC4B5": "AN4488 STM32F4硬件开发入门 ST 英文 50页",
+    "LIB7FA418B1CAC5D1F3": "从设计到量产电子工程师PCB智造实战指南",
+    "LIB84DA7D3745364E88": "TI SLVA689A I2C上拉电阻计算",
+    "LIB8552726900704857": "信号完整性与电源完整性分析 Eric Bogatin",
+    "LIB8AB81B5A351132AE": "TI SPRA953D 半导体与封装热指标",
+    "LIB92C29CD0A7B77614": "IPC-TM-650 2.4.22c 印制板弓曲与扭曲测试 英文",
+    "LIB9A35763CE3BAF0CE": "ADI 线性电路设计手册 第1章 运算放大器",
+    "LIBA56469486BFACE53": "运算放大器权威指南 第3版",
+    "LIBAAB1225C22702881": "IPC-2221B 印制板设计通用标准 英文 201211",
+    "LIBB0463C6DB85D0C6D": "ADI 如何查看数据手册",
+    "LIBB613117A93A95FF1": "SLLA272D RS-485设计指南 TI 英文",
+    "LIBBEFD7D5D63EFCC0E": "ADI 线性电路设计手册 第12章 PCB设计",
+    "LIBCE41CE2AA51654A9": "IPC-A-610J 电子组件的可接受性 中文节选 202403 33页",
+    "LIBD30CFFC395AB1628": "EMC电磁兼容设计与测试案例分析 第3版",
+    "LIBD3F1DB5447640381": "电子学的艺术 原书第3版 上册",
+    "LIBDC91F00F65584E06": "NXP UM10204 I2C总线规范与用户手册",
+    "LIBEEF92A895999FC2A": "TI ZHCUAI1 TPS62913反相降压升压EVM",
+    "LIBEF20A8142AFDE953": "电子学的艺术 原书第3版 下册",
+    "LIBF1C470EF4FA6403D": "ADI MT-211 全波整流器",
+    "LIBFCC84967BE0FA465": "精通开关电源设计 第2版"
+  }
+}

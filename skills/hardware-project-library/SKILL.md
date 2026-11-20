@@ -7,6 +7,8 @@ metadata:
 
 # Hardware Project Library
 
+按 [工程决策](../hardware/references/design-workflow.md) 明确允许的资料来源。仅当任务需要且获授权时找参考工程。独立设计使用约定规格与本机适用知识，研究结论按来源范围交付。
+
 让项目知识能够检索、追溯和复用，而不把网页介绍、单次成功或公司资料混成通用规则。可独立查参考/学习项目，也可供 `hardware-solution` 调用。
 
 ## 查找与复用

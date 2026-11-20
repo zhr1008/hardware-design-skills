@@ -195,6 +195,20 @@ def saved_bench(report, limits, measurements, hashes, *, missing=False):
     )
 
 
+def saved_sourcing(report, path):
+    digest = report.get("sha256")
+    has_identity = isinstance(digest, str) and re.fullmatch(r"[0-9a-f]{64}", digest)
+    covered = report.get("schema") == "sourcing-lock-v2" and has_identity and report.get("status") == "PASS"
+    return envelope(
+        backend="sourcing-lock-checker", stage="saved_artifact",
+        verification="pass" if covered else "review_required", native=report,
+        executed=["sourcing:v2"] if covered else [],
+        inputs={"sourcing_lock": artifact(path, digest)} if has_identity else {},
+        skipped_checks=[] if covered else [skipped("sourcing:v2", "正式资格或商务校核未通过")],
+        coverage={"qualification_and_commercial_scope": "sourcing-lock-v2", "as_of": report.get("as_of")},
+    )
+
+
 def verify_artifacts(value):
     from hardware_tool import local_file
 

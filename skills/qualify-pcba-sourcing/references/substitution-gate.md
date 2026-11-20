@@ -14,6 +14,10 @@ Use the official datasheet for the exact orderable suffix. Record manufacturer
 status and live supplier stock, price break, MOQ, assembly class, timestamp, and
 evidence URL. Optimize total assembled-order cost, not catalog unit price.
 
+同一原厂完整料号收到 PCN 或生产配置变更时，先核定适用配置和原厂资格覆盖。
+报价更新走采购重算。供应商的交期、库存及报价只支持采购判断，电气和封装复用依据来自对应的设计证据。
+正式锁定按 [资格范围与采购证据合同](sourcing-lock-evidence.md) 记录并检查。
+
 ## Prove electrical and physical compatibility
 
 - Compare every physical pin: role, direction, active level, voltage domain,
