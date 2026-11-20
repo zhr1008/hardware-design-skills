@@ -31,6 +31,8 @@
 
 ## Gate evidence
 
+冻结制造包时记录实际交付是裸板还是贴装。SMT 装配放行和首件另用 `smt_release` 或 `first_article` 核 B3。过程证据来自同配置的钢网、锡膏、拼板、实板热／冷点炉温与 SPI/首件处置。钢网、锡膏、拼板和产线变更按 `assembly-process` 触发重验。 [装配证据边界](../../hardware/references/design-workflow.md#高风险分支与阶段证据)
+
 - ERC/equivalent, raw connectivity, real DRC, power connectivity, layout checks,
   critical-net measurements, DFM, and visual/mechanical review.
 - Every waiver is narrow, evidence-backed, owner-approved, and lists what it

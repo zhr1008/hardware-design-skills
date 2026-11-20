@@ -97,6 +97,17 @@ class EngineeringKnowledgeTest(unittest.TestCase):
         self.write_json(self.data / "page-labels.json", labels)
         self.assertIn("版本", self.query("read", "A1", "16", private=True, expected=1)["error"])
 
+    def test_domain_aliases_normalize_and_unknown_domain_lists_active_labels(self):
+        thermal = self.query("rules", "--domain", "热设计与可靠性", "--summary")
+        self.assertGreater(thermal["count"], 0)
+        self.assertEqual(self.query("rules", "--domain", "热设计", "--summary"), thermal)
+        self.assertEqual(self.query("rules", "--domain", " ＴｈＥＲＭＡＬ ", "--summary"), thermal)
+        combined = self.query("rules", "--domain", "热", "--domain", "pcb 与 emc", "--summary")
+        self.assertEqual({row["domain"] for row in combined["rules"]}, {"热设计与可靠性", "PCB与EMC"})
+        problem = self.query("rules", "--domain", "机械材料", expected=1)
+        self.assertIn("机械材料", problem["error"])
+        self.assertEqual(problem["available_domains"], sorted(self.query("status")["rule_domains"]))
+
     def test_missing_escaped_or_existing_index_does_not_silently_pass(self):
         self.assertIn("--library", self.query("search", "adc", expected=1)["error"])
         self.assertIn("index.db", self.query("search", "adc", private=True, expected=1)["error"])

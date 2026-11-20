@@ -56,17 +56,20 @@ def rule_arguments(rule_ids):
     return [arg for rule_id in dict.fromkeys(rule_ids) for arg in ("--id", rule_id)]
 
 
-def start(library, mode, topics, additional_rules, prototype_names=(), intent="", data=None, model_limits=()):
+def start(library, mode, topics, additional_rules, prototype_names=(), intent="", data=None, model_limits=(),
+          target=None):
     case = data or {}
+    if target and mode not in engineering.TARGET_MODES[target]:
+        raise ValueError("工程 mode 与正式交付目标不匹配")
     task_intent = " ".join(filter(None, (case.get("intent", ""), intent)))
     decision = engineering.select(engineering.policy(), mode, [*case.get("prototypes", []), *prototype_names],
-                                  task_intent,
+                                  task_intent, target,
                                   facts=case.get("facts"), model_limits=[
                                       *model_limits, *(flag for flags in case.get("model_limits", {}).values() for flag in flags)
                                   ], carried_checks=case.get("checks", {}))
     mapped = {name: TOPICS[name] for name in dict.fromkeys(topics)}
     rule_ids = [rule for rules in mapped.values() for rule in rules] + additional_rules
-    expanded = data is not None or bool(prototype_names or intent or model_limits) or mode not in ("plan", "design", "review")
+    expanded = data is not None or bool(prototype_names or intent or model_limits or target) or mode not in ("plan", "design", "review")
     all_ids = [*rule_ids, *decision["required_rules"]]
     available = query(library, "rules", "--summary", *rule_arguments(all_ids))["rules"] if all_ids else []
     candidates = available if expanded else [row for row in available if row["id"] in rule_ids]
@@ -85,11 +88,14 @@ def start(library, mode, topics, additional_rules, prototype_names=(), intent=""
     }
 
 
-def basis(library, rule_ids, theme_ids=(), roles=()):
+def basis(library, rule_ids, theme_ids=(), roles=(), branch_ids=()):
+    branches = [{"id": key, **engineering.policy()["branches"][key]} for key in dict.fromkeys(branch_ids)]
+    rule_ids = list(dict.fromkeys([*rule_ids, *(rule for branch in branches for rule in branch["rules"])]))
     rules = query(library, "rules", *rule_arguments(rule_ids))["rules"] if rule_ids else []
     if {rule["id"] for rule in rules} != set(rule_ids):
         raise ValueError("规则结果未覆盖请求的编号")
-    locations = [item for rule in rules for item in rule["evidence"]]
+    locations = [item for branch in branches for item in branch["sources"]]
+    locations.extend(item for rule in rules for item in rule["evidence"])
     reading = []
     if theme_ids:
         chart = reading_map.load_map()
@@ -134,9 +140,14 @@ def basis(library, rule_ids, theme_ids=(), roles=()):
             pages[key] = {"status": status, **page}
         except (ValueError, OSError, subprocess.TimeoutExpired) as exc:
             pages[key] = {"status": "unavailable", "error": str(exc)}
+        if "locator" in evidence:
+            pages[key]["approved_locator"] = evidence["locator"]
     return {
         "schema": "hardware-design-basis-v1",
         "rules": rules,
+        **({"branch_sources": {branch["id"]: branch["sources"] for branch in branches}} if branches else {}),
+        **({"related_sources": {branch["id"]: branch["related_sources"] for branch in branches
+                                if "related_sources" in branch}} if branches else {}),
         **({"reading_steps": reading} if theme_ids else {}),
         "source_pages": [
             {"document_id": doc, "requested_pdf_page": number, **page}
@@ -156,9 +167,11 @@ def main():
     initial.add_argument("--prototype", action="append", default=[], help="重复指定电路或系统原型")
     initial.add_argument("--intent", default="", help="简短目标描述，匹配明确的原型别名")
     initial.add_argument("--case", type=Path, help="正式或已记录的工程对象，可选")
+    initial.add_argument("--target", choices=engineering.TARGET_MODES)
     initial.add_argument("--model-limit", choices=engineering.MODEL_LIMITS, action="append", default=[])
     evidence = sub.add_parser("basis", help="读取选中规则或知识主题的来源页", allow_abbrev=False)
     evidence.add_argument("--rule", action="append", default=[])
+    evidence.add_argument("--branch", action="append", default=[], help="读取已选适用分支的原页")
     evidence.add_argument("--theme", action="append", default=[], choices=reading_map.load_map()["themes"])
     evidence.add_argument("--role", action="append", default=[], choices=("theory", "design", "practice", "authority"))
     sub.add_parser("prototypes", help="列出可用原型及别名")
@@ -169,19 +182,21 @@ def main():
     propagation = sub.add_parser("impact", help="计算同版变更的影响范围", allow_abbrev=False)
     propagation.add_argument("--case", type=Path, required=True)
     propagation.add_argument("--change", type=Path, required=True)
+    propagation.add_argument("--target", choices=engineering.TARGET_MODES, help="冻结基线的正式交付目标")
     binding = sub.add_parser("bind", help="根据执行回执附加本次工程条件，不授予审批", allow_abbrev=False)
     binding.add_argument("--case", type=Path, required=True)
     binding.add_argument("--evidence", type=Path, required=True)
     for name in ("check", "execution", "condition", "criterion"):
         binding.add_argument("--" + name, required=True)
+    binding.add_argument("--branch", action="append", default=[], help="该执行项及工况实际覆盖的分支")
     binding.add_argument("--disposition", choices=("pass", "fail", "not_applicable"), default="pass")
     args = parser.parse_args()
     code = 0
     try:
         if args.command == "basis":
-            if not (args.rule or args.theme) or (args.role and not args.theme):
-                evidence.error("指定 --rule 或 --theme；--role 用于筛选主题内的阅读角色")
-            result = basis(args.library, args.rule, args.theme, args.role)
+            if not (args.rule or args.theme or args.branch) or (args.role and not args.theme):
+                evidence.error("指定 --rule、--branch 或 --theme（--role 筛选主题内的阅读角色）")
+            result = basis(args.library, args.rule, args.theme, args.role, args.branch)
         else:
             rules = engineering.policy()
             case_path = getattr(args, "case", None)
@@ -192,17 +207,21 @@ def main():
                 if data is not None and data["mode"] != args.mode:
                     raise ValueError("工程记录的 mode 与启动 mode 不同")
                 result = start(args.library, args.mode, args.topic, args.rule, args.prototype, args.intent,
-                               data, args.model_limit)
+                               data, args.model_limit, args.target)
             elif args.command == "assess":
                 result = engineering.assess(data, rules, args.target, args.root or case_path.resolve().parent)
                 code = {"covered": 0, "blocked": 1, "needs_evidence": 2}[result["engineering_evidence"]]
             elif args.command == "impact":
-                result = engineering.impact(data, engineering.read_json(args.change), rules)
+                result = engineering.impact(data, engineering.read_json(args.change), rules, args.target)
             else:
+                if any(rules.get("branches", {}).get(key, {}).get("check") != args.check for key in args.branch):
+                    raise ValueError("分支不存在或不属于指定检查")
+                if args.branch and args.disposition == "not_applicable":
+                    raise ValueError("适用分支不能绑定为不适用")
                 result = engineering.bind(
                     engineering.read_json(args.evidence), engineering.inspect_baseline(data["baseline"]),
                     args.check, args.condition, args.criterion, args.execution, args.disposition,
-                    rules["checks"][args.check]["stages"])
+                    rules["checks"][args.check]["stages"], args.branch)
     except (ValueError, TypeError, KeyError, OSError, subprocess.TimeoutExpired) as exc:
         parser.exit(2, f"{exc}\n")
     print(json.dumps(result, ensure_ascii=False, indent=2))

@@ -32,6 +32,10 @@ CHECK_STAGES = {
     "analog-drive": ("circuit", "manufacturing_release"),
     "edge-termination": ("circuit", "routing", "manufacturing_release"),
     "emc-current-path": ("circuit", "routing", "manufacturing_release"),
+    "assembly": ("manufacturing_release",),
+    "factory-capability": ("manufacturing_release",),
+    "production-evidence": ("manufacturing_release",),
+    "release-identity": ("manufacturing_release",),
 }
 INVALIDATION = {
     "product-definition": STAGES,

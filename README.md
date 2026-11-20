@@ -2,7 +2,9 @@
 
 面向电子硬件设计、固件与验证的 **48 项可独立调用技能**。`$hardware` 负责规划、设计、深审、ECO、仿真验收、Bring-up 和制造放行。它先由实际电路原型展开风险，读本机依据，再完成工程取舍、实施和验收。查器件、按接线画图和报告转换可直达专项。
 
-[v0.6.0 下载](https://github.com/zhr1008/hardware-design-skills/releases/tag/v0.6.0) · [快速开始](#快速开始) · [使用示例](#在-codex-里怎么用) · [架构图](#架构与分工) · [48 项技能速览](#48-项技能速览) · [模块手册](docs/architecture-guide.md) · [更新日志](CHANGELOG.md)
+[v0.7.0 下载](https://github.com/zhr1008/hardware-design-skills/releases/tag/v0.7.0) · [快速开始](#快速开始) · [使用示例](#在-codex-里怎么用) · [架构图](#架构与分工) · [48 项技能速览](#48-项技能速览) · [模块手册](docs/architecture-guide.md) · [更新日志](CHANGELOG.md)
+
+**v0.7.0** 将电源稳定性、功率路径、热与降额、PCB 回流、装配证据、故障传播和电源状态的 **12 个工程判断分支并入 7 个现有父检查**。选中分支可回读原页，正式证据绑定到实际执行项，ECO 按受影响的变体重验。两组离线盲测覆盖 24 V 工业控制板叠层降本与 MLCC 替代，以及低速 GPIO 指示灯改值。 [分支与证据范围](skills/hardware/references/design-workflow.md#高风险分支与阶段证据)
 
 ## 快速开始
 
@@ -31,6 +33,7 @@ python -X utf8 skills/hardware/scripts/backend_doctor.py
 
 | 可以这样问 | 这次会交付什么 |
 | --- | --- |
+| 「3.3 V GPIO 低速驱动 LED，Vf 约 2.0 V，1 kΩ 改成 680 Ω 可以吗？」 | 直接算改前、改后电流和功耗，列带载输出、最坏角点和额定边界，按题面给条件结论。 |
 | 「按这些接口要求独立设计一个模拟前端，给原理图和验算。」 | 可测要求、本机原文、关键方案取舍、按指定格式实现的原理图和验证边界。 |
 | 「用 `$hardware` 画一张 RC 低通示意图，给 SVG。」 | Schemdraw 源码和 SVG。需要可编辑的工程原理图时，写明 Altium、EasyEDA Pro 或 KiCad。 |
 | 「只读核对这份保存的 Altium 工程，按页列出器件数。」 | 工程成员、保存态的器件明细和无法解析的文件。若还需要未保存的编辑内容，再申请现场读取。 |
@@ -51,9 +54,9 @@ python -X utf8 skills/hardware/scripts/backend_doctor.py
 
 ```mermaid
 flowchart TD
-  A["硬件任务"] --> Q{"需要工程判断？"}
-  Q -->|"输入和动作已明确"| FAST["专项直接交付<br/>查料、计算、绘图或读报告"]
-  Q -->|"规划、设计、改版或验收"| B["$hardware 定义可测要求与停点"]
+  A["硬件任务"] --> Q{"是否需要展开风险？"}
+  Q -->|"直接任务或低风险局部微调"| FAST["直接交付<br/>查料、定量核算、绘图或读报告"]
+  Q -->|"规划、设计、复杂改版或验收"| B["$hardware 定义可测要求与停点"]
   B --> C["按电路原型展开风险<br/>查本地规则和原文"]
   C --> D["比较方案、反证与验证判据"]
   D --> E["按授权调用专项并读回工件"]
@@ -71,7 +74,7 @@ flowchart TD
 
 ### 实施工具与专项分布
 
-![v0.6.0 硬件技能包的快路径、工程判断、专项实施与证据回流](docs/architecture/hardware-design-skills.png)
+![硬件技能包的快路径、工程判断、专项实施与证据回流](docs/architecture/hardware-design-skills.png)
 
 - `$hardware` 负责工程决策、证据与验收，按平台及权限调用实施入口。
 - `hardware-solution` 协调整板的供电、引脚、通信、机械和固件接口。

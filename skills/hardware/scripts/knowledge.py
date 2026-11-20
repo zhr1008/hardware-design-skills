@@ -11,6 +11,8 @@ import sqlite3
 from tempfile import NamedTemporaryFile
 import unicodedata
 
+from rule_domains import UnknownDomain, resolve_domains
+
 
 RULES = Path(__file__).resolve().parents[1] / "assets" / "review-knowledge" / "rules.json"
 DATA = Path("assets/engineering-library")
@@ -181,13 +183,13 @@ def read_reference(root, doc, locator, offset, limit):
 def review_rules(data, sources, args):
     terms = terms_for(args.terms)
     known_ids = {rule["id"] for rule in data}
-    known_domains = {rule["domain"] for rule in data}
-    unknown = (set(args.id) - known_ids) | (set(args.domain) - known_domains)
+    domains = resolve_domains(args.domain, data)
+    unknown = set(args.id) - known_ids
     if unknown:
         raise ValueError("未知规则编号或领域：" + ", ".join(sorted(unknown)))
     selected = []
     for rule in data:
-        if args.id and rule["id"] not in args.id or args.domain and rule["domain"] not in args.domain:
+        if (args.id and rule["id"] not in args.id) or (domains and rule["domain"] not in domains):
             continue
         if not all(term in normalized(json.dumps(rule, ensure_ascii=False)) for term in terms):
             continue
@@ -266,7 +268,7 @@ def main():
     sub.add_parser("status", help="列出规则数量及索引覆盖")
     rules = sub.add_parser("rules", help="按领域、编号或关键词检索规则")
     rules.add_argument("terms", nargs="*")
-    rules.add_argument("--domain", action="append", default=[])
+    rules.add_argument("--domain", action="append", default=[], help="按领域或常用别名筛选，可重复")
     rules.add_argument("--id", action="append", default=[])
     rules.add_argument("--summary", action="store_true")
     find = sub.add_parser("find", help="按书目、厂商、编号等定位资料")
@@ -336,6 +338,9 @@ def main():
             result = build_index(root, docs, args.replace)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
+    except UnknownDomain as error:
+        print(json.dumps({"error": str(error), "available_domains": error.available_domains}, ensure_ascii=False))
+        return 1
     except (OSError, KeyError, TypeError, ValueError, sqlite3.Error) as error:
         print(json.dumps({"error": str(error)}, ensure_ascii=False))
         return 1

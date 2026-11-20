@@ -82,6 +82,7 @@
     "dvt": ["verification-coverage", "measurement-integrity", "test-coverage"],
     "pvt": ["release-identity", "factory-capability", "assembly", "test-coverage", "production-evidence"],
     "first_article": ["release-identity", "factory-capability", "assembly", "production-evidence"],
+    "smt_release": ["release-identity", "factory-capability", "assembly", "test-coverage", "production-evidence"],
     "production": [
       "release-identity",
       "factory-capability",
@@ -335,9 +336,371 @@
       "thermal",
       "insulation"
     ],
+    "assembly-process": ["assembly", "factory-capability", "production-evidence"],
     "unknown": [
       "change-impact"
     ]
+  },
+  "branches": {
+    "P1": {
+      "check": "power-stability",
+      "title": "环路证据绑定装机配置和模式",
+      "trigger": {
+        "prototypes": ["switching-power"],
+        "keywords": ["开关稳压环路","电源环路补偿","电源环路","稳压器频响","PWM/PFM"]
+      },
+      "rules": ["switching-rms-stress"],
+      "sources": [
+        {"document_id":"LIBB7F925FC4BD01ACD","title":"开关稳压电源的设计与应用（长谷川彰）","pdf_page":251,"printed_page":"246","locator":"图 8.15、8.16","source_sha256":"b7f925fc4bd01acd15fe1be5202a0d2a09dfdea1bbd723bdf563e127e4aca653"},
+        {"document_id":"LIBB7F925FC4BD01ACD","title":"开关稳压电源的设计与应用（长谷川彰）","pdf_page":254,"printed_page":"249","locator":"图 8.18","source_sha256":"b7f925fc4bd01acd15fe1be5202a0d2a09dfdea1bbd723bdf563e127e4aca653"},
+        {"document_id":"LIBEEF92A895999FC2A","title":"TI ZHCUAI1，TPS62913 反相降压升压 EVM","pdf_page":10,"printed_page":"10","locator":"图 3-6，−5 V EVM 拆除磁珠的频响条件","source_sha256":"eef92a895999fc2a4d6d4a519278c785ff005b125e23ef84ca8c37451f1bb61f"}
+      ],
+      "phase_actions": {
+        "plan": "定源、负载、模式和适用判据",
+        "design": "分模式建模并留可用注入点",
+        "review": "核取样面、实装滤波和有效 C/ESR",
+        "eco": "补偿、磁珠、馈线或模式变动重判",
+        "verify": "装机角点频响及切换/阶跃",
+        "bringup": "限能确认注入线性和响应",
+        "release": "冻结装机配置与覆盖范围"
+      },
+      "closure": "记录实装滤波、反馈取样面、输入、负载、温度、工作模式和注入配置。在线性稳态按适用频响判据验收，切换和启动用时域证据另核。无统一相位裕量可替代项目条件。",
+      "redline": "持续振荡、保护失效或已证越过工作边界时停止对应工况。",
+      "prototype": "有独立限能、清楚的模式和停止条件时，可预留注入点并试验首板。",
+      "invalidated_by": ["part","filter","power","layout","firmware","test-fixture"],
+      "physical_stages": ["bench_record"]
+    },
+    "P2": {
+      "check": "power-path",
+      "title": "栅极回路、寄生开通和开关损耗联验",
+      "trigger": {
+        "unknown_requires_trigger": true,
+        "keywords": ["功率开关级","高 dV/dt","高dv/dt","高能量感性","大能量感性","大能量容性","高能量容性","高能换流","大能量切换","大能量热插拔","半桥换流","硬开关半桥","功率半桥","打嗝保护","打嗝重试","拐点重试保护"],
+        "all_of": [[["打嗝","重试","hiccup"],["过流","限流","保护","功率级"]]]
+      },
+      "rules": ["gate-drive-return","switch-diode-blocking"],
+      "sources": [
+        {"document_id":"LIB526C51562C4DD2B7","title":"IGBT 模块：技术、驱动和应用","pdf_page":234,"printed_page":"222","locator":"图 7.1","source_sha256":"526c51562c4dd2b7003cb0d50b7e8b0c36a4464427844645e075218220cf5487"},
+        {"document_id":"LIB526C51562C4DD2B7","title":"IGBT 模块：技术、驱动和应用","pdf_page":236,"printed_page":"224","locator":"图 7.3、7.4","source_sha256":"526c51562c4dd2b7003cb0d50b7e8b0c36a4464427844645e075218220cf5487"},
+        {"document_id":"LIB526C51562C4DD2B7","title":"IGBT 模块：技术、驱动和应用","pdf_page":349,"printed_page":"337","locator":"图 12.34","source_sha256":"526c51562c4dd2b7003cb0d50b7e8b0c36a4464427844645e075218220cf5487"}
+      ],
+      "phase_actions": {
+        "plan": "分配应力、损耗和关断裕量",
+        "design": "定驱动回路、栅阻与调节位置",
+        "review": "核实板公共寄生与探测参考",
+        "eco": "改器件、驱动、回流、死区重验",
+        "verify": "同步波形及开关能量、受控 A/B",
+        "bringup": "从低储能单脉冲递进",
+        "release": "核冻结配置的应力、热和死区证据"
+      },
+      "closure": "功率估算带实际平台和驱动阻抗。闭合实物证据需同步器件端 VGS（或 VGE）、换流电压与电流，按对齐波形核开关能量，并区分反向恢复和真误导通。",
+      "redline": "已证额定／SOA 或安全关断越界时拦截。探测参考或时延不明时仍需取证。",
+      "prototype": "从低母线、独立限能的单脉冲开始，逐步比较栅阻、死区和钳位。",
+      "invalidated_by": ["part","power","layout","firmware","test-fixture"],
+      "physical_stages": ["bench_record"],
+      "related_sources": [
+        {"title":"TI SLUA618A，§2.7–2.8，PDF 13–14","url":"https://www.ti.com/lit/ml/slua618a/slua618a.pdf"}
+      ]
+    },
+    "P3": {
+      "check": "power-path",
+      "title": "限流门限、总延迟和热态磁件饱和同验",
+      "trigger": {
+        "prototypes": ["switching-power"],
+        "keywords": ["热态饱和","电感饱和","磁饱和","励磁复位","逐周期限流","采样消隐","前沿消隐","电流检测延迟","限流延迟"]
+      },
+      "rules": ["inductor-peak-saturation","current-sense-kelvin"],
+      "sources": [
+        {"document_id":"LIBB7F925FC4BD01ACD","title":"开关稳压电源的设计与应用（长谷川彰）","pdf_page":191,"printed_page":"185","locator":"图 6.22","source_sha256":"b7f925fc4bd01acd15fe1be5202a0d2a09dfdea1bbd723bdf563e127e4aca653"},
+        {"document_id":"LIBB7F925FC4BD01ACD","title":"开关稳压电源的设计与应用（长谷川彰）","pdf_page":225,"printed_page":"220","locator":"图 8.5①","source_sha256":"b7f925fc4bd01acd15fe1be5202a0d2a09dfdea1bbd723bdf563e127e4aca653"},
+        {"document_id":"LIBB7F925FC4BD01ACD","title":"开关稳压电源的设计与应用（长谷川彰）","pdf_page":226,"printed_page":"221","locator":"图 8.6①②","source_sha256":"b7f925fc4bd01acd15fe1be5202a0d2a09dfdea1bbd723bdf563e127e4aca653"},
+        {"document_id":"LIBEEB29BE86714E5F8","title":"电力电子技术，第 6 版","pdf_page":153,"printed_page":"137","locator":"图 5-23、5-24","source_sha256":"eeb29be86714e5f83f7d61dc8f0c6c7547658dae50d4d14a7014a6b38ad41bce"}
+      ],
+      "phase_actions": {
+        "plan": "定正常峰值、故障上限和关断时间",
+        "design": "算门限、消隐及延迟，预留测点",
+        "review": "核采样、复位、热态降感和限流",
+        "eco": "改磁件、RC 或控制配置重验",
+        "verify": "同步真实电流、感测和门控",
+        "bringup": "小幅变输入/负载区分伪影和饱和",
+        "release": "确认冻结保护窗口"
+      },
+      "closure": "核正常峰流、保证动作阈值和关断总延迟后的峰流。按可达的最低热态电感／复位余量比较应力，实物同步看真实电流、感测输入与门控，区分尖峰和磁饱和。",
+      "redline": "已证在保护清除前越过额定、热态饱和允许边界或相关 SOA 时停止该工况。",
+      "prototype": "独立限流，先用低输入／负载、可换 RC 和可观测节点逐级取证。",
+      "invalidated_by": ["part","filter","power","layout","firmware","test-fixture"],
+      "physical_stages": ["bench_record"]
+    },
+    "T1": {
+      "check": "thermal",
+      "title": "按装机热路径和测温不确定度估结温",
+      "trigger": {
+        "prototypes": ["high-current","switching-power","motor-inductive"],
+        "keywords": ["结温","热阻","散热器","热电偶","风道","热降额","热管理","热失效"]
+      },
+      "rules": ["thermal-junction-budget","thermal-board-conditions"],
+      "sources": [
+        {"document_id":"LIB8AB81B5A351132AE","title":"TI SPRA953D，半导体与封装热指标","pdf_page":8,"printed_page":"8","locator":"式 (8)、§3","source_sha256":"8ab81b5a351132ae8ab049d984e7cc72f1eb3dd3e4d9d8e063be6fcd841080a9"},
+        {"document_id":"LIB8AB81B5A351132AE","title":"TI SPRA953D，半导体与封装热指标","pdf_page":9,"printed_page":"9","locator":"表 3-1、§3.1","source_sha256":"8ab81b5a351132ae8ab049d984e7cc72f1eb3dd3e4d9d8e063be6fcd841080a9"},
+        {"document_id":"LIB526C51562C4DD2B7","title":"IGBT 模块：技术、驱动和应用","pdf_page":143,"printed_page":"131","locator":"图 4.18 后的温敏参数说明","source_sha256":"526c51562c4dd2b7003cb0d50b7e8b0c36a4464427844645e075218220cf5487"}
+      ],
+      "phase_actions": {
+        "plan": "给结温边界与测量精度",
+        "design": "选热指标、测点和损耗模型",
+        "review": "核风道、板铜、TIM 和探头误差",
+        "eco": "改结构、封装、风量或测法重核",
+        "verify": "留装机稳态、测点照片和估算区间",
+        "bringup": "低负载定标，再过最热工况",
+        "release": "核最坏装机结温和证据版次"
+      },
+      "closure": "按装机功耗和实体热路径选择热指标，记录探头位置、热电偶导热或 IR 发射率校正及温度不确定度，计算结温区间。",
+      "redline": "已证结温超限时停止；区间跨限时保留待证并限制对应验收。",
+      "prototype": "按保守温度止点限功率验证，先校测量，再逐级增加负载。",
+      "invalidated_by": ["part","power","layout","process","test-fixture"],
+      "physical_stages": ["bench_record"]
+    },
+    "T2": {
+      "check": "thermal",
+      "title": "铝电解系列的纹波、热点和寿命终点",
+      "trigger": {
+        "unknown_requires_trigger": true,
+        "keywords": ["电解电容","铝电解","固态电容","聚合物电容","混合电容","混合电解","electrolytic","polymer capacitor","hybrid capacitor"]
+      },
+      "rules": ["output-capacitor-ripple"],
+      "sources": [
+        {"document_id":"LIBB7F925FC4BD01ACD","title":"开关稳压电源的设计与应用（长谷川彰）","pdf_page":74,"printed_page":"67","locator":"图 3.10","source_sha256":"b7f925fc4bd01acd15fe1be5202a0d2a09dfdea1bbd723bdf563e127e4aca653"},
+        {"document_id":"LIBB7F925FC4BD01ACD","title":"开关稳压电源的设计与应用（长谷川彰）","pdf_page":75,"printed_page":"68","locator":"表 3.1","source_sha256":"b7f925fc4bd01acd15fe1be5202a0d2a09dfdea1bbd723bdf563e127e4aca653"},
+        {"document_id":"LIBFCC84967BE0FA465","title":"精通开关电源设计，第 2 版","pdf_page":200,"printed_page":"185","locator":"输出电容纹波与温度","source_sha256":"fcc84967be0fa465febe908aa10935a5c484207d4b40b926a636a0fcf8310dfc"},
+        {"document_id":"LIBFCC84967BE0FA465","title":"精通开关电源设计，第 2 版","pdf_page":201,"printed_page":"186","locator":"使用寿命与终点 C／ESR","source_sha256":"fcc84967be0fa465febe908aa10935a5c484207d4b40b926a636a0fcf8310dfc"}
+      ],
+      "phase_actions": {
+        "plan": "分配寿命、环境及任务剖面",
+        "design": "求纹波、热点、并联分流和终点",
+        "review": "核完整料号、频率系数和局部热环境",
+        "eco": "改系列、负载、风道或尺寸重算",
+        "verify": "原厂系列条件、纹波、温度和终点功能",
+        "bringup": "首板实测纹波及热点",
+        "release": "冻结物料、剖面和寿命证据"
+      },
+      "closure": "按精确系列、任务剖面和原厂频率修正核纹波损耗与热点，并以寿命终点 C／ESR 过系统保持时间、纹波与稳定性要求。MLCC 有效容量沿用 effective-capacitance。",
+      "redline": "已证该系列条件下的电压、纹波或温度额定越界时停止；寿命证据缺失时限制寿命声明和正式验收。",
+      "prototype": "受限温、限时的首板可先取得实装纹波频谱与热点，持续条件另判。",
+      "invalidated_by": ["part","power","filter","layout","process"],
+      "physical_stages": ["bench_record"],
+      "related_sources": [
+        {"title":"Nichicon 固态 FPCAP","url":"https://www.nichicon.co.jp/english/products/pdf/2012fpcap_catalog_05.pdf"},
+        {"title":"Nichicon GYA 混合系列寿命条件","url":"https://www.nichicon.co.jp/english/products/lifetime/ripple_b.html?sr=GYA"}
+      ]
+    },
+    "T3": {
+      "check": "thermal",
+      "title": "重复热脉冲核物理热端口和温度历史",
+      "trigger": {
+        "unknown_requires_trigger": true,
+        "keywords": ["功率开关级","高 dV/dt","高dv/dt","高能量感性","大能量感性","大能量容性","高能量容性","高能换流","大能量切换","大能量热插拔","半桥换流","硬开关半桥","功率半桥","打嗝保护","打嗝重试","拐点重试保护"],
+        "all_of": [[["打嗝","重试","hiccup"],["过流","限流","保护","功率级"]]]
+      },
+      "rules": ["transistor-soa"],
+      "sources": [
+        {"document_id":"LIB526C51562C4DD2B7","title":"IGBT 模块：技术、驱动和应用","pdf_page":143,"printed_page":"131","locator":"图 4.18，Cauer 与 Foster","source_sha256":"526c51562c4dd2b7003cb0d50b7e8b0c36a4464427844645e075218220cf5487"},
+        {"document_id":"LIB72A3036CA3917D82","title":"Infineon AN2015-10 V1.2，瞬态热测量与热等效电路模型","pdf_page":7,"printed_page":"7","locator":"图 6、7；式 (1)、(2)","source_sha256":"72a3036ca3917d82666ccc3df123bd9fe7ad159f73172a6678c9e3d7f77804b0"},
+        {"document_id":"LIB72A3036CA3917D82","title":"Infineon AN2015-10 V1.2，瞬态热测量与热等效电路模型","pdf_page":8,"printed_page":"8","locator":"图 8、9；式 (3)","source_sha256":"72a3036ca3917d82666ccc3df123bd9fe7ad159f73172a6678c9e3d7f77804b0"},
+        {"document_id":"LIB72A3036CA3917D82","title":"Infineon AN2015-10 V1.2，瞬态热测量与热等效电路模型","pdf_page":9,"printed_page":"9","locator":"图 10","source_sha256":"72a3036ca3917d82666ccc3df123bd9fe7ad159f73172a6678c9e3d7f77804b0"}
+      ],
+      "phase_actions": {
+        "plan": "定初温、脉冲、重复率和重试上限",
+        "design": "建物理热端口、损耗和 SOA 预算",
+        "review": "查模型节点、初温、TIM 和装机条件",
+        "eco": "功率器件、散热或固件重试变化重验",
+        "verify": "重复损耗加温度记录，结温与 SOA 分验",
+        "bringup": "先限能单次，再受控重复",
+        "release": "硬件、散热与固件时序同版证据"
+      },
+      "closure": "以实装冷却边界、损耗时序、初温及重复周期评估瞬态热积累。只在已知物理热端口耦合散热器；Foster 内节点不能当作实体温度。分别比较结温和 SOA。",
+      "redline": "已证重复工况结温、SOA 或保护安全时间超界时停止。冷机单次过关无法关闭重复重试风险。",
+      "prototype": "独立限能，先短时单次，再按有界重复周期验证并记录冷却恢复。",
+      "invalidated_by": ["part","power","layout","firmware","process","test-fixture"],
+      "physical_stages": ["bench_record"]
+    },
+    "B1": {
+      "check": "return-path",
+      "title": "按同网、异电位和隔离判断跨参考面回流",
+      "trigger": {
+        "prototypes": ["high-speed"],
+        "keywords": ["参考平面","跨参考面","换参考面","参考层","回流割裂","改2层","改 2 层","四层改两层","四层改二层","4 层改 2 层","4层改2层","叠层","RS485"]
+      },
+      "rules": ["pcb-return-path"],
+      "sources": [
+        {"document_id":"LIB4B5F961A3E10B21E","title":"印制电路板（PCB）设计技术与实践，第 3 版","pdf_page":398,"printed_page":"379","locator":"图 10-49、10-50","source_sha256":"4b5f961a3e10b21e17d906b3419e18a192b1197e3b4dcdc4170438272a260b8a"},
+        {"document_id":"LIB4B5F961A3E10B21E","title":"印制电路板（PCB）设计技术与实践，第 3 版","pdf_page":399,"printed_page":"380","locator":"图 10-51","source_sha256":"4b5f961a3e10b21e17d906b3419e18a192b1197e3b4dcdc4170438272a260b8a"}
+      ],
+      "phase_actions": {
+        "plan": "冻结叠层、边沿与隔离限值",
+        "design": "标换层的实际参考面及回流",
+        "review": "检查平面缺口、过孔和耦合元件",
+        "eco": "改层、过孔、开窗或端口重验",
+        "verify": "必要时测 TDR、接收点或共模",
+        "bringup": "区分回流缺口、端接和探测伪影",
+        "release": "对照板厂叠层及 CAM"
+      },
+      "closure": "交同版叠层及铜层剖面、实际参考面、换层/跨口和闭合回流标注。同网参考可用邻近同网过孔；异电位按频带、回路阻抗和项目约束考虑耦合；隔离屏障依其规范。需要时补接收端或共模对照。",
+      "redline": "关键路径无成立回流或已证越过绝缘约束时拦截相关布局／放行；未拿到版图时保留待证。",
+      "prototype": "优先保持连续参考和改线，允许可回退布局与近源端接预留，并在接收点区分反射、回流缺口和探测伪影。",
+      "invalidated_by": ["layout","pin-pad","part","power","process","test-fixture"]
+    },
+    "B2": {
+      "check": "power-path",
+      "title": "用成品铜与孔铜下界核局部热态瓶颈",
+      "trigger": {
+        "prototypes": ["high-current"],
+        "keywords": ["孔铜载流","过孔载流","成品铜厚","铜箔载流","大电流铺铜","窄颈载流","强电走线","热态铜损"]
+      },
+      "rules": ["power-high-current-connections","ipc-pth-hole-copper-tradeoff"],
+      "sources": [
+        {"document_id":"LIBA60DE39D573074BD","title":"PCB 电流与信号完整性设计","pdf_page":179,"locator":"§21.1、图 21-1","source_sha256":"a60de39d573074bd5d449fe9d23a65f5835813fff947c7595388075a7d2dde44"},
+        {"document_id":"LIBA60DE39D573074BD","title":"PCB 电流与信号完整性设计","pdf_page":180,"printed_page":"165","locator":"图 21-2","source_sha256":"a60de39d573074bd5d449fe9d23a65f5835813fff947c7595388075a7d2dde44"}
+      ],
+      "phase_actions": {
+        "plan": "定 RMS、峰值、压降和温升限值",
+        "design": "按制造公差核逐段截面及返回路径",
+        "review": "核窄颈、孔、端子和保护清除",
+        "eco": "改板厂、成品铜、孔、接端重验",
+        "verify": "最坏工况下分段压降、热点和保护",
+        "bringup": "限流逐级上探并标出瓶颈",
+        "release": "核实际铜厚保证与首件证据"
+      },
+      "closure": "按成品铜厚、成品孔与最小孔铜建立分段热态压降和损耗，包含窄颈、热焊盘辐条、不均流、接触点及回流侧；对应最坏环境看热点和保护清除。",
+      "redline": "已证过温、压降越过工作边界或故障清除不及时则限制对应功率工况。",
+      "prototype": "可限流、限占空比并监测具体瓶颈的原型，在核对板厂保证值后逐级扩大工况。",
+      "invalidated_by": ["part","power","layout","process","supplier"],
+      "physical_stages": ["bench_record"]
+    },
+    "B3": {
+      "check": "production-evidence",
+      "title": "钢网、SPI、实板炉温与首件同配置绑定",
+      "trigger": {
+        "unknown_requires_trigger": true,
+        "modes": ["eco","review","release"],
+        "targets": ["smt_release","first_article"],
+        "exclude_targets": ["fabrication"],
+        "scopes": [
+          {"modes":["eco"],"change_terms":["更换钢网","钢网变更","修改钢网","重做钢网","改钢网","钢网改版","更换锡膏","锡膏变更","换锡膏","换用锡膏","改用锡膏","修改拼板","改拼板","拼板变更","拼板改版","切换产线","更换产线","换产线","产线变更","更改回流配方","回流配方变更","炉温配方变更"]},
+          {"modes":["review","release"],"keywords":["SMT 首件","SMT首件","贴装首件","装配首件","PCBA 首件","PCBA首件","SMT 放行","SMT放行","贴装放行","贴片放行","SMT 装配放行","SMT装配放行"]}
+        ]
+      },
+      "rules": ["pcb-pad-solder-coverage"],
+      "sources": [
+        {"document_id":"LIB642BAD1C294F7428","title":"IPC-7530，2001-05 版（方法参考）","pdf_page":6,"printed_page":"2","locator":"图 3-2","source_sha256":"642bad1c294f74281e7f5ed5855764eec562e0b16a009d333dc2ca7d365e8523"},
+        {"document_id":"LIB642BAD1C294F7428","title":"IPC-7530，2001-05 版（方法参考）","pdf_page":7,"printed_page":"3","locator":"§4.1.1","source_sha256":"642bad1c294f74281e7f5ed5855764eec562e0b16a009d333dc2ca7d365e8523"},
+        {"document_id":"LIB642BAD1C294F7428","title":"IPC-7530，2001-05 版（方法参考）","pdf_page":8,"printed_page":"4","locator":"§4.1.2","source_sha256":"642bad1c294f74281e7f5ed5855764eec562e0b16a009d333dc2ca7d365e8523"},
+        {"document_id":"LIB642BAD1C294F7428","title":"IPC-7530，2001-05 版（方法参考）","pdf_page":13,"printed_page":"9","locator":"§7.9、图 7-1 至 7-3","source_sha256":"642bad1c294f74281e7f5ed5855764eec562e0b16a009d333dc2ca7d365e8523"}
+      ],
+      "phase_actions": {
+        "plan": "定工艺窗口和首件负责人",
+        "design": "标小开口、热/冷点、裸露焊盘",
+        "review": "核焊盘、钢网转移和测温布局",
+        "eco": "改堆叠、锡膏、产线、拼板重审",
+        "verify": "SPI、实板热曲线和必要 AOI/X-ray",
+        "bringup": "工程首件读回后再扩大批量",
+        "release": "工艺配方与量产实装变体绑定"
+      },
+      "closure": "绑定同一贴装变体的钢网、物料、拼板、产线与配方；保存适用小开口的 SPI 转移、实际 PCB 热／冷测点炉温曲线和首件缺陷处置。IPC-7530（2001）仅作方法，限值用项目批准版次及工艺窗口。",
+      "redline": "缺少代表性实装证据或已有同版装配硬冲突时挡住对应装配签核。",
+      "prototype": "允许受控装配首件取证。裸板投板和早期手焊样机遵循各自交付条件。",
+      "invalidated_by": ["assembly-process","part","layout","process","bom-variant","production-config","supplier","test-fixture"],
+      "physical_stages": ["bench_record"],
+      "related_sources": [
+        {"title":"IPC-7530A 官方目录（与上述本机历史版页码分别使用）","url":"https://www.ipc.org/TOC/IPC-7530A.pdf"}
+      ]
+    },
+    "R1": {
+      "check": "fault-propagation",
+      "title": "端口注入时联合核残压、逐件应力和后续供能",
+      "trigger": {
+        "keywords": ["TVS","ESD","EFT","浪涌","静电防护","保护泄放","端口防护","RS-485","RS485","外接CAN","外接 CAN"]
+      },
+      "rules": ["emc-shield-current-path","rs485-node-capacitance"],
+      "sources": [
+        {"document_id":"LIBD30CFFC395AB1628","title":"EMC 电磁兼容设计与测试案例分析，第 3 版","pdf_page":199,"printed_page":"185","locator":"图 4.75、4.76","source_sha256":"d30cffc395ab16285e1a157b168e3f7d401c9f850f9451d2c8a8d8f35e7ca558"},
+        {"document_id":"LIB414236C18903E248","title":"TI SLVA680A，ESD 保护布局指南","pdf_page":4,"printed_page":"4","locator":"§2.1","source_sha256":"414236c18903e2489c6564c36718ed3743be9c595f4543098f167259b5ba8635"},
+        {"document_id":"LIB414236C18903E248","title":"TI SLVA680A，ESD 保护布局指南","pdf_page":5,"printed_page":"5","locator":"§2.2","source_sha256":"414236c18903e2489c6564c36718ed3743be9c595f4543098f167259b5ba8635"},
+        {"document_id":"LIB414236C18903E248","title":"TI SLVA680A，ESD 保护布局指南","pdf_page":6,"printed_page":"6","locator":"§2.3","source_sha256":"414236c18903e2489c6564c36718ed3743be9c595f4543098f167259b5ba8635"},
+        {"document_id":"LIB414236C18903E248","title":"TI SLVA680A，ESD 保护布局指南","pdf_page":7,"printed_page":"7","locator":"§2.4","source_sha256":"414236c18903e2489c6564c36718ed3743be9c595f4543098f167259b5ba8635"}
+      ],
+      "phase_actions": {
+        "plan": "定端口波形、阻抗、极性和判据",
+        "design": "画泄放回路与逐件脉冲预算",
+        "review": "核脉冲载荷、持续供能和清除链",
+        "eco": "保护件、回流、机壳或线束换版重验",
+        "verify": "支路应力、残压与试后功能",
+        "bringup": "低能确认测法，再按适用条件取证",
+        "release": "绑定冻结 PCB、BOM、工况和清除证据"
+      },
+      "closure": "按实际端口、适用波形/源阻抗、注入点和机壳/屏蔽条件画分流与回流，核串联件、钳位和收发器应力、试后功能及 TVS 短路后持续供能与清除。 保护件电容对接口负载的影响另按实际收发器与线缆核。",
+      "redline": "已证脉冲应力超耐量、故障后危险供能或破坏安全绝缘时停止对应工况。接口名称无法确定 EMC 等级。",
+      "prototype": "受控低能验证回流和测法；逐项改变回路或串联件做对照，正式注入按项目工况审批和验收。",
+      "invalidated_by": ["part","pin-pad","layout","power","process","test-fixture"],
+      "physical_stages": ["bench_record"]
+    },
+    "R2": {
+      "check": "power-states",
+      "title": "按可达组合核反接、反灌和掉电",
+      "trigger": {
+        "prototypes": ["battery-hotplug","multi-supply"],
+        "keywords": ["反接","反灌","倒灌","反向电流","掉电时序","棕断","brownout","掉电组合","power fail","backfeed"]
+      },
+      "rules": [],
+      "sources": [
+        {"document_id":"LIBD30CFFC395AB1628","title":"EMC 电磁兼容设计与测试案例分析，第 3 版","pdf_page":274,"printed_page":"260","locator":"图 5.56、5.57、5.58","source_sha256":"d30cffc395ab16285e1a157b168e3f7d401c9f850f9451d2c8a8d8f35e7ca558"}
+      ],
+      "phase_actions": {
+        "plan": "枚举外部源、负载与掉电组合",
+        "design": "画反向导通、旁路和偏置路径",
+        "review": "核实际电荷源、阈值和默认状态",
+        "eco": "FET、时序、上下拉和配置变化重验",
+        "verify": "统计实测峰值、持续电流和动作时间",
+        "bringup": "独立限源复验高阻/低阻掉电",
+        "release": "证据覆盖矩阵随冻结版本维护"
+      },
+      "closure": "列上游开路／低阻掉电、反极性、输出仍外供和 I/O 仍驱动等可达状态；同步核 VIN、VOUT、双向电流、复位与最终负载状态及持续时间。",
+      "redline": "危险反充、额定越界或不安全负载动作时拦截。单一关断状态能说明的范围限该状态。",
+      "prototype": "独立限源，先从低能分路供电验证高阻/低阻掉电，再按工况补证。",
+      "invalidated_by": ["part","pin-pad","power","layout","firmware","test-fixture"],
+      "physical_stages": ["bench_record"],
+      "related_sources": [
+        {"title":"TI SLVAE57B，§4.2、§5，PDF 5–8","url":"https://www.ti.com/lit/an/slvae57b/slvae57b.pdf"},
+        {"title":"TI SLVA730，§5.2–5.3，PDF 8–10","url":"https://www.ti.com/lit/an/slva730/slva730.pdf"}
+      ]
+    },
+    "R3": {
+      "check": "fault-propagation",
+      "title": "隔离接口失效追到最终安全状态及恢复",
+      "trigger": {
+        "prototypes": ["isolation"],
+        "keywords": ["安全输出","失效安全","安全关断","隔离器掉电","恢复授权"]
+      },
+      "rules": [],
+      "sources": [
+        {"document_id":"LIB1CF567BEE4AD4D6E","title":"可靠性概论","pdf_page":184,"printed_page":"165","locator":"第 5 章第 6 小节","source_sha256":"1cf567bee4ad4d6ef7fe432b138f1023efcaf789b8e95e764b0d905f1e495d38"}
+      ],
+      "phase_actions": {
+        "plan": "定最终安全状态、动作时间和绝缘要求",
+        "design": "拆两侧故障与独立关断/恢复授权",
+        "review": "逐级追器件后缀、上拉和执行器",
+        "eco": "电源、隔离器、固件及机电修改重验",
+        "verify": "同步两侧电源、故障、使能和负载",
+        "bringup": "用安全夹具验证故障及恢复顺序",
+        "release": "安全目标、证据和板/固件绑定"
+      },
+      "closure": "按精确器件后缀、两侧供电、使能、高阻或棕断及故障矩阵追到最终执行器；核独立切断、释放及恢复授权。绝缘间距与耐压仍由 insulation 提证。",
+      "redline": "危险输出、超安全响应时间或安全屏障未证时限制对应验收。",
+      "prototype": "低能隔离夹具先比较故障、使能与恢复次序；危险负载接入等安全验证及授权。",
+      "invalidated_by": ["part","pin-pad","power","layout","firmware","process","test-fixture"],
+      "physical_stages": ["bench_record"],
+      "related_sources": [
+        {"title":"TI ISO774x，SLLSEP4K PDF 29，表 7-2（滚动链接须核版）","url":"https://www.ti.com/lit/ds/symlink/iso7741.pdf"}
+      ]
+    }
   },
   "checks": {
     "requirements": {
@@ -534,6 +897,17 @@
     "effective-capacitance": {
       "severity": "engineering",
       "reason": "用准确 MPN 的 DC 偏压、温度、老化和公差核实装电容，并纳入 ESR/ESL。",
+      "intent_keywords": ["MLCC", "陶瓷电容", "瓷介电容"],
+      "phase_actions": {
+        "plan": "分配电容角色和最低有效值、阻抗、纹波及温区，保留料号曲线来源。",
+        "design": "按精确料号核偏压、温漂、容差和老化。用于稳压器输出或反馈时，把 C/ESR 窗口交 power-stability；确认开关环路后展开 P1。",
+        "review": "逐位置核实装偏压和有效值，区分去耦、稳压、滤波及储能。无曲线的料号先记未知。",
+        "eco": "绑定位号和新旧完整料号，按各自偏压、温度、老化及 ESR/ESL 比较。用途若影响环路，重开稳定性证据，开关环路按 P1。",
+        "verify": "在实际偏压和温度比较有效值及阻抗，按该功能位置验收阶跃、保持时间或滤波响应。",
+        "bringup": "先同布局、同负载只换电容，再保持电容不变比较布局，以隔离零件和布局影响。",
+        "release": "同一冻结 BOM 保留精确料号、工况曲线、允许边界及受影响的稳定性验收。"
+      },
+      "invalidated_by": ["part", "filter", "power", "layout", "process"],
       "rules": [
         "mlcc-effective-capacitance",
         "capacitor-frequency-parasitics"

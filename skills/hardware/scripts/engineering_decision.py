@@ -27,7 +27,9 @@ TARGET_MODES = {
     "pvt": {"release"},
     "first_article": {"release"},
     "production": {"release"},
+    "smt_release": {"release"},
 }
+PHYSICAL_TARGETS = {"evt", "dvt", "pvt", "first_article", "production", "smt_release"}
 MODEL_LIMITS = {
     "nominal-only": ("补保证 min/max 和有界工况，重算可达角点。", None),
     "margin-crosses-limit": ("证明角点可达性或用独立模型/量测缩小跨限区间。", None),
@@ -72,6 +74,51 @@ def matches(intent, alias):
     return alias.casefold() in intent.casefold()
 
 
+def intent_matches(intent, keywords):
+    return any(matches(intent, term) for term in keywords)
+
+
+def affirmed_change(intent, terms):
+    for term in terms:
+        for hit in re.finditer(re.escape(term), intent):
+            prefix = intent[:hit.start()].rstrip()
+            suffix = intent[hit.end():].lstrip()
+            excluded = re.search(r"(?:不涉及|不做|不计划|不需要|无需|无须|不要|不|未|没)(?:更)?$", prefix)
+            if not excluded and not suffix.startswith(("不在", "不做", "取消")):
+                return True
+    return False
+
+
+def inferred_trigger(trigger, mode, examples, intent):
+    return mode in trigger.get("modes", (mode,)) and (
+        examples.intersection(trigger.get("prototypes", ()))
+        or intent_matches(intent, trigger.get("keywords", ()))
+        or affirmed_change(intent, trigger.get("change_terms", ()))
+        or any(all(intent_matches(intent, group) for group in conjunction)
+               for conjunction in trigger.get("all_of", ()))
+    )
+
+
+def active_branches(policy_data, mode, examples, intent, target, facts):
+    selected = {}
+    examples = set(examples)
+    for key, branch in policy_data.get("branches", {}).items():
+        trigger = branch["trigger"]
+        if target in trigger.get("targets", ()):
+            selected[key] = "target"
+            continue
+        if mode not in trigger.get("modes", policy_data["modes"]) or target in trigger.get("exclude_targets", ()):
+            continue
+        state = facts.get(key)
+        if state == "absent":
+            continue
+        if state == "present" or (state == "unknown" and not trigger.get("unknown_requires_trigger")):
+            selected[key] = state
+        elif any(inferred_trigger(scope, mode, examples, intent) for scope in trigger.get("scopes", [trigger])):
+            selected[key] = state or "scope_candidate"
+    return selected
+
+
 def select(policy_data, mode, prototypes, intent="", target=None, facts=None, model_limits=(),
            carried_checks=()):
     inferred = [
@@ -89,24 +136,41 @@ def select(policy_data, mode, prototypes, intent="", target=None, facts=None, mo
         identifiers.extend(policy_data["prototypes"][name]["checks"])
     identifiers.extend(
         key for key, check in policy_data["checks"].items()
-        if (any(matches(intent, term) for term in check.get("intent_keywords", ()))
+        if (intent_matches(intent, check.get("intent_keywords", ()))
             or ("phase_actions" in check and key in carried_checks))
     )
-    for item, value in (facts or {}).items():
-        if item not in policy_data["checks"]:
+    facts = facts or {}
+    branches = policy_data.get("branches", {})
+    for item, value in facts.items():
+        if item not in policy_data["checks"] and item not in branches:
             raise ValueError(f"未知风险事实：{item}")
         if value not in ("present", "absent", "unknown"):
             raise ValueError(f"风险事实状态无效：{item}")
-        if value != "absent":
+        if item in policy_data["checks"] and value != "absent":
             identifiers.append(item)
+    branch_checks = {}
+    for key, match in active_branches(policy_data, mode, examples, intent, target, facts).items():
+        branch = branches[key]
+        check = branch["check"]
+        identifiers.append(check)
+        branch_checks.setdefault(check, []).append({
+            "id": key, "title": branch["title"], "matched_by": match,
+            "phase_action": branch["phase_actions"][mode],
+            "closure": branch["closure"], "redline": branch["redline"], "prototype": branch["prototype"],
+            "sources": branch["sources"], "rules": branch["rules"],
+            **({"related_sources": branch["related_sources"]} if "related_sources" in branch else {}),
+        })
     required = []
     for identifier in dict.fromkeys(identifiers):
         row = policy_data["checks"][identifier]
         required.append({
             "id": identifier, "severity": row["severity"], "reason": row["reason"],
-            "rules": row["rules"], "references": row["references"],
+            "rules": list(dict.fromkeys([*row["rules"], *(
+                rule for branch in branch_checks.get(identifier, ()) for rule in branch["rules"]
+            )])), "references": row["references"],
             **({"phase_action": row["phase_actions"][mode]} if "phase_actions" in row else {}),
             **({"knowledge_theme": row["knowledge_theme"]} if "knowledge_theme" in row else {}),
+            **({"branches": branch_checks[identifier]} if identifier in branch_checks else {}),
         })
     return {
         "prototypes": examples,
@@ -192,7 +256,7 @@ def check_scope(raw, check, disposition):
         raise ValueError("该后端的检查范围不能用于这项工程结论")
 
 
-def bind(raw, baseline, check, condition, criterion, execution, disposition, stages):
+def bind(raw, baseline, check, condition, criterion, execution, disposition, stages, branches=()):
     evidence_adapter.validate(raw)
     check_scope(raw, check, disposition)
     if any(not text(item) for item in (condition, criterion, execution)):
@@ -207,6 +271,8 @@ def bind(raw, baseline, check, condition, criterion, execution, disposition, sta
     if original and any(original.get(key) != baseline[key] for key in IDENTITY):
         raise ValueError("证据已绑定其他工程、版次或变体")
     claim = {"condition": condition, "criterion": criterion, "execution": execution, "disposition": disposition}
+    if branches:
+        claim["branches"] = sorted(set(branches))
     existing = original.get("checks", {})
     if check in existing and existing[check] != claim:
         raise ValueError("证据已绑定该检查的另一工况或判据")
@@ -214,7 +280,7 @@ def bind(raw, baseline, check, condition, criterion, execution, disposition, sta
     return raw
 
 
-def make_proof(check, record, evidence, artifacts, baseline, root, stages, cache):
+def make_proof(check, record, evidence, artifacts, baseline, root, stages, cache, branch_stages=None):
     if not text(record.get("condition")) or not text(record.get("finding")):
         raise ValueError("缺工况或观察结果")
     if not text(record.get("criterion")):
@@ -227,6 +293,10 @@ def make_proof(check, record, evidence, artifacts, baseline, root, stages, cache
         raise ValueError("缺少已核对的基线工件")
     required = {artifacts[item] for item in subjects}
     expected = {"pass": "pass", "fail": "fail", "not_applicable": "pass"}[record["status"]]
+    branch_stages = branch_stages or {}
+    if branch_stages and record["status"] == "not_applicable":
+        raise ValueError("已触发分支需要适用性定界或实际证据")
+    covered = set()
     for item in ids:
         if item not in cache:
             try:
@@ -264,6 +334,14 @@ def make_proof(check, record, evidence, artifacts, baseline, root, stages, cache
         if (claim.get("condition") != record["condition"] or claim.get("criterion") != record["criterion"]
                 or claim.get("disposition") != record["status"] or not required <= files):
             raise ValueError(f"{item} 的工况、判据、适用性或工件不符")
+        declared = claim.get("branches", [])
+        if not isinstance(declared, list) or not all(text(key) for key in declared):
+            raise ValueError(f"{item} 的分支覆盖无效")
+        covered.update(key for key in declared if raw["evidence_stage"] in branch_stages.get(key, ()))
+    missing = branch_stages.keys() - covered
+    # A single proven failure is enough to reject the check. A pass needs all active branches.
+    if missing and record["status"] != "fail":
+        raise ValueError(f"缺同工况的分支证据或证据层不符：{', '.join(sorted(missing))}")
 
 
 def accepted_stages(stages, flags):
@@ -301,22 +379,32 @@ def assess(data, policy_data, target, root):
         row = check_state.get(name)
         status = "open"
         reason = "缺可用的关闭记录"
+        branches = check.get("branches", [])
         if isinstance(row, dict) and row.get("status") in ("pass", "fail", "not_applicable"):
             try:
                 flags = data.get("model_limits", {}).get(name, [])
                 if (row["status"] != "fail" and check["severity"] == "redline"
                         and data.get("facts", {}).get(name) == "unknown"):
                     raise ValueError("红线工况仍未确认")
+                if row["status"] != "fail" and any(branch["matched_by"] == "unknown" for branch in branches):
+                    raise ValueError("已标为未知的分支仍需确认适用工况")
                 if row["status"] != "fail" and any(flag in {"nominal-only", "margin-crosses-limit"} for flag in flags):
                     raise ValueError("仍只有名义工况或保守区间跨限；先关闭模型边界再采用通过结论")
-                make_proof(name, row, data.get("evidence", {}), artifacts, baseline, root,
-                           accepted_stages(policy_data["checks"][name]["stages"], flags), cache)
+                stages = accepted_stages(policy_data["checks"][name]["stages"], flags)
+                branch_stages = {}
+                for branch in branches:
+                    key = branch["id"]
+                    rule = policy_data["branches"][key]
+                    minimum = rule.get("physical_stages") if target in PHYSICAL_TARGETS else None
+                    branch_stages[key] = stages & set(minimum) if minimum and row["status"] == "pass" else stages
+                make_proof(name, row, data.get("evidence", {}), artifacts, baseline, root, stages, cache, branch_stages)
                 status = row["status"]
                 reason = row["finding"]
             except (ValueError, TypeError) as exc:
                 reason = str(exc)
         results.append({"id": name, "status": status, "severity": check["severity"], "reason": reason,
-                        **({"phase_action": check["phase_action"]} if "phase_action" in check else {})})
+                        **({"phase_action": check["phase_action"]} if "phase_action" in check else {}),
+                        **({"branches": branches} if branches else {})})
     hard_failure = any(row["status"] == "fail" for row in results)
     open_check = any(row["status"] == "open" for row in results)
     status = "blocked" if hard_failure else "needs_evidence" if open_check or issues else "covered"
@@ -328,7 +416,9 @@ def assess(data, policy_data, target, root):
     }
 
 
-def impact(data, change, policy_data):
+def impact(data, change, policy_data, target=None):
+    if target and data["mode"] not in TARGET_MODES[target]:
+        raise ValueError("工程 mode 与冻结基线的正式交付目标不匹配")
     if not isinstance(change, dict) or change.get("schema") != CHANGE_VERSION:
         raise ValueError("变更记录 schema 无效")
     baseline = inspect_baseline(data["baseline"])
@@ -338,7 +428,7 @@ def impact(data, change, policy_data):
     if not isinstance(items, list) or not items:
         raise ValueError("未提供结构化变更")
     planned = select(policy_data, data["mode"], data.get("prototypes", []), data.get("intent", ""),
-                     facts=data.get("facts"), carried_checks=data.get("checks", {}))
+                     target, data.get("facts"), carried_checks=data.get("checks", {}))
     impacted = {}
     for item in items:
         if (not isinstance(item, dict) or not text(item.get("object")) or not text(item.get("variant"))
@@ -349,10 +439,18 @@ def impact(data, change, policy_data):
         variant = item["variant"]
         obj = item["object"]
         kind = item["kind"]
+        affected_branches = {}
+        for check in planned["required_checks"]:
+            keys = [branch["id"] for branch in check.get("branches", ())
+                    if kind == "unknown" or kind in policy_data["branches"][branch["id"]]["invalidated_by"]]
+            if keys:
+                affected_branches[check["id"]] = keys
+        if kind == "assembly-process":
+            affected_branches.setdefault("production-evidence", ["B3"])
         seeds = [*policy_data["changes"][kind], *(
             check["id"] for check in planned["required_checks"]
             if kind in policy_data["checks"][check["id"]].get("invalidated_by", ())
-        )]
+        ), *affected_branches]
         if kind == "unknown":
             seeds = list(dict.fromkeys(seeds + [row["id"] for row in planned["required_checks"]]))
         queue = deque((name, [kind, name]) for name in seeds)
@@ -362,11 +460,18 @@ def impact(data, change, policy_data):
             if name in visited:
                 continue
             visited.add(name)
-            impacted.setdefault((variant, obj, name), path)
-            queue.extend((out, [*path, out]) for out in policy_data["checks"][name]["affects"])
+            entry = impacted.setdefault((variant, obj, name), {"path": path, "branches": []})
+            entry["branches"].extend(affected_branches.get(name, ()))
+            for dependent in policy_data["checks"][name]["affects"]:
+                # Assembly-only process changes requalify the build and its first article.
+                # Circuit test access is rechecked when a layout, part or fixture also changes.
+                if kind == "assembly-process" and name == "factory-capability" and dependent == "test-coverage":
+                    continue
+                queue.append((dependent, [*path, dependent]))
     rows = [
-        {"variant": variant, "object": obj, "check": check, "path": path, "status": "recheck"}
-        for (variant, obj, check), path in impacted.items()
+        {"variant": variant, "object": obj, "check": check, "path": entry["path"], "status": "recheck",
+         **({"branches": list(dict.fromkeys(entry["branches"]))} if entry["branches"] else {})}
+        for (variant, obj, check), entry in impacted.items()
     ]
     affected = {row["check"] for row in rows if row["variant"] in (baseline["variant"], "*")}
     return {
