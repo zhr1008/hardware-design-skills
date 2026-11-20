@@ -163,9 +163,15 @@ def scoped_path(value, root):
     if not text(value):
         raise ValueError("证据缺文件路径")
     path = Path(os.path.abspath(root / value))
-    if not path.is_relative_to(root):
+    outside = not path.is_relative_to(root)
+    if outside and (os.name != "nt" or path.drive.casefold() != root.drive.casefold()):
         raise ValueError("证据文件不在明确指定的工程范围内")
-    return local_file(path)
+    # Windows may spell the same local directory using an 8.3 alias. Check
+    # every component for reparse points before resolving either spelling.
+    checked = local_file(path).resolve(strict=True)
+    if not checked.is_relative_to(root.resolve(strict=True)):
+        raise ValueError("证据文件不在明确指定的工程范围内")
+    return checked
 
 
 def reference(spec, root):

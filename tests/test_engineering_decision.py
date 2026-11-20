@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -182,6 +183,34 @@ class EngineeringDecisionTests(unittest.TestCase):
             save(case, record)
             subject.write_text("Content changed at the same revision.", encoding="utf-8")
             self.assertIn("spec", assessment(2)["artifact_issues"])
+
+    @unittest.skipUnless(os.name == "nt", "Windows short-path spelling")
+    def test_formal_evidence_accepts_existing_windows_short_path_alias(self):
+        from ctypes import create_unicode_buffer, windll
+
+        with tempfile.TemporaryDirectory(prefix="hardware engineering evidence ") as directory:
+            root = Path(directory).resolve()
+            alias = create_unicode_buffer(32768)
+            size = windll.kernel32.GetShortPathNameW(str(root), alias, len(alias))
+            if not 0 < size < len(alias) or Path(alias.value) == root:
+                self.skipTest("Windows volume did not assign this directory a short alias")
+            _, record = self.synthetic_case(Path(alias.value))
+            case = save(root / "case.json", record)
+            result = self.run_json(FLOW, "assess", "--case", case, "--target", "handoff")
+            self.assertEqual(result["engineering_evidence"], "covered")
+
+    def test_formal_keeps_an_existing_file_outside_the_root_out_of_scope(self):
+        with tempfile.TemporaryDirectory() as directory:
+            parent = Path(directory)
+            root = parent / "root"
+            root.mkdir()
+            _, record = self.synthetic_case(root)
+            outside = parent / "external.txt"
+            outside.write_text("Existing fixture outside the evidence root.", encoding="utf-8")
+            record["artifacts"]["spec"] = ref(outside)
+            result = self.run_json(FLOW, "assess", "--case", save(root / "case.json", record),
+                                   "--target", "handoff", code=2)
+            self.assertIn("证据文件不在明确指定的工程范围内", result["artifact_issues"]["spec"])
 
     def test_stale_or_conflicting_receipt_cannot_be_bound_to_a_formal_pass(self):
         with tempfile.TemporaryDirectory() as directory:
