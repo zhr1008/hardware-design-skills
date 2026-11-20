@@ -108,6 +108,13 @@ class EngineeringKnowledgeTest(unittest.TestCase):
         self.assertIn("机械材料", problem["error"])
         self.assertEqual(problem["available_domains"], sorted(self.query("status")["rule_domains"]))
 
+    def test_combined_domain_query_rejects_unknown_alias_without_partial_results(self):
+        problem = self.query("rules", "--domain", " ＰｃＢ ", "--domain", "机械材料",
+                             "--summary", expected=1)
+        self.assertNotIn("rules", problem)
+        self.assertIn("机械材料", problem["error"])
+        self.assertEqual(problem["available_domains"], sorted(self.query("status")["rule_domains"]))
+
     def test_missing_escaped_or_existing_index_does_not_silently_pass(self):
         self.assertIn("--library", self.query("search", "adc", expected=1)["error"])
         self.assertIn("index.db", self.query("search", "adc", private=True, expected=1)["error"])

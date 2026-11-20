@@ -319,17 +319,41 @@ def scan(repo: Path, *, staged: bool, tree: str | None):
     return checked, findings
 
 
+def release_version_finding(repo: Path, tree: str, version: str):
+    try:
+        raw = git(repo, "cat-file", "blob", f"{tree}:VERSION")
+    except subprocess.CalledProcessError:
+        return {"path": "VERSION", "line": 0, "rule": "release-version-file-missing-or-invalid"}
+    if raw.rstrip(b"\r\n") != version.encode("ascii"):
+        return {"path": "VERSION", "line": 1, "rule": "release-version-tag-mismatch", "expected": version}
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1])
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--staged", action="store_true", help="Scan the Git index blob contents.")
     mode.add_argument("--tree", metavar="REF", help="Scan the committed tree of a Git ref.")
+    parser.add_argument("--release-tag", metavar="TAG", help="Require VERSION in --tree to match a release tag.")
     args = parser.parse_args()
+    version = None
+    if args.release_tag is not None:
+        if args.tree is None:
+            parser.error("--release-tag requires --tree")
+        tag = re.fullmatch(r"v([0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)",
+                           args.release_tag)
+        if tag is None:
+            parser.error("--release-tag expects a tag such as v1.2.3")
+        version = tag.group(1)
     try:
         tree = (git(args.repo, "rev-parse", "--verify", "--end-of-options", args.tree + "^{tree}")
                 .decode("ascii").strip() if args.tree else None)
         scanned, findings = scan(args.repo, staged=args.staged, tree=tree)
+        if version is not None:
+            finding = release_version_finding(args.repo, tree, version)
+            if finding is not None:
+                findings.append(finding)
     except (OSError, ValueError, subprocess.SubprocessError):
         scanned, findings = 0, [{"path": ".", "line": 0, "rule": "unable-to-read-publication-tree"}]
     print(json.dumps({"files_checked": scanned, "findings": findings}, ensure_ascii=False, indent=2))

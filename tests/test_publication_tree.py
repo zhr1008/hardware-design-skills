@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -14,8 +15,8 @@ class PublicationTreeTest(unittest.TestCase):
         self.repo = Path(folder.name)
         publication.git(self.repo, "init", "-q")
 
-    def commit(self, message):
-        publication.git(self.repo, "add", "--", "note.txt")
+    def commit(self, message, *paths):
+        publication.git(self.repo, "add", "--", *(paths or ("note.txt",)))
         publication.git(self.repo, "-c", "user.name=Bundle CI", "-c", "user.email=ci@example.com",
                         "-c", "commit.gpgsign=false", "commit", "-qm", message)
         return publication.git(self.repo, "rev-parse", "HEAD").decode().strip()
@@ -46,6 +47,28 @@ class PublicationTreeTest(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 1, result.stderr)
         self.assertIn("private-network-address", result.stdout)
+
+    def test_release_tag_checks_committed_version_and_rejects_missing_or_stale_files(self):
+        (self.repo / "note.txt").write_text("publishable\n", encoding="utf-8")
+        missing = self.commit("without version")
+        version = self.repo / "VERSION"
+        version.write_bytes(b"0.7.0\n")
+        stale = self.commit("stale version", "VERSION")
+        version.write_bytes(b"0.7.1\r\n")
+        aligned = self.commit("matching version", "VERSION")
+        version.write_bytes(b"9.9.9\n")
+
+        for ref, expected in ((missing, "release-version-file-missing-or-invalid"),
+                              (stale, "release-version-tag-mismatch"), (aligned, None)):
+            with self.subTest(expected=expected):
+                result = subprocess.run(
+                    [sys.executable, "-X", "utf8", publication.__file__, "--repo", str(self.repo),
+                     "--tree", ref, "--release-tag", "v0.7.1"],
+                    capture_output=True, encoding="utf-8", check=False,
+                )
+                self.assertEqual(result.returncode, int(expected is not None), result.stderr)
+                self.assertEqual([finding["rule"] for finding in json.loads(result.stdout)["findings"]],
+                                 [expected] if expected else [])
 
     def test_local_library_json_stays_out_of_public_tree(self):
         paths = [

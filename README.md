@@ -2,9 +2,9 @@
 
 面向电子硬件设计、固件与验证的 **48 项可独立调用技能**。`$hardware` 负责规划、设计、深审、ECO、仿真验收、Bring-up 和制造放行。它先由实际电路原型展开风险，读本机依据，再完成工程取舍、实施和验收。查器件、按接线画图和报告转换可直达专项。
 
-[v0.7.0 下载](https://github.com/zhr1008/hardware-design-skills/releases/tag/v0.7.0) · [快速开始](#快速开始) · [使用示例](#在-codex-里怎么用) · [架构图](#架构与分工) · [48 项技能速览](#48-项技能速览) · [模块手册](docs/architecture-guide.md) · [更新日志](CHANGELOG.md)
+[v0.7.1 下载](https://github.com/zhr1008/hardware-design-skills/releases/tag/v0.7.1) · [快速开始](#快速开始) · [使用示例](#在-codex-里怎么用) · [架构图](#架构与分工) · [48 项技能速览](#48-项技能速览) · [模块手册](docs/architecture-guide.md) · [更新日志](CHANGELOG.md)
 
-**v0.7.0** 将电源稳定性、功率路径、热与降额、PCB 回流、装配证据、故障传播和电源状态的 **12 个工程判断分支并入 7 个现有父检查**。选中分支可回读原页，正式证据绑定到实际执行项，ECO 按受影响的变体重验。两组离线盲测覆盖 24 V 工业控制板叠层降本与 MLCC 替代，以及低速 GPIO 指示灯改值。 [分支与证据范围](skills/hardware/references/design-workflow.md#高风险分支与阶段证据)
+**v0.7.1** 明确架构取舍的硬约束与复杂度代价，按风险半径及可逆性决定查证深度，交付摘要按最终工件和工具回执说明覆盖与缺口。规则查询接受如 `热设计`、`THERMAL`、`PCB` 的领域名称；未知输入会提示合法领域。发布时校验 `VERSION` 与标签一致。 [工程流程](skills/hardware/references/design-workflow.md)
 
 ## 快速开始
 
@@ -71,6 +71,8 @@ flowchart TD
 ```
 
 日常设计用轻量 `design_flow.py start <mode> --intent …`，直接取得按原型展开的风险检查和阅读链；例如 ADC 前端从运放与滤波追到转换器，再补供电和回流证据。正式评审、跨阶段交接、正式 ECO 和制造放行使用 `case.json`、`impact` 和 `assess`。项目签核与 L0–L3 操作授权按原渠道处理。 [工程知识地图](skills/hardware/references/knowledge-map.md) · [详细流程与离线命令](skills/hardware/references/design-workflow.md)
+
+对 3.3 V GPIO 指示灯改限流电阻这类局部可逆任务，算清电流、功耗和实际器件边界即可交付。涉及跨域影响、隐蔽失效或正式放行时展开原始证据。汇报中可直接给出已核对的对象数和总数，并注明仍待核实的字段或工况。 [风险与证据的停点](skills/hardware/references/design-workflow.md#低风险局部参数微调)
 
 ### 实施工具与专项分布
 
@@ -300,6 +302,8 @@ python -X utf8 scripts/validate_bundle.py
 python -X utf8 scripts/check_publication.py --tree HEAD
 python -X utf8 -m pytest -ra tests skills/schematic-analyzer/tests skills/hardware-project-library/tests
 ```
+
+发布前对将要打包的提交检查版本。例如 `python -X utf8 scripts/check_publication.py --tree HEAD --release-tag v0.7.1` 会从该提交读 `VERSION`，缺失或不一致时返回非零。版本标签触发的 Windows 和 Linux CI 执行同一校验。
 
 ### 上游原板夹具
 
