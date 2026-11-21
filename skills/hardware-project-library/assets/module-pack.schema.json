@@ -177,7 +177,7 @@
     "change_kind": {
       "enum": [
         "part", "production-config", "pin-pad", "filter", "power", "layout", "firmware",
-        "supplier", "price-stock", "bom-variant", "test-fixture", "process", "assembly-process", "unknown"
+        "supplier", "price-stock", "bom-variant", "test-fixture", "process", "assembly-process", "enclosure-thermal", "unknown"
       ]
     },
     "allowed_change": {

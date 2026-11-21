@@ -5,6 +5,8 @@ description: 组织电子硬件综合评审、冻结门禁和板级故障分析�
 
 # 硬件综合评审
 
+直接任务走现有专项。开放式任务沿用工作态台账，正式交接才按[系统契约和一页协议](../hardware/references/system-contract.md)固定共享事实。读取同基线台账的目标、候选、关键假设、证据和下一步。提交结论前用独立工件或方法挑战决定性假设，将反例和缺口回传到源头决定，给可执行的复验。
+
 按 [工程决策](../hardware/references/design-workflow.md) 分辨单项读回、正式评审、验收和 Bring-up。先核触发风险、模式覆盖与反证。排障保留竞争假设、原始波形和伪影，给最小区分实验。正式 Go 范围须有 `assess` 与独立签核。
 
 做正式验收时，按[模型与实测对齐](references/simulation-correlation.md)核条件和偏差。首次上电、重复故障与测量伪影按[联调排障](references/bring-up-troubleshooting.md)规定的探点交接。已有台架记录可用 `check_bench_results.py --formal`。

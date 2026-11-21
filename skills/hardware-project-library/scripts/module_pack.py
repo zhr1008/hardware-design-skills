@@ -16,7 +16,7 @@ DISTRIBUTIONS = {"public-original", "private", "reference-only"}
 # The corresponding kinds from hardware's engineering policy, for standalone use.
 CHANGE_KINDS = (
     "part", "production-config", "pin-pad", "filter", "power", "layout", "firmware",
-    "supplier", "price-stock", "bom-variant", "test-fixture", "process", "assembly-process", "unknown",
+    "supplier", "price-stock", "bom-variant", "test-fixture", "process", "assembly-process", "enclosure-thermal", "unknown",
 )
 FIT_ORDER = {"fits": 0, "needs_input": 1, "recheck": 2, "blocked": 3}
 UNKNOWN_LICENSES = {"unknown", "unlicensed", "noassertion", "none", "reference-only"}

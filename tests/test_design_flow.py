@@ -45,6 +45,33 @@ class DesignFlowTest(unittest.TestCase):
         self.assertEqual(page["status"], "unavailable")
         self.assertNotIn("text", page)
 
+    def test_compact_start_keeps_review_actions_and_rule_summaries(self):
+        args = ("start", "eco", "--intent", "四层降两层 24 MHz 参考时钟 SPI 掉电反灌",
+                "--prototype", "high-speed", "--prototype", "multi-supply")
+        original = run("design_flow.py", *args)
+        compact = run("design_flow.py", *args, "--compact")
+        self.assertEqual((original.returncode, compact.returncode), (0, 0), compact.stderr)
+        full, short = json.loads(original.stdout), json.loads(compact.stdout)
+        self.assertEqual(full["schema"], "hardware-design-flow-v2")
+        self.assertEqual(short["schema"], "hardware-design-flow-compact-v1")
+        self.assertEqual(short["candidate_rules"], full["candidate_rules"])
+        self.assertEqual(short["required_rules"], full["required_rules"])
+        self.assertEqual(short["knowledge_route"]["catalogue_status"], full["knowledge_route"]["catalogue_status"])
+        self.assertEqual(short["knowledge_route"]["themes"],
+                         [{key: theme[key] for key in ("id", "reference")}
+                          for theme in full["knowledge_route"]["themes"]])
+        self.assertNotIn("module_catalogues", short)
+        for view, source in zip(short["required_checks"], full["required_checks"], strict=True):
+            for key in ("id", "severity", "rules", "references"):
+                self.assertEqual(view[key], source[key])
+            action = "phase_action" if "phase_action" in source else "reason"
+            self.assertEqual(view[action], source[action])
+            for small, branch in zip(view.get("branches", []), source.get("branches", []), strict=True):
+                for key in ("id", "matched_by", "phase_action", "closure", "redline", "rules"):
+                    self.assertEqual(small[key], branch[key])
+        self.assertLess(len(compact.stdout.encode()), len(original.stdout.encode()) * 0.55)
+        self.assertLess(len(compact.stdout.splitlines()), 65)
+
     def test_topology_options_and_sampling_risk_are_scoped_to_forward_design(self):
         for mode in ("plan", "design"):
             with self.subTest(mode=mode):

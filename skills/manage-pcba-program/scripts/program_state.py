@@ -35,6 +35,7 @@ CHECK_STAGES = {
     "assembly": ("manufacturing_release",),
     "factory-capability": ("manufacturing_release",),
     "production-evidence": ("manufacturing_release",),
+    "thermal": ("placement", "manufacturing_release"),
     "release-identity": ("manufacturing_release",),
 }
 INVALIDATION = {
@@ -114,14 +115,15 @@ def evidence_root(state_dir: Path) -> Path:
     return state_dir.parent if state_dir.name == ".pcba-workflow" else state_dir
 
 
-def case_record(path: Path, state_dir: Path, stage: str, project: str, release=None) -> dict:
+def case_record(path: Path, state_dir: Path, stage: str, project: str, release=None, *, require_contract=False) -> dict:
     root = evidence_root(state_dir)
     path = path.resolve(strict=True)
     if not path.is_relative_to(root):
         raise ValueError("engineering case must be inside the project evidence root")
     before = path.read_bytes()
     target = "fabrication" if stage == "manufacturing_release" else "handoff"
-    verdict = decision_result("assess", "--target", target, "--case", path, "--root", root)
+    options = ("--require-system-contract",) if require_contract else ()
+    verdict = decision_result("assess", "--target", target, "--case", path, "--root", root, *options)
     after = path.read_bytes()
     if before != after or verdict["baseline"]["project"] != project:
         raise ValueError("engineering case changed or points to another project")
@@ -138,7 +140,8 @@ def case_record(path: Path, state_dir: Path, stage: str, project: str, release=N
         if verdict["baseline"]["revision"] != manifest["revision"] or not matched:
             raise ValueError("engineering case does not bind the current release and CPL")
     return {"path": str(path.relative_to(root)), "sha256": hashlib.sha256(after).hexdigest(),
-            "target": target, "baseline": verdict["baseline"]}
+            "target": target, "baseline": verdict["baseline"],
+            **({"require_system_contract": True} if require_contract else {})}
 
 
 def propagate_invalidation(state, affected, design_critical):
@@ -281,7 +284,8 @@ def validate(state: dict, state_dir: Path, verified_records: dict | None = None,
                 root = evidence_root(state_dir)
                 bound_release = ({key: state["artifacts"][key] for key in RELEASE_EVIDENCE_ROLES}
                                  if stage == "manufacturing_release" else None)
-                actual = case_record(root / record["path"], state_dir, stage, state["project_id"], bound_release)
+                actual = case_record(root / record["path"], state_dir, stage, state["project_id"], bound_release,
+                                     require_contract=record.get("require_system_contract") is True)
                 if actual != record:
                     errors.append(f"{stage}: engineering case no longer matches its record")
             except (ValueError, TypeError, KeyError, OSError, subprocess.TimeoutExpired) as exc:
@@ -344,6 +348,8 @@ def main() -> int:
     set_p.add_argument("--status", choices=sorted(STATUSES), required=True)
     set_p.add_argument("--evidence", action="append", default=[])
     set_p.add_argument("--engineering-case", type=Path, help="Recheck the case for this stage before recording PASS.")
+    set_p.add_argument("--require-system-contract", action="store_true",
+                       help="Require the engineering case to bind a valid system contract.")
     set_p.add_argument("--release-manifest", type=Path, help="Verified PASS manifest for the manufacturing release stage.")
     set_p.add_argument("--previous-release-manifest", type=Path,
                        help="Original frozen manifest for browser recovery when an older state lacks the pre-edit hashes.")
@@ -373,6 +379,8 @@ def main() -> int:
     else:
         state = load(args.file)
         if args.command == "set-stage":
+            if args.require_system_contract and not args.engineering_case:
+                raise SystemExit("--require-system-contract requires --engineering-case")
             if args.status in {"PASS", "USER_REVIEW"} and not has_evidence(args.evidence):
                 raise SystemExit(f"{args.status} requires nonempty --evidence text entries")
             if args.stage == "placement" and args.status in {"PASS", "USER_REVIEW"} and state["stages"]["sourcing"]["status"] != "PASS":
@@ -392,7 +400,8 @@ def main() -> int:
                     raise SystemExit("--engineering-case applies to engineering PASS transitions")
                 try:
                     state["stages"][args.stage]["engineering_case"] = case_record(
-                        args.engineering_case, state_dir, args.stage, state["project_id"], verified_records)
+                        args.engineering_case, state_dir, args.stage, state["project_id"], verified_records,
+                        require_contract=args.require_system_contract)
                     verified_case_stage = args.stage
                 except (ValueError, KeyError, OSError, subprocess.TimeoutExpired) as exc:
                     raise SystemExit(str(exc)) from exc
@@ -424,7 +433,7 @@ def main() -> int:
                 inputs = [path.resolve(strict=True) for path in (args.case, args.change_file)]
                 if any(not path.is_relative_to(root) for path in inputs):
                     raise ValueError("impact inputs must be inside the project evidence root")
-                impact = decision_result("impact", "--case", inputs[0], "--change", inputs[1])
+                impact = decision_result("impact", "--case", inputs[0], "--change", inputs[1], "--root", root)
                 baseline = impact["baseline"]
                 stored = [data["engineering_case"]["baseline"] for data in state["stages"].values()
                           if data.get("engineering_case")]

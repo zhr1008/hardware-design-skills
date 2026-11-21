@@ -337,6 +337,7 @@
       "insulation"
     ],
     "assembly-process": ["assembly", "factory-capability", "production-evidence"],
+    "enclosure-thermal": ["thermal", "layout-coverage", "assembly"],
     "unknown": [
       "change-impact"
     ]

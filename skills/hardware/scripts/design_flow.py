@@ -59,7 +59,7 @@ def rule_arguments(rule_ids):
 
 
 def start(library, mode, topics, additional_rules, prototype_names=(), intent="", data=None, model_limits=(),
-          target=None):
+          target=None, *, compact=False):
     case = data or {}
     if target and mode not in engineering.TARGET_MODES[target]:
         raise ValueError("工程 mode 与正式交付目标不匹配")
@@ -87,7 +87,8 @@ def start(library, mode, topics, additional_rules, prototype_names=(), intent=""
         "knowledge_route": reading_map.select(
             mode, mapped, decision["prototypes"], library, task_intent,
             required_themes=[check["knowledge_theme"] for check in decision["required_checks"]
-                             if "knowledge_theme" in check]),
+                             if "knowledge_theme" in check],
+            compact=compact),
         **decision,
     }
 
@@ -112,6 +113,40 @@ def module_candidates(mode, keyword, roots, conditions):
             raise ValueError(result.stderr.strip() or str(report))
         catalogues.append({"root": str(root), **report})
     return catalogues
+
+
+def compact_start(result):
+    """Project the working view from the same decisions as the full response."""
+    checks = []
+    for original in result["required_checks"]:
+        row = {key: original[key] for key in ("id", "severity", "rules", "references")}
+        action = "phase_action" if "phase_action" in original else "reason"
+        row[action] = original[action]
+        if "branches" in original:
+            row["branches"] = [
+                {key: branch[key] for key in ("id", "matched_by", "phase_action", "closure", "redline", "rules")}
+                for branch in original["branches"]
+            ]
+        checks.append(row)
+    return {
+        **result,
+        "schema": "hardware-design-flow-compact-v1",
+        "required_checks": checks,
+    }
+
+
+def compact_json(result):
+    def span(value):
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+    rows = []
+    for key, value in result.items():
+        if key in ("required_checks", "candidate_rules") and value:
+            body = ",\n    ".join(map(span, value))
+            rows.append(f"  {span(key)}:[\n    {body}\n  ]")
+        else:
+            rows.append(f"  {span(key)}:{span(value)}")
+    return "{\n" + ",\n".join(rows) + "\n}"
 
 
 def basis(library, rule_ids, theme_ids=(), roles=(), branch_ids=()):
@@ -192,6 +227,7 @@ def main():
     initial.add_argument("--rule", action="append", default=[])
     initial.add_argument("--prototype", action="append", default=[], help="重复指定电路或系统原型")
     initial.add_argument("--intent", default="", help="简短目标描述，匹配明确的原型别名")
+    initial.add_argument("--compact", action="store_true", help="工作态精简视图，保留检查、分支、规则摘要和参考路径")
     initial.add_argument("--case", type=Path, help="正式或已记录的工程对象，可选")
     initial.add_argument("--target", choices=engineering.TARGET_MODES)
     initial.add_argument("--module-query", help="选定功能块时检索获准复用的模块")
@@ -208,13 +244,20 @@ def main():
     target.add_argument("--case", type=Path, required=True)
     target.add_argument("--target", choices=engineering.TARGET_MODES, required=True)
     target.add_argument("--root", type=Path, help="允许读取的证据根目录，默认工程记录所在目录")
+    target.add_argument("--require-system-contract", action="store_true")
+    contract = sub.add_parser("contract-check", help="核对系统契约及 case 的契约证据绑定", allow_abbrev=False)
+    contract.add_argument("--case", type=Path, required=True)
+    contract.add_argument("--contract", type=Path, required=True)
+    contract.add_argument("--root", type=Path, help="允许读取的证据根目录，默认工程记录所在目录")
     propagation = sub.add_parser("impact", help="计算同版变更的影响范围", allow_abbrev=False)
     propagation.add_argument("--case", type=Path, required=True)
     propagation.add_argument("--change", type=Path, required=True)
     propagation.add_argument("--target", choices=engineering.TARGET_MODES, help="冻结基线的正式交付目标")
+    propagation.add_argument("--root", type=Path, help="允许读取的证据根目录，默认工程记录所在目录")
     binding = sub.add_parser("bind", help="根据执行回执附加本次工程条件，不授予审批", allow_abbrev=False)
     binding.add_argument("--case", type=Path, required=True)
     binding.add_argument("--evidence", type=Path, required=True)
+    binding.add_argument("--root", type=Path, help="允许读取的证据根目录，默认工程记录所在目录")
     for name in ("check", "execution", "condition", "criterion"):
         binding.add_argument("--" + name, required=True)
     binding.add_argument("--branch", action="append", default=[], help="该执行项及工况实际覆盖的分支")
@@ -230,6 +273,8 @@ def main():
             rules = engineering.policy()
             case_path = getattr(args, "case", None)
             data = engineering.load_case(case_path, rules) if case_path else None
+            root = ((getattr(args, "root", None) or case_path.resolve().parent).absolute()
+                    if case_path is not None else None)
             if args.command == "prototypes":
                 result = {"prototypes": rules["prototypes"]}
             elif args.command == "start":
@@ -238,27 +283,47 @@ def main():
                 if data is not None and data["mode"] != args.mode:
                     raise ValueError("工程记录的 mode 与启动 mode 不同")
                 result = start(args.library, args.mode, args.topic, args.rule, args.prototype, args.intent,
-                               data, args.model_limit, args.target)
+                               data, args.model_limit, args.target, compact=args.compact)
                 if args.module_query is not None:
                     result["module_catalogues"] = module_candidates(
                         args.mode, args.module_query, args.module_root, args.module_conditions)
             elif args.command == "assess":
-                result = engineering.assess(data, rules, args.target, args.root or case_path.resolve().parent)
+                result = engineering.assess(data, rules, args.target, root,
+                                            require_system_contract=args.require_system_contract)
+                code = {"covered": 0, "blocked": 1, "needs_evidence": 2}[result["engineering_evidence"]]
+            elif args.command == "contract-check":
+                result = engineering.contract_check(data, rules, root, args.contract.absolute())
                 code = {"covered": 0, "blocked": 1, "needs_evidence": 2}[result["engineering_evidence"]]
             elif args.command == "impact":
-                result = engineering.impact(data, engineering.read_json(args.change), rules, args.target)
+                result = engineering.impact(data, engineering.read_json(args.change), rules, args.target, root=root)
             else:
                 if any(rules.get("branches", {}).get(key, {}).get("check") != args.check for key in args.branch):
                     raise ValueError("分支不存在或不属于指定检查")
                 if args.branch and args.disposition == "not_applicable":
                     raise ValueError("适用分支不能绑定为不适用")
+                baseline = engineering.inspect_baseline(data["baseline"])
+                digest = None
+                if engineering.contract_reference(args.condition, args.criterion):
+                    loaded, _, issues = engineering.contract_context(data, rules, root, required=True)
+                    if issues:
+                        raise next(iter(issues.values()))
+                    registered = data.get("checks", {}).get(args.check, {})
+                    if any(field in registered and registered[field] != getattr(args, field)
+                           for field in ("condition", "criterion")):
+                        raise engineering.system_contract.ContractConflict("绑定参数与 case 的工况或判据不符")
+                    digest = engineering.system_contract.binding(loaded, baseline, args.condition, args.criterion)
                 result = engineering.bind(
-                    engineering.read_json(args.evidence), engineering.inspect_baseline(data["baseline"]),
+                    engineering.read_json(args.evidence), baseline,
                     args.check, args.condition, args.criterion, args.execution, args.disposition,
-                    rules["checks"][args.check]["stages"], args.branch)
+                    rules["checks"][args.check]["stages"], args.branch, contract_sha256=digest)
+    except engineering.system_contract.ContractConflict as exc:
+        parser.exit(1, f"{exc}\n")
     except (ValueError, TypeError, KeyError, OSError, subprocess.TimeoutExpired) as exc:
         parser.exit(2, f"{exc}\n")
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if args.command == "start" and args.compact:
+        print(compact_json(compact_start(result)))
+    else:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
     return code
 
 

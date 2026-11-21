@@ -2,6 +2,8 @@
 
 由 `$hardware` 持有工程决定和交付验收。专项持有实际工程方法和工具结果，`hardware-solution` 管理整板接口，`manage-pcba-program` 管理项目阶段与签核记录。继续执行时复用仍适用的同版证据。
 
+按[三档推进与系统契约](system-contract.md)决定深度。工作态用五项台账安排下一项验证，交付前结合实际可达反例。正式跨阶段交接、多变体 ECO 和放行固定共享契约并核对 case。
+
 ## 按目标启动
 
 | 模式 | 工程动作与停点 |
@@ -14,12 +16,12 @@
 | `bringup` | 区分物理失效、测量伪影与固件解释。先用现有波形/配置/日志，记录证伪条件并设计最小隔离实验。 |
 | `release` | 区分冻结制造包、供应商预检、阶段首件及批量，核同版、变体、工艺与 DFT，按目标确认工程资格和签核。 |
 
-日常设计、需要展开风险的局部审查、选型判断和排障在技能目录用轻量参数启动。
+日常设计、需要展开风险的局部审查、选型判断和排障用 `start --compact` 一次取本轮检查。紧凑视图保留规则摘要、分支行动与主题参考路径。已有脚本可以继续使用默认完整输出。
 
 ```powershell
-python -X utf8 -B scripts/design_flow.py start design --intent "24 V 供电的 MCU 精密采样前端"
-python -X utf8 -B scripts/design_flow.py start design --prototype adc-front-end --prototype ldo
-python -X utf8 -B scripts/design_flow.py start bringup --prototype switching-power --model-limit measurement-conflict
+python -X utf8 -B scripts/design_flow.py start design --compact --intent "24 V 供电的 MCU 精密采样前端"
+python -X utf8 -B scripts/design_flow.py start design --compact --prototype adc-front-end --prototype ldo
+python -X utf8 -B scripts/design_flow.py start bringup --compact --prototype switching-power --model-limit measurement-conflict
 python -X utf8 -B scripts/design_flow.py prototypes
 python -X utf8 -B scripts/design_flow.py basis --rule adc-antialias-budget --rule analog-capacitive-load
 ```
@@ -49,7 +51,7 @@ python -X utf8 -B scripts/design_flow.py basis --rule adc-antialias-budget --rul
 
 ## 把工程规则带到后续环节
 
-工程级规划、设计和改版先从允许的来源找模块。用 `start <mode> --module-query <功能>` 查公开样板，或显式传 `--module-root <已授权目录>` 查项目／个人库。可用 `--module-conditions <请求JSON>` 随目标工况筛选。缺少适用模块时继续原有工程流程，适配结果进入已有工件引用。改版同样核销受影响证据并接 `impact`。 [模块包](../../hardware-project-library/references/module-packs.md)
+有实际复用需求时，在单次 `start <mode> --compact` 加一个 `--module-query <功能>`。可显式传 `--module-root <已授权目录>` 和 `--module-conditions <请求JSON>`。没有可用项目模块库且本次无需复用时省略该参数。空命中按已有工程工件推进，适配结果进入已有工件引用。改版继续按 `impact` 核销受影响证据。 [模块包](../../hardware-project-library/references/module-packs.md)
 
 移交写入结果前按[保存态回读](saved-design-readback.md)取得最小真实工程证据。
 

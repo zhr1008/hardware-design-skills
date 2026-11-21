@@ -5,6 +5,8 @@ description: Turn an electronic product idea, behavior description, reverse-engi
 
 # Electronic Product Planner
 
+直接任务走现有专项。开放式任务沿用工作态台账，正式交接才按[系统契约和一页协议](../hardware/references/system-contract.md)固定共享事实。把台账中的目标、外部约束和验收语义归入需求，保留仍可行的选项及决定性未知。交接前试找不可同时满足的工况；反例回到需求来源，由目标 owner 裁决。
+
 按 [工程决策](../hardware/references/design-workflow.md) 的 `start plan` 展开接口、电源、热、故障状态和验证分配。非关键未知可取有界默认并注明首板关闭方法。对比可取得的器件、调试可达性和代价。
 
 涉及安全目标、故障反应时间或可靠性分配时，按[系统安全与需求](references/system-safety-and-requirements.md)核口径、需求派生和上下游签收。

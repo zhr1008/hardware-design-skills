@@ -13,22 +13,28 @@ $hardware 持有需求、工程判断、跨域影响及交付验收。专项实�
 
 **先守底线，再控复杂度。** 安全、器件额定与工作区边界、核心性能和合规要求是方案准入条件。删减必要保护、侵占安全裕量或以软件代替必要硬保护均使方案失去资格。满足同等硬约束和核心指标时，优先采用链路更短、复用或集成度更高、失效面更小的方案；新增层级、辅助系统、器件种类、特殊工艺或校准调试依赖须说明简洁方案卡在哪项具体边界，以及新增部分的代价。 [架构取舍原则](references/design-workflow.md#先守底线再控复杂度)
 
-按交付目标选择 `plan/design/review/eco/verify/bringup/release`。已点名的专项用于实施，工程判断仍走本流程。日常设计、局部审查和排障使用轻量启动。精确查料、单点计算、既定接线绘图、转换和已有报告提取直达工具。仅正式评审、跨阶段交接、正式 ECO 和制造放行保存工程 case 并运行完整 `assess`。
+按交付目标选择 `plan/design/review/eco/verify/bringup/release`，先定深度。
+
+- **直接任务**。精确查料、单点计算、既定接线绘图和低风险局部改值直接交付。按需用专项，不启动工程编排、不查模块、不建 case 或契约。
+- **工作态设计、审查与排障**。在当前任务内记五项：目标和工况、候选与剪枝理由、决定性假设及反证、已获证据与裕量、下一步或回溯点。用这五项驱动下一次计算、独立读回或区分实验，更新受影响条目即可。
+- **正式跨阶段交接、多变体 ECO、放行**。按[契约和交接](references/system-contract.md)冻结共享事实，复用 case、`assess`、`impact`。单阶段正式审查沿原 case 合同。技术证据、项目签核与 L0–L3 操作授权分别核对。
+
+提交方案或关项前主动找一个最可能推翻结论的可达条件，用独立工件或方法核对。若已有反例，先核对象和工况，再回到被推翻的参数、接口分配或拓扑，并标记相关下游证据重验。仅改变尚可调整的对象，不在无新增信息时重复试验。专项接收与回传用[一页协议](references/system-contract.md#派发和回传)。
 
 1. **确定交付范围和工况**。锁定允许来源、当前版次与拟交付物。筛正常极限、状态转移、环境/寄生、故障与生产/测量。独立设计用给定规格和允许的知识，仅在授权且必要时查旧工程。
-2. **先展开风险，再比较可行方案**。调用 [design_flow.py](scripts/design_flow.py) `start <mode> --intent "任务目标"`，补 `--prototype` 确认关键功能块。根据 `knowledge_route` 选读能改变决定的理论、设计参考和案例，缺定位时按功能、端口和工况查证。先核安全、额定、不可逆故障和制造硬冲突，再比较可行方案的成立条件、代价、可测性和会推翻选择的工况。用户已锁定拓扑时核其适用性。 [工程知识地图](references/knowledge-map.md)
-3. **选定后沿实际路径核验**。由输入或能源端追到负载或接收引脚，并追踪返回路径、正常和故障电流及掉电状态。多通道逐路核对。用 `basis --rule` 或 `basis --theme` 核适用原页，缺原件时参照 11 域资料定向补证。把依据、设计取值、器件限值和待验证项分开。信号采集按[端口到 ADC 的接法与判据](references/design-workflow.md#从端口到接收引脚)。动态、寄生或裕量跨限可能改变结论时按[模型升级](references/design-workflow.md#模型升级与反证)补证。非关键缺项带有界假设继续，按需预留测试点、可断开通路和滤波/吸收位置。
+2. **先展开风险，再比较可行方案**。工作态用 [design_flow.py](scripts/design_flow.py) `start <mode> --compact --intent "任务目标"` 一次取得检查与规则摘要。只补确定适用的原型，不为同一工况重跑启动。先核安全、额定、不可逆故障和制造硬冲突，再比较可行方案的成立条件、代价、可测性和反证条件。用户已锁定拓扑时核其适用性。 [工程知识地图](references/knowledge-map.md)
+3. **选定后沿实际路径核验**。由输入或能源端追到负载或接收引脚，并追踪返回路径、正常和故障电流及掉电状态。多通道逐路核对。正文库可用且原页能改变判断时，将需查项合并进一次 `basis`。如果 `knowledge_route.catalogue_status=not_configured`，复用 `candidate_rules` 和随包参考，避免为已见摘要再跑 `basis`，并注明正文缺口。信号采集按[端口到 ADC 的接法与判据](references/design-workflow.md#从端口到接收引脚)，动态或寄生改变结论时按[模型升级](references/design-workflow.md#模型升级与反证)补证。非关键缺项带有界假设继续。
 4. **执行和回流**。给专项工件身份、工况、目标产物、判据与许可。用已有脚本验证，读回不同证据层。ECO 用 `impact` 标出失效结论；排障保留竞争假设、伪影和最小区分实验；制造区分冻结、预检与实体放行。正式交付运行 `assess`，项目签核和 L0–L3 授权另核。
 
 具体命令、实用设计判据、正式工件和验证见 [工程决策与交接](references/design-workflow.md)。已有有效证据按版次和工况复用。
 
-`required_checks` 中有 `phase_action` 时，将该行动落实成当前阶段的决定、测量判据或缺证。读到的原文用于确定适用条件；闭环按实际工况及工件核。正式交接保留适用检查 ID 和证据，后续阶段据此复用或重验。
+`--prototype` 合法值为 `adc-front-end`、`switching-power`、`ldo`、`high-current`、`isolation`、`high-speed`、`mixed-signal-mcu`、`battery-hotplug`、`motor-inductive`、`open-drain-bus`、`multi-supply`、`manufacturing`。机壳等未列类型用 `--intent` 说明实际对象与风险。
 
-触发高风险分支时，逐项确认 `branches` 的实际工况，按 `basis --branch ID` 回读原页，并执行该阶段的行动。项目需要正式关项时，将实际覆盖绑定到父检查，同一检查只出一条结论。边界、证据和 ECO 重验见[高风险分支与阶段证据](references/design-workflow.md#高风险分支与阶段证据)。
+将 `required_checks` 和适用 `branches` 的阶段行动落实成决定、验收判据或缺证。按实际工况及工件核对。正式交接用父检查记录真实覆盖项，同一检查出一条结论。见[高风险分支与阶段证据](references/design-workflow.md#高风险分支与阶段证据)。
 
 ## 专项调用与操作权限
 
-工程级 `plan/design/eco` 在拓扑决定前，用 [模块包检索](../hardware-project-library/references/module-packs.md) 查允许复用的同类模块，核对明确的工况、设备边界和证据覆盖。精确查料、单点算式及低风险改值沿原入口收口。
+有实际复用需求且已有获准模块来源时，在同一次 `start` 加一个可区分的 `--module-query`，可配 `--module-root`。无获准可用项目库且无需复用时省略检索。空目录或零命中后按现有工件推进。 [模块包检索与核对](../hardware-project-library/references/module-packs.md)
 
 生成或修改原理图、PCB、网表和制造包后，按[保存态回读](references/saved-design-readback.md)核实际连接、原生报告和工件身份，再报告已验证范围。
 

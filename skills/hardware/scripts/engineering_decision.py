@@ -9,6 +9,7 @@ import re
 
 import evidence_adapter
 from hardware_tool import local_file
+import system_contract
 
 
 SKILL = Path(__file__).resolve().parents[1]
@@ -245,8 +246,40 @@ def reference(spec, root):
     with path.open("rb") as stream:
         actual = hashlib.file_digest(stream, "sha256").hexdigest()
     if actual != spec["sha256"]:
-        raise ValueError("文件内容与记录摘要不一致")
+        raise system_contract.ContractConflict("文件内容与记录摘要不一致")
     return str(path), actual
+
+
+def contract_reference(condition, criterion):
+    return any(isinstance(value, str) and value.startswith("contract:") for value in (condition, criterion))
+
+
+def contract_context(data, policy_data, root, *, required=False, expected_path=None):
+    baseline = inspect_baseline(data["baseline"])
+    rows = {
+        name: row for name, row in data.get("checks", {}).items()
+        if contract_reference(row.get("condition"), row.get("criterion"))
+    }
+    spec = data.get("artifacts", {}).get("system_contract")
+    if spec is None and not (required or rows or expected_path is not None):
+        return None, {}, {}
+    try:
+        contract = system_contract.load(spec, root, baseline, policy_data["checks"], expected_path=expected_path)
+    except (system_contract.ContractConflict, system_contract.ContractMissing) as exc:
+        return None, {}, {"system_contract": exc}
+    bindings, issues = {}, {}
+    for name, row in rows.items():
+        try:
+            bindings[name] = system_contract.binding(contract, baseline, row.get("condition"), row.get("criterion"))
+        except (system_contract.ContractConflict, system_contract.ContractMissing) as exc:
+            issues[name] = exc
+    return contract, bindings, issues
+
+
+def contract_status(issues):
+    if any(isinstance(exc, system_contract.ContractConflict) for exc in issues.values()):
+        return "blocked"
+    return "needs_evidence" if issues else "covered"
 
 
 def check_scope(raw, check, disposition):
@@ -256,7 +289,8 @@ def check_scope(raw, check, disposition):
         raise ValueError("该后端的检查范围不能用于这项工程结论")
 
 
-def bind(raw, baseline, check, condition, criterion, execution, disposition, stages, branches=()):
+def bind(raw, baseline, check, condition, criterion, execution, disposition, stages, branches=(),
+         *, contract_sha256=None):
     evidence_adapter.validate(raw)
     check_scope(raw, check, disposition)
     if any(not text(item) for item in (condition, criterion, execution)):
@@ -271,6 +305,10 @@ def bind(raw, baseline, check, condition, criterion, execution, disposition, sta
     if original and any(original.get(key) != baseline[key] for key in IDENTITY):
         raise ValueError("证据已绑定其他工程、版次或变体")
     claim = {"condition": condition, "criterion": criterion, "execution": execution, "disposition": disposition}
+    if contract_reference(condition, criterion):
+        if contract_sha256 is None:
+            raise system_contract.ContractMissing("契约检查必须绑定当前判据和工况摘要")
+        claim["contract_sha256"] = contract_sha256
     if branches:
         claim["branches"] = sorted(set(branches))
     existing = original.get("checks", {})
@@ -280,7 +318,8 @@ def bind(raw, baseline, check, condition, criterion, execution, disposition, sta
     return raw
 
 
-def make_proof(check, record, evidence, artifacts, baseline, root, stages, cache, branch_stages=None):
+def make_proof(check, record, evidence, artifacts, baseline, root, stages, cache, branch_stages=None,
+               *, contract_sha256=None):
     if not text(record.get("condition")) or not text(record.get("finding")):
         raise ValueError("缺工况或观察结果")
     if not text(record.get("criterion")):
@@ -309,14 +348,18 @@ def make_proof(check, record, evidence, artifacts, baseline, root, stages, cache
                 }
                 cache[item] = (raw, files)
             except (KeyError, ValueError, OSError) as exc:
-                cache[item] = str(exc)
+                cache[item] = exc
         proof = cache[item]
-        if isinstance(proof, str):
+        if isinstance(proof, Exception):
+            if contract_sha256 is not None and isinstance(proof, system_contract.ContractConflict):
+                raise proof
             raise ValueError(f"{item}：{proof}")
         raw, files = proof
         check_scope(raw, check, record["status"])
         cover = raw["coverage"].get("engineering")
         if not isinstance(cover, dict) or any(cover.get(key) != baseline[key] for key in IDENTITY):
+            if contract_sha256 is not None and isinstance(cover, dict) and all(text(cover.get(key)) for key in IDENTITY):
+                raise system_contract.ContractConflict(f"{item} 绑定到不同工程、版次或变体")
             raise ValueError(f"{item} 未绑定同工程、版次和变体")
         if (raw["evidence_stage"] not in stages or raw["execution_status"] != "completed"
                 or raw["mutation_outcome"] == "outcome_unknown"
@@ -328,6 +371,13 @@ def make_proof(check, record, evidence, artifacts, baseline, root, stages, cache
         claim = observations.get(check)
         if not isinstance(claim, dict):
             raise ValueError(f"{item} 未覆盖 {check}")
+        if contract_sha256 is not None:
+            if "contract_sha256" not in claim:
+                raise system_contract.ContractMissing(f"{item} 缺契约判据与工况摘要")
+            if claim["contract_sha256"] != contract_sha256:
+                raise system_contract.ContractConflict(f"{item} 的契约判据或工况已变更，必须重验")
+            if claim.get("condition") != record["condition"] or claim.get("criterion") != record["criterion"]:
+                raise system_contract.ContractConflict(f"{item} 的契约工况或判据引用不符")
         execution = claim.get("execution")
         if execution not in raw["checks_executed"]:
             raise ValueError(f"{item} 未实际执行所引检查")
@@ -352,26 +402,35 @@ def accepted_stages(stages, flags):
     return permitted
 
 
-def assess(data, policy_data, target, root):
+def assess(data, policy_data, target, root, *, require_system_contract=False, contract_path=None):
     if data["mode"] not in TARGET_MODES[target]:
         raise ValueError("工程 mode 与正式交付目标不匹配")
     root = Path(os.path.abspath(root))
     if root.drive.startswith("\\\\") or not root.is_dir():
         raise ValueError("root 需要指定证据根目录")
     baseline = inspect_baseline(data["baseline"])
-    chosen = select(policy_data, data["mode"], data.get("prototypes", []), data.get("intent", ""),
-                    target, data.get("facts"), carried_checks=data.get("checks", {}))
     check_state = data.get("checks", {})
     extra = set(check_state) - policy_data["checks"].keys()
     if extra:
         raise ValueError(f"不认识的工程检查：{', '.join(sorted(extra))}")
+    contract, bindings, contract_issues = contract_context(
+        data, policy_data, root, required=require_system_contract, expected_path=contract_path)
+    facts = dict(data.get("facts", {}))
+    for name in bindings:
+        if facts.get(name) != "unknown":
+            facts[name] = "present"
+    chosen = select(policy_data, data["mode"], data.get("prototypes", []), data.get("intent", ""),
+                    target, facts, carried_checks=check_state)
     artifacts = {}
     issues = {}
+    artifact_conflicts = {}
     for key, spec in data.get("artifacts", {}).items():
         try:
             artifacts[key] = reference(spec, root)
         except (ValueError, OSError) as exc:
             issues[key] = str(exc)
+            if isinstance(exc, system_contract.ContractConflict):
+                artifact_conflicts[key] = exc
     results = []
     cache = {}
     for check in chosen["required_checks"]:
@@ -382,6 +441,14 @@ def assess(data, policy_data, target, root):
         branches = check.get("branches", [])
         if isinstance(row, dict) and row.get("status") in ("pass", "fail", "not_applicable"):
             try:
+                fingerprint = bindings.get(name)
+                if contract_reference(row.get("condition"), row.get("criterion")) and fingerprint is None:
+                    raise ValueError(str(contract_issues.get(name) or contract_issues.get("system_contract")
+                                         or "缺契约绑定"))
+                if fingerprint is not None:
+                    for subject in row.get("artifacts", ()):
+                        if subject in artifact_conflicts:
+                            raise artifact_conflicts[subject]
                 flags = data.get("model_limits", {}).get(name, [])
                 if (row["status"] != "fail" and check["severity"] == "redline"
                         and data.get("facts", {}).get(name) == "unknown"):
@@ -397,26 +464,69 @@ def assess(data, policy_data, target, root):
                     rule = policy_data["branches"][key]
                     minimum = rule.get("physical_stages") if target in PHYSICAL_TARGETS else None
                     branch_stages[key] = stages & set(minimum) if minimum and row["status"] == "pass" else stages
-                make_proof(name, row, data.get("evidence", {}), artifacts, baseline, root, stages, cache, branch_stages)
+                make_proof(name, row, data.get("evidence", {}), artifacts, baseline, root, stages, cache,
+                           branch_stages, contract_sha256=fingerprint)
                 status = row["status"]
                 reason = row["finding"]
+            except system_contract.ContractConflict as exc:
+                contract_issues[name] = exc
+                reason = str(exc)
             except (ValueError, TypeError) as exc:
                 reason = str(exc)
         results.append({"id": name, "status": status, "severity": check["severity"], "reason": reason,
                         **({"phase_action": check["phase_action"]} if "phase_action" in check else {}),
                         **({"branches": branches} if branches else {})})
-    hard_failure = any(row["status"] == "fail" for row in results)
+    formal = contract_status(contract_issues)
+    hard_failure = formal == "blocked" or any(row["status"] == "fail" for row in results)
     open_check = any(row["status"] == "open" for row in results)
-    status = "blocked" if hard_failure else "needs_evidence" if open_check or issues else "covered"
+    status = "blocked" if hard_failure else "needs_evidence" if open_check or issues or contract_issues else "covered"
     return {
         "schema": "hardware-engineering-assessment-v1", "target": target, "baseline": baseline,
         "engineering_evidence": status, "artifact_issues": issues, "results": results,
+        **({"system_contract": {"status": formal, "issues": {key: str(exc) for key, exc in contract_issues.items()}}}
+           if contract is not None or contract_issues else {}),
         "project_signoff": "verify_separately",
         "operation_authorization": "check_user_or_host_separately",
     }
 
 
-def impact(data, change, policy_data, target=None):
+def contract_check(data, policy_data, root, path):
+    baseline = inspect_baseline(data["baseline"])
+    _, bindings, issues = contract_context(data, policy_data, root, required=True, expected_path=path)
+    cache = {}
+    for name, fingerprint in bindings.items():
+        row = data["checks"][name]
+        if row["status"] == "open":
+            continue
+        try:
+            artifacts = {subject: reference(data["artifacts"][subject], root) for subject in row.get("artifacts", [])}
+            make_proof(name, row, data.get("evidence", {}), artifacts, baseline, root,
+                       policy_data["checks"][name]["stages"], cache, contract_sha256=fingerprint)
+        except (ValueError, KeyError, OSError, TypeError) as exc:
+            issues[name] = exc
+    return {"schema": "hardware-system-contract-check-v1", "baseline": baseline,
+            "engineering_evidence": contract_status(issues),
+            "issues": {key: str(exc) for key, exc in issues.items()}, "bindings": bindings}
+
+
+def contract_paths(contract, obj, variant):
+    """Return check targets and their project-specific dependency paths."""
+    outgoing = {}
+    for edge in contract["dependencies"]:
+        if variant in edge["variants"]:
+            outgoing.setdefault(edge["source"], []).append(edge["target"])
+    paths = {}
+    queue = deque([(obj, [obj])])
+    while queue:
+        node, path = queue.popleft()
+        if node in paths:
+            continue
+        paths[node] = path
+        queue.extend((child, [*path, child]) for child in outgoing.get(node, ()))
+    return {node.removeprefix("check:"): path for node, path in paths.items() if node.startswith("check:")}
+
+
+def impact(data, change, policy_data, target=None, root=None):
     if target and data["mode"] not in TARGET_MODES[target]:
         raise ValueError("工程 mode 与冻结基线的正式交付目标不匹配")
     if not isinstance(change, dict) or change.get("schema") != CHANGE_VERSION:
@@ -427,6 +537,10 @@ def impact(data, change, policy_data, target=None):
     items = change.get("changes")
     if not isinstance(items, list) or not items:
         raise ValueError("未提供结构化变更")
+    contract, _, contract_issues = contract_context(data, policy_data, root or Path.cwd())
+    if contract_issues:
+        raise next((error for error in contract_issues.values() if isinstance(error, system_contract.ContractConflict)),
+                   next(iter(contract_issues.values())))
     planned = select(policy_data, data["mode"], data.get("prototypes", []), data.get("intent", ""),
                      target, data.get("facts"), carried_checks=data.get("checks", {}))
     impacted = {}
@@ -436,7 +550,18 @@ def impact(data, change, policy_data, target=None):
             raise ValueError("变更需要已知 kind、object、variant 与 before/after")
         if item["before"] == item["after"]:
             continue
-        variant = item["variant"]
+        requested_variant = item["variant"]
+        variants = [requested_variant]
+        if contract is not None:
+            known_variants = contract["baseline"]["variants"]
+            subject = next((contract[group][item["object"]] for group in (
+                "blocks", "ports", "conditions", "criteria", "decisions", "anchors")
+                if item["object"] in contract[group]), None)
+            scope = subject["variants"] if subject is not None else known_variants
+            if requested_variant == "*":
+                variants = scope
+            elif requested_variant not in scope:
+                raise system_contract.ContractConflict("ECO 变体不属于绑定对象或契约")
         obj = item["object"]
         kind = item["kind"]
         affected_branches = {}
@@ -453,23 +578,28 @@ def impact(data, change, policy_data, target=None):
         ), *affected_branches]
         if kind == "unknown":
             seeds = list(dict.fromkeys(seeds + [row["id"] for row in planned["required_checks"]]))
-        queue = deque((name, [kind, name]) for name in seeds)
-        visited = set()
-        while queue:
-            name, path = queue.popleft()
-            if name in visited:
-                continue
-            visited.add(name)
-            entry = impacted.setdefault((variant, obj, name), {"path": path, "branches": []})
-            entry["branches"].extend(affected_branches.get(name, ()))
-            for dependent in policy_data["checks"][name]["affects"]:
-                # Assembly-only process changes requalify the build and its first article.
-                # Circuit test access is rechecked when a layout, part or fixture also changes.
-                if kind == "assembly-process" and name == "factory-capability" and dependent == "test-coverage":
+        for variant in variants:
+            dynamic = contract_paths(contract, obj, variant) if contract is not None else {}
+            queue = deque([(name, [kind, *path]) for name, path in dynamic.items()] +
+                          [(name, [kind, name]) for name in seeds])
+            visited = set()
+            while queue:
+                name, path = queue.popleft()
+                if name in visited:
                     continue
-                queue.append((dependent, [*path, dependent]))
+                visited.add(name)
+                entry = impacted.setdefault((variant, obj, name), {"path": path, "branches": []})
+                if name in dynamic:
+                    entry["contract_path"] = dynamic[name]
+                entry["branches"].extend(affected_branches.get(name, ()))
+                for dependent in policy_data["checks"][name]["affects"]:
+                    # Assembly-only changes do not recheck circuit probe access unless a bound dependency calls for it.
+                    if kind == "assembly-process" and name == "factory-capability" and dependent == "test-coverage":
+                        continue
+                    queue.append((dependent, [*path, dependent]))
     rows = [
         {"variant": variant, "object": obj, "check": check, "path": entry["path"], "status": "recheck",
+         **({"contract_path": entry["contract_path"]} if "contract_path" in entry else {}),
          **({"branches": list(dict.fromkeys(entry["branches"]))} if entry["branches"] else {})}
         for (variant, obj, check), entry in impacted.items()
     ]

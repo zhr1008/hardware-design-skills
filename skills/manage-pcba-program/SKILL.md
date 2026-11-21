@@ -5,6 +5,8 @@ description: Coordinate an evidence-gated electronic product and PCBA workflow f
 
 # PCBA Program Manager
 
+直接任务走现有专项。开放式任务沿用工作态台账，正式交接才按[系统契约和一页协议](../hardware/references/system-contract.md)固定共享事实。正式阶段消费已验收的 case、快照和 impact。关项前核身份、变体、证据与批准；发现反例只失效相关阶段，退回负责的工程决定。
+
 工程决定由 [硬件工程流程](../hardware/references/design-workflow.md) 形成。新正式项目可用 `program_state.py init --formal-engineering`；工程阶段通过需 `set-stage --engineering-case` 重新核验。制造阶段再绑定当前 manifest 和 CPL。授权时用 `invalidate-impact --case … --change-file … --reason …` 消费当前版、当前变体的影响结果。旧项目状态仍可读并沿用原合同。状态记录与真实项目签核、现场/采购授权分别管理。
 
 Coordinate specialists; do not replace them. Default shared artifacts to

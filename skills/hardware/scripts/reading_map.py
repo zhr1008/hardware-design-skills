@@ -61,7 +61,7 @@ def expand(data, theme_ids, docs, include_further=False, root=None):
     return themes
 
 
-def select(mode, topics, prototypes, root=None, intent="", required_themes=()):
+def select(mode, topics, prototypes, root=None, intent="", required_themes=(), *, compact=False):
     data = load_map()
     primary = [theme for topic in topics for theme in data["by_topic"].get(topic, ())]
     primary.extend(theme for proto in prototypes for theme in data["by_prototype"].get(proto, ()))
@@ -74,6 +74,12 @@ def select(mode, topics, prototypes, root=None, intent="", required_themes=()):
     ordered = (mode_themes + primary if not primary or mode in ("eco", "verify", "bringup", "release")
                else primary)
     docs = documents(root or SKILL)
+    if compact:
+        return {
+            "catalogue_status": "available" if docs else "not_configured",
+            "themes": [{"id": theme, "reference": data["themes"][theme]["reference"]}
+                       for theme in dict.fromkeys(ordered)],
+        }
     return {"schema_version": 1, "catalogue_status": "available" if docs else "not_configured",
             "inferred_from_intent": inferred, "themes": expand(data, dict.fromkeys(ordered), docs, root=root)}
 

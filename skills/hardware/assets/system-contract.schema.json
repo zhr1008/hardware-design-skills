@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hardware system contract v1",
+  "description": "A project-local snapshot of shared design facts. The runtime validator also checks identity, file integrity, variant containment, reference resolution, scalar sums, and dependency cycles.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "baseline", "brief_ref", "blocks", "ports", "links", "conditions", "criteria", "decisions", "dependencies", "anchors"],
+  "properties": {
+    "schema": {"const": "hardware-system-contract-v1"},
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project", "revision", "variants"],
+      "properties": {
+        "project": {"$ref": "#/$defs/text"},
+        "revision": {"$ref": "#/$defs/text"},
+        "variants": {"$ref": "#/$defs/variants"}
+      }
+    },
+    "brief_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "requirements"],
+      "properties": {
+        "path": {"$ref": "#/$defs/path"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "requirements": {
+          "type": "object",
+          "propertyNames": {"$ref": "#/$defs/id"},
+          "additionalProperties": {
+            "type": "string",
+            "description": "JSON Pointer for a JSON brief (including JSON-compatible YAML), or #L followed by a one-based line number for a text brief.",
+            "pattern": "^(?:/(?:[^~]|~[01])*|#L[1-9][0-9]{0,8})$"
+          }
+        }
+      }
+    },
+    "blocks": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/block"}},
+    "ports": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/port"}},
+    "links": {"type": "array", "items": {"$ref": "#/$defs/link"}},
+    "conditions": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/condition"}},
+    "criteria": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/criterion"}},
+    "decisions": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/decision"}},
+    "dependencies": {"type": "array", "items": {"$ref": "#/$defs/dependency"}},
+    "anchors": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/anchor"}}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.-]*$"},
+    "text": {"type": "string", "pattern": "\\S"},
+    "variants": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+    "path": {
+      "type": "string",
+      "description": "Project-relative file path using forward slashes. The runtime checks components and role-specific suffixes.",
+      "pattern": "^[^/<>:\"|?*\u005cx5c\u005cx00-\u005cx1f]+(?:/[^/<>:\"|?*\u005cx5c\u005cx00-\u005cx1f]+)*$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "variants"],
+      "properties": {
+        "role": {"$ref": "#/$defs/text"},
+        "variants": {"$ref": "#/$defs/variants"}
+      }
+    },
+    "port": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["block", "kind", "role", "domain", "variants"],
+      "properties": {
+        "block": {"$ref": "#/$defs/id"},
+        "kind": {"$ref": "#/$defs/text"},
+        "role": {"$ref": "#/$defs/text"},
+        "domain": {"$ref": "#/$defs/text"},
+        "variants": {"$ref": "#/$defs/variants"},
+        "locator": {"$ref": "#/$defs/text"},
+        "gap": {"$ref": "#/$defs/text"},
+        "anchor": {"$ref": "#/$defs/id"}
+      }
+    },
+    "link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "target", "variants"],
+      "properties": {
+        "source": {"$ref": "#/$defs/id"},
+        "target": {"$ref": "#/$defs/id"},
+        "variants": {"$ref": "#/$defs/variants"},
+        "condition": {"$ref": "#/$defs/id"}
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "window", "variants"],
+      "properties": {
+        "state": {"$ref": "#/$defs/text"},
+        "window": {"$ref": "#/$defs/text"},
+        "variants": {"$ref": "#/$defs/variants"},
+        "environment": {"$ref": "#/$defs/text"}
+      }
+    },
+    "criterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirement", "condition", "point", "op", "limit", "unit", "variants"],
+      "properties": {
+        "requirement": {"$ref": "#/$defs/id"},
+        "condition": {"$ref": "#/$defs/id"},
+        "point": {"$ref": "#/$defs/id"},
+        "op": {"enum": ["<", "<=", ">", ">="]},
+        "limit": {"type": "number"},
+        "unit": {"type": "string", "pattern": "^\\S+$"},
+        "variants": {"$ref": "#/$defs/variants"},
+        "allocations": {
+          "description": "Explicitly additive scalar allocations, all in the criterion unit. The exact sum must satisfy the criterion bound.",
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "number"}
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "variants"],
+      "properties": {
+        "statement": {"$ref": "#/$defs/text"},
+        "variants": {"$ref": "#/$defs/variants"},
+        "condition": {"$ref": "#/$defs/id"},
+        "method": {"$ref": "#/$defs/text"},
+        "anchors": {"$ref": "#/$defs/refs"},
+        "affected": {"$ref": "#/$defs/refs"}
+      }
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "target", "variants"],
+      "properties": {
+        "source": {"$ref": "#/$defs/id"},
+        "target": {"type": "string", "pattern": "^(?:check:)?[A-Za-z0-9_][A-Za-z0-9_.-]*$"},
+        "variants": {"$ref": "#/$defs/variants"}
+      }
+    },
+    "anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "role", "variants"],
+      "properties": {
+        "path": {"$ref": "#/$defs/path"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "role": {
+          "enum": ["schematic", "pcb", "firmware", "mechanical", "simulation", "evidence", "module-pack", "bom", "cpl", "manifest", "sourcing-lock", "test-fixture"]
+        },
+        "variants": {"$ref": "#/$defs/variants"},
+        "locator": {"$ref": "#/$defs/text"}
+      }
+    }
+  }
+}
