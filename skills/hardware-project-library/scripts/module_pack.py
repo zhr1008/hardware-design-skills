@@ -4,7 +4,9 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import re
+import stat
 from pathlib import Path
 
 from project_library import file_hash, identifier, linked_path, selected_file
@@ -290,6 +292,16 @@ def module_root(library):
 
 def load_module(root, manifest, expected_hash=None):
     if manifest.is_absolute():
+        if ".." in manifest.parts:
+            raise ValueError("module manifest requires a normalized path")
+        if (os.name == "nt" and not manifest.is_relative_to(root)
+                and manifest.drive.casefold() == root.drive.casefold()):
+            # The library root may be expanded while the input still uses an 8.3 alias.
+            # Inspect the original spelling before resolving away any links.
+            if any(part.lstat().st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
+                   for part in (manifest, *manifest.parents)):
+                raise ValueError("linked module manifest path is not accepted")
+            manifest = manifest.resolve(strict=True)
         manifest = manifest.relative_to(root)
     if len(manifest.parts) != 3 or manifest.name != "module.json":
         raise ValueError("module manifest path must be <module_id>/<revision>/module.json")

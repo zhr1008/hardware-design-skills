@@ -95,6 +95,25 @@ class ModulePackTests(unittest.TestCase):
         self.assertEqual(result["status"], "blocked")
         self.assertEqual(result["conditions"]["supply"]["status"], "outside")
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows 8.3 path alias")
+    def test_absolute_manifest_accepts_windows_short_alias(self):
+        from ctypes import create_unicode_buffer, windll
+
+        manifest = self.path.resolve(strict=True)
+        alias = create_unicode_buffer(32768)
+        size = windll.kernel32.GetShortPathNameW(str(manifest), alias, len(alias))
+        if not 0 < size < len(alias) or Path(alias.value).is_relative_to(self.library.resolve()):
+            self.skipTest("Windows volume did not assign a short alias to the library path")
+        result = self.run_cli("module-fit", "--manifest", alias.value,
+                              request={"conditions": {"source_ohm": {"value": 50, "unit": "ohm"}}})
+        self.assertEqual(result["status"], "fits")
+
+    def test_absolute_manifest_cannot_point_to_another_library(self):
+        other = self.root / "other" / "sample" / "0.1.0" / "module.json"
+        other.parent.mkdir(parents=True)
+        other.write_bytes(self.path.read_bytes())
+        self.run_cli("module-fit", "--manifest", other, code=2)
+
     def test_forbidden_combinations_are_matched_clear_or_unknown(self):
         self.manifest["forbidden_combinations"] = [
             {"id": "fast-source", "reason": "fast source boundary",
