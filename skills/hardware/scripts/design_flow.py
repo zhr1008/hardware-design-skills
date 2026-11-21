@@ -10,6 +10,8 @@ import engineering_decision as engineering
 import reading_map
 
 KNOWLEDGE = Path(__file__).with_name("knowledge.py")
+PROJECT_LIBRARY = KNOWLEDGE.parents[2] / "hardware-project-library"
+MODULE_PHASES = {"plan", "design", "eco"}
 TOPICS = {
     "analog": ("opamp-common-mode", "opamp-linear-output", "analog-capacitive-load",
                "opamp-offset-error", "opamp-bias-error", "opamp-slew-rate"),
@@ -30,8 +32,8 @@ TOPICS = {
                     "ipc-datum-fiducial", "msl-floor-life", "pcb-bow-twist-method"),
 }
 PHASES = {
-    "plan": ("requirements", "knowledge", "decision", "handoff"),
-    "design": ("requirements", "knowledge", "decision", "implementation", "verification", "handoff"),
+    "plan": ("requirements", "knowledge", "topology-options", "decision", "handoff"),
+    "design": ("requirements", "knowledge", "topology-options", "decision", "implementation", "verification", "handoff"),
     "review": ("requirements", "knowledge", "assessment", "verification", "handoff"),
     "eco": ("baseline", "knowledge", "impact", "decision", "implementation", "reverification", "handoff"),
     "verify": ("requirements", "knowledge", "model_coverage", "verification", "handoff"),
@@ -62,8 +64,10 @@ def start(library, mode, topics, additional_rules, prototype_names=(), intent=""
     if target and mode not in engineering.TARGET_MODES[target]:
         raise ValueError("工程 mode 与正式交付目标不匹配")
     task_intent = " ".join(filter(None, (case.get("intent", ""), intent)))
-    decision = engineering.select(engineering.policy(), mode, [*case.get("prototypes", []), *prototype_names],
-                                  task_intent, target,
+    prototypes = [*case.get("prototypes", []), *prototype_names]
+    if "sampling" in topics and mode in ("plan", "design"):
+        prototypes.append("adc-front-end")
+    decision = engineering.select(engineering.policy(), mode, prototypes, task_intent, target,
                                   facts=case.get("facts"), model_limits=[
                                       *model_limits, *(flag for flags in case.get("model_limits", {}).values() for flag in flags)
                                   ], carried_checks=case.get("checks", {}))
@@ -86,6 +90,28 @@ def start(library, mode, topics, additional_rules, prototype_names=(), intent=""
                              if "knowledge_theme" in check]),
         **decision,
     }
+
+
+def module_candidates(mode, keyword, roots, conditions):
+    if mode not in MODULE_PHASES:
+        raise ValueError("模块检索适用于 plan、design 或 eco")
+    if not keyword.strip():
+        raise ValueError("模块检索需要明确的功能或关键词")
+    command = [sys.executable, "-X", "utf8", "-B", str(PROJECT_LIBRARY / "scripts/project_library.py"),
+               "module-search", "--query", keyword, "--limit", "5"]
+    if conditions:
+        command += ["--conditions", str(conditions)]
+    catalogues = []
+    for root in dict.fromkeys(roots or [PROJECT_LIBRARY / "assets/module-packs"]):
+        result = subprocess.run([*command, "--library", str(root)], capture_output=True,
+                                encoding="utf-8", timeout=30, check=False)
+        if result.returncode not in (0, 1) or not result.stdout.strip():
+            raise ValueError(result.stderr.strip() or "模块目录无法查询")
+        report = json.loads(result.stdout)
+        if not isinstance(report, dict) or "matches" not in report:
+            raise ValueError(result.stderr.strip() or str(report))
+        catalogues.append({"root": str(root), **report})
+    return catalogues
 
 
 def basis(library, rule_ids, theme_ids=(), roles=(), branch_ids=()):
@@ -168,6 +194,9 @@ def main():
     initial.add_argument("--intent", default="", help="简短目标描述，匹配明确的原型别名")
     initial.add_argument("--case", type=Path, help="正式或已记录的工程对象，可选")
     initial.add_argument("--target", choices=engineering.TARGET_MODES)
+    initial.add_argument("--module-query", help="选定功能块时检索获准复用的模块")
+    initial.add_argument("--module-root", type=Path, action="append", help="明确允许读取的模块目录，可重复")
+    initial.add_argument("--module-conditions", type=Path, help="已有目标工况的模块核对请求")
     initial.add_argument("--model-limit", choices=engineering.MODEL_LIMITS, action="append", default=[])
     evidence = sub.add_parser("basis", help="读取选中规则或知识主题的来源页", allow_abbrev=False)
     evidence.add_argument("--rule", action="append", default=[])
@@ -204,10 +233,15 @@ def main():
             if args.command == "prototypes":
                 result = {"prototypes": rules["prototypes"]}
             elif args.command == "start":
+                if args.module_query is None and (args.module_root or args.module_conditions):
+                    raise ValueError("模块目录或请求需与 --module-query 同用")
                 if data is not None and data["mode"] != args.mode:
                     raise ValueError("工程记录的 mode 与启动 mode 不同")
                 result = start(args.library, args.mode, args.topic, args.rule, args.prototype, args.intent,
                                data, args.model_limit, args.target)
+                if args.module_query is not None:
+                    result["module_catalogues"] = module_candidates(
+                        args.mode, args.module_query, args.module_root, args.module_conditions)
             elif args.command == "assess":
                 result = engineering.assess(data, rules, args.target, args.root or case_path.resolve().parent)
                 code = {"covered": 0, "blocked": 1, "needs_evidence": 2}[result["engineering_evidence"]]

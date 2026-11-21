@@ -80,6 +80,18 @@ class OfflinePcbChecks(unittest.TestCase):
         cpl = self.write("CPL.csv", "Ref Des,Mid X (mm),Mid Y (mm),Layer,Rotation\nR1,0,2,Top,0\n")
         self.assertEqual(self.invoke(ASSEMBLY, bom, "--cpl", cpl)[0], 0)
 
+    def test_kibot_compatible_fixture_keeps_dnc_and_explicitly_excludes_dnf(self):
+        bom = self.write("bom.csv", "References,Status\nR1,DNC\nR2,DNF\nC1,\n")
+        populated = "Ref,PosX,PosY,Rot,Side\nR1,1mm,2mm,0,top\nC1,3mm,4mm,90,bottom\n"
+        cpl = self.write("pos.csv", populated)
+        code, report = self.invoke(ASSEMBLY, bom, "--cpl", cpl, "--exclude", "R2")
+        self.assertEqual(code, 0, report)
+        self.assertEqual(report["cpl_side_counts"], {"top": 1, "bottom": 1})
+        self.assertEqual(report["excluded_references"], ["R2"])
+        self.assertEqual(self.invoke(ASSEMBLY, bom, "--cpl", cpl)[0], 1)  # no implicit Status parsing
+        cpl.write_text(populated + "R2,1mm,2mm,0,top\n", encoding="utf-8")
+        self.assertEqual(self.invoke(ASSEMBLY, bom, "--cpl", cpl, "--exclude", "R2")[0], 1)
+
     def kicad_report(self, kind, **values):
         report = {
             "$schema": f"https://schemas.kicad.org/{kind}.v1.json",

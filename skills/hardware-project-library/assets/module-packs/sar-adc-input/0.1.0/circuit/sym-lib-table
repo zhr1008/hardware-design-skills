@@ -1,0 +1,2 @@
+(sym_lib_table (version 7)
+  (lib (name "SarMvp")(type "KiCad")(uri "${KIPRJMOD}/SarMvp.kicad_sym")(options "")(descr "Original SAR MVP library")))

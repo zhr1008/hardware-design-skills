@@ -29,6 +29,8 @@ metadata:
 
 ## 本地工具
 
+元件或子电路级复用走[模块包](references/module-packs.md)，按许可、接线、工况与证据层选候选。仓库内的公开样板是原创合成示例。
+
 `scripts/project_library.py` 只用 Python 标准库；无网络调用，不执行被索引文件。使用绝对脚本路径，Windows 用 `python -X utf8`。
 
 ```text

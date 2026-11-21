@@ -6,6 +6,8 @@ description: >-
 
 # Altium 회로도 검토
 
+涉及写入或派生制造工件时，按[保存态回读](../hardware/references/saved-design-readback.md)逐项核对同版真实工程及原生报告，记录回执、写入结果和实际覆盖。
+
 电气判断先按 [工程决策](../hardware/references/design-workflow.md) 展开风险并核本机原文，平台解析交精确位号/脚位/网和覆盖。保持保存态优先。
 
 保存文件优先。经授权连接现场时只取文档身份、对应图纸和所需引脚/网络，核对活动焦点。空结果记证据缺口；写后超时先只读对账。

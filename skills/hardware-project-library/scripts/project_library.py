@@ -35,6 +35,10 @@ def identifier(value: object) -> str:
     return value
 
 
+def linked_path(path: Path) -> bool:
+    return path.is_symlink() or getattr(path, "is_junction", lambda: False)()
+
+
 def selected_file(root: Path, relative: object) -> Path:
     if not isinstance(relative, str) or not relative.strip():
         raise ValueError("file path must be a nonempty relative path")
@@ -45,7 +49,7 @@ def selected_file(root: Path, relative: object) -> Path:
     for part in [candidate, *candidate.parents]:
         if part == root:
             break
-        if part.is_symlink() or getattr(part, "is_junction", lambda: False)():
+        if linked_path(part):
             raise ValueError(f"linked file or directory is not accepted: {relative}")
     resolved = candidate.resolve(strict=True)
     if not resolved.is_relative_to(root) or not resolved.is_file():
@@ -222,6 +226,16 @@ def main() -> int:
         elif command == "search":
             p.add_argument("--query", default=""); p.add_argument("--limit", type=int, default=20)
         else: p.add_argument("--id", required=True)
+    for command in ("module-search", "module-fit"):
+        p = sub.add_parser(command)
+        p.add_argument("--library", type=Path, required=True, help="explicit module root")
+        p.add_argument("--conditions", type=Path, help="JSON request with conditions, interfaces, and changes")
+        if command == "module-search":
+            p.add_argument("--query", default="")
+            p.add_argument("--limit", type=int, default=5)
+        else:
+            p.add_argument("--manifest", type=Path, required=True, help="module.json under the module root")
+            p.add_argument("--manifest-sha256", help="expected hash of a previously identified manifest")
     args = parser.parse_args()
     try:
         if args.command == "template":
@@ -232,11 +246,20 @@ def main() -> int:
         elif args.command == "register":
             spec = json.loads(args.spec.read_text(encoding="utf-8-sig"))
             result = {"record": str(register(args.library, spec)), "engineering_validation": "not_performed_by_indexer"}
+        elif args.command in ("module-search", "module-fit"):
+            from module_pack import module_fit, module_search, read_json
+
+            request = read_json(args.conditions.read_bytes()) if args.conditions else {}
+            if args.command == "module-search":
+                result = module_search(args.library, args.query, request, args.limit)
+            else:
+                result = module_fit(args.library, args.manifest, request, args.manifest_sha256)
         elif args.command == "search": result = search(args.library, args.query, args.limit)
         elif args.command == "inspect": result = read_record(args.library, args.id)
         else: result = verify(args.library, args.id)
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 1 if result.get("integrity_ok") is False or result.get("invalid_records") else 0
+        return 1 if (result.get("integrity_ok") is False or result.get("invalid_records")
+                     or result.get("invalid_modules") or result.get("status") == "blocked") else 0
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(json.dumps({"error": str(exc), "operation": args.command}, ensure_ascii=False))
         return 2

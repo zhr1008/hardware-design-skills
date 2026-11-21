@@ -95,6 +95,22 @@ class ReleaseGuard(unittest.TestCase):
         self.assertEqual(legacy.returncode, 1)
         self.assertIn("cpl_places_excluded_reference", " ".join(json.loads(legacy.stdout)["errors"]))
 
+    def test_kibot_compatible_fixture_freezes_actual_output_bytes(self):
+        bom = b"References,Status\nR1,DNC\nR2,DNF\nC1,\n"
+        cpl = b"Ref,PosX,PosY,Rot,Side\nR1,1mm,2mm,0,top\nC1,3mm,4mm,90,bottom\n"
+        self.artifacts["bom"] = artifact_record(self.root, "bom", bom)
+        self.artifacts["cpl"] = artifact_record(self.root, "cpl", cpl)
+        self.data["constraints"]["assembly_sides"] = ["Top", "Bottom"]
+        built = self.build("--exclude", "R2")
+        self.assertEqual(built.returncode, 0, built.stdout + built.stderr)
+        result = run_cli(RELEASE_SCRIPTS / "validate_release_manifest.py", self.manifest,
+                         "--confine-to-manifest-dir", "--formal")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        (self.root / "cpl.csv").write_bytes(cpl.replace(b",90,", b",91,"))
+        changed = run_cli(RELEASE_SCRIPTS / "validate_release_manifest.py", self.manifest,
+                          "--confine-to-manifest-dir", "--formal")
+        self.assertNotEqual(changed.returncode, 0, changed.stdout)
+
     def test_formal_release_records_artifact_hashes_for_downstream_recheck(self):
         checked = self.validate()
         self.assertEqual(checked.returncode, 0, checked.stderr)

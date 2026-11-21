@@ -155,6 +155,8 @@ def make_parser():
         runner.add_argument("--timeout", type=int, help="本次执行的秒数上限")
     parsers["kicad-native-check"].add_argument("--companion", action="append", default=[],
                                                help="源目录内的伴随文件，可重复")
+    parsers["kicad-native-check"].add_argument("--schematic", help="同版 KiCad 原理图")
+    parsers["kicad-native-check"].add_argument("--expected-readback", help="已核实的保存态目标 JSON")
 
     bench = parsers["bench-check"]
     bench.add_argument("--measurements", required=True, help="已有的测量 CSV")
@@ -182,7 +184,8 @@ def list_tools(as_json):
 def prepare(args):
     name = args.tool
     formal = getattr(args, "formal", False)
-    source = local_file(args.input, input_file=not formal)
+    paired_readback = name == "kicad-native-check" and bool(args.schematic and args.expected_readback)
+    source = local_file(args.input, input_file=not (formal or paired_readback))
     entry = TOOLS[name][2]
     command = [str(source)]
     input_paths = [source]
@@ -295,6 +298,14 @@ def prepare(args):
                 raise ValueError(f"伴随文件必须位于输入文件所在目录：{companion}")
             input_paths.append(companion)
             command += [f"--companion={companion}"]
+        if name == "kicad-native-check":
+            if bool(args.schematic) != bool(args.expected_readback):
+                raise ValueError("--schematic 与 --expected-readback 必须同时指定")
+            for flag, value in (("schematic", args.schematic), ("expected-readback", args.expected_readback)):
+                if value:
+                    path = local_file(value, input_file=False)
+                    input_paths.append(path)
+                    command.append(f"--{flag}={path}")
     elif name == "bench-check":
         measurements = local_file(args.measurements, input_file=not formal)
         if source.suffix.casefold() != ".json" or measurements.suffix.casefold() != ".csv":

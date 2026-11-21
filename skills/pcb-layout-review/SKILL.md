@@ -5,6 +5,8 @@ description: Audit, finish, or port PCB placement and routing using circuit inte
 
 # PCB Layout Reviewer
 
+涉及写入或派生制造工件时，按[保存态回读](../hardware/references/saved-design-readback.md)逐项核对同版真实工程及原生报告，记录回执、写入结果和实际覆盖。
+
 工程审查按 [工程决策](../hardware/references/design-workflow.md) 的 `start review` 展开实际回流、工艺下界、热、装配和可测性。回交网/层/位置和报告覆盖。机械或工艺变更通过 `impact` 分配重验。
 
 [KiCad 原生检查输入与局限](references/kicad-native-checks.md)

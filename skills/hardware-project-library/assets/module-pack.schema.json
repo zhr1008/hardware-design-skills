@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hardware module pack v1",
+  "description": "The module CLI also checks file paths and hashes, references, compatible units, and ordered bounds.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "module_id", "revision", "variant", "function", "tags", "scope",
+    "provenance", "interfaces", "conditions", "parts", "files", "evidence"
+  ],
+  "properties": {
+    "schema": {"const": "hardware-module-pack-v1"},
+    "module_id": {"$ref": "#/$defs/id"},
+    "revision": {"$ref": "#/$defs/id"},
+    "variant": {"$ref": "#/$defs/id"},
+    "function": {"$ref": "#/$defs/text"},
+    "tags": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "scope": {"$ref": "#/$defs/text"},
+    "provenance": {"$ref": "#/$defs/provenance"},
+    "interfaces": {"type": "array", "items": {"$ref": "#/$defs/interface"}},
+    "conditions": {
+      "type": "object",
+      "propertyNames": {"$ref": "#/$defs/id"},
+      "additionalProperties": {"$ref": "#/$defs/condition"}
+    },
+    "parts": {"type": "array", "items": {"$ref": "#/$defs/part"}},
+    "files": {
+      "type": "object",
+      "propertyNames": {"$ref": "#/$defs/id"},
+      "additionalProperties": {"$ref": "#/$defs/file"}
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["saved_eda", "calculation", "simulation", "bench"],
+      "properties": {
+        "saved_eda": {"$ref": "#/$defs/evidence"},
+        "calculation": {"$ref": "#/$defs/evidence"},
+        "simulation": {"$ref": "#/$defs/evidence"},
+        "bench": {"$ref": "#/$defs/evidence"}
+      }
+    },
+    "allowed_changes": {"type": "array", "items": {"$ref": "#/$defs/allowed_change"}},
+    "forbidden_combinations": {"type": "array", "items": {"$ref": "#/$defs/forbidden"}},
+    "layout_constraints": {"type": "array", "items": {"$ref": "#/$defs/layout"}},
+    "change_impact": {"type": "array", "items": {"$ref": "#/$defs/impact"}}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"provenance": {"properties": {"distribution": {"const": "public-original"}}}}},
+      "then": {"properties": {"provenance": {"properties": {"kind": {"const": "original"}}}}}
+    },
+    {
+      "if": {"properties": {"provenance": {"properties": {"kind": {"not": {"const": "original"}}}}}},
+      "then": {"properties": {"provenance": {"properties": {"sources": {"minItems": 1}}}}}
+    },
+    {
+      "if": {"properties": {"provenance": {"properties": {"distribution": {"not": {"const": "reference-only"}}}}}},
+      "then": {"properties": {"files": {"minProperties": 1}}}
+    }
+  ],
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,95}$"},
+    "text": {"type": "string", "pattern": "\\S"},
+    "refs": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["locator", "use"],
+      "properties": {
+        "locator": {"$ref": "#/$defs/text"},
+        "use": {"$ref": "#/$defs/text"},
+        "revision": {"$ref": "#/$defs/text"},
+        "detail": {"$ref": "#/$defs/text"}
+      }
+    },
+    "provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "sources", "license", "distribution"],
+      "properties": {
+        "kind": {"$ref": "#/$defs/text"},
+        "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
+        "license": {"$ref": "#/$defs/text"},
+        "distribution": {"enum": ["public-original", "private", "reference-only"]}
+      }
+    },
+    "interface": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "role", "direction", "reference_domain", "mapping"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "role": {"$ref": "#/$defs/text"},
+        "direction": {"enum": ["input", "output", "bidirectional", "passive"]},
+        "reference_domain": {"$ref": "#/$defs/text"},
+        "mapping": {
+          "type": "object", "minProperties": 1, "additionalProperties": false,
+          "properties": {"pin": {"$ref": "#/$defs/text"}, "net": {"$ref": "#/$defs/text"}}
+        }
+      }
+    },
+    "range": {
+      "type": "object", "required": ["unit", "min", "max"],
+      "properties": {
+        "unit": {"$ref": "#/$defs/text"},
+        "min": {"type": "number"},
+        "max": {"type": "number"}
+      }
+    },
+    "enum": {
+      "type": "object", "required": ["enum"],
+      "properties": {"enum": {
+        "type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}
+      }}
+    },
+    "domain": {
+      "oneOf": [{"$ref": "#/$defs/range"}, {"$ref": "#/$defs/enum"}]
+    },
+    "condition": {
+      "$ref": "#/$defs/domain",
+      "type": "object", "unevaluatedProperties": false, "required": ["required"],
+      "properties": {"required": {"type": "boolean"}, "hard": {"type": "boolean"}}
+    },
+    "predicate": {
+      "type": "object", "propertyNames": {"$ref": "#/$defs/id"},
+      "additionalProperties": {
+        "type": "object", "unevaluatedProperties": false,
+        "oneOf": [
+          {"$ref": "#/$defs/range"},
+          {"required": ["equals"], "properties": {"equals": {"$ref": "#/$defs/text"}}}
+        ]
+      }
+    },
+    "part": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ref", "role", "manufacturer", "mpn", "package", "pin_map", "dnp"],
+      "properties": {
+        "ref": {"$ref": "#/$defs/id"},
+        "role": {"$ref": "#/$defs/text"},
+        "manufacturer": {"$ref": "#/$defs/text"},
+        "mpn": {"$ref": "#/$defs/text"},
+        "package": {"$ref": "#/$defs/text"},
+        "pin_map": {
+          "type": "object", "minProperties": 1,
+          "propertyNames": {"$ref": "#/$defs/text"}, "additionalProperties": {"$ref": "#/$defs/text"}
+        },
+        "dnp": {"type": "boolean"}
+      }
+    },
+    "file": {
+      "type": "object", "additionalProperties": false,
+      "required": ["role", "relative_path", "sha256", "license"],
+      "properties": {
+        "role": {"$ref": "#/$defs/text"},
+        "relative_path": {"$ref": "#/$defs/text"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "license": {"$ref": "#/$defs/text"},
+        "materialize_as": {"$ref": "#/$defs/text"}
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "receipt"],
+      "properties": {
+        "status": {"enum": ["pending", "pass", "fail"]},
+        "receipt": {"type": ["string", "null"]},
+        "conditions": {
+          "type": "object", "propertyNames": {"$ref": "#/$defs/id"},
+          "additionalProperties": {
+            "$ref": "#/$defs/domain", "unevaluatedProperties": false
+          }
+        },
+        "note": {"$ref": "#/$defs/text"}
+      },
+      "if": {"properties": {"status": {"const": "pending"}}},
+      "then": {"properties": {"receipt": {"type": "null"}}},
+      "else": {"properties": {"receipt": {"$ref": "#/$defs/id"}}}
+    },
+    "change_kind": {
+      "enum": [
+        "part", "production-config", "pin-pad", "filter", "power", "layout", "firmware",
+        "supplier", "price-stock", "bom-variant", "test-fixture", "process", "assembly-process", "unknown"
+      ]
+    },
+    "allowed_change": {
+      "$ref": "#/$defs/domain",
+      "type": "object", "unevaluatedProperties": false, "required": ["parameter", "change_kind"],
+      "properties": {
+        "parameter": {"$ref": "#/$defs/id"},
+        "change_kind": {"$ref": "#/$defs/change_kind"}
+      }
+    },
+    "forbidden": {
+      "type": "object", "additionalProperties": false, "required": ["id", "when", "reason"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "when": {"$ref": "#/$defs/predicate", "minProperties": 1},
+        "reason": {"$ref": "#/$defs/text"}
+      }
+    },
+    "layout": {
+      "type": "object", "additionalProperties": false, "required": ["id", "object", "criterion"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "object": {"$ref": "#/$defs/text"},
+        "criterion": {"$ref": "#/$defs/text"},
+        "when": {"$ref": "#/$defs/predicate"},
+        "evidence": {"$ref": "#/$defs/refs"}
+      }
+    },
+    "impact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["parameter", "change_kind", "checks", "invalidates", "reason"],
+      "properties": {
+        "parameter": {"$ref": "#/$defs/id"},
+        "change_kind": {"$ref": "#/$defs/change_kind"},
+        "checks": {"$ref": "#/$defs/refs"},
+        "invalidates": {
+          "type": "array", "uniqueItems": true,
+          "items": {"enum": ["saved_eda", "calculation", "simulation", "bench"]}
+        },
+        "reason": {"$ref": "#/$defs/text"}
+      }
+    }
+  }
+}

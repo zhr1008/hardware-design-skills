@@ -6,7 +6,15 @@ python -X utf8 -B scripts/run_kicad_checks.py board.kicad_pcb --output-dir path/
 
 执行器通过扩展名选择 ERC 或 DRC。使用 KiCad 9.x/10.x 稳定版，保留命令、版本、退出码、原生 JSON 与日志。它在新目录复制保存态文件及适用的工程规则和库表，纳入本地层次原理图，可用 `--companion` 补充同一源目录范围内的文件。隔离配置使用安装自带的标准库表执行 ERC。源文件摘要在执行前后比对。
 
-原生退出码 5 表示报告有违规，报告的排除、忽略以及严重度覆盖以实际 JSON 和已读回条目为准。本机实测 KiCad 9.0.7 的报告缺少 `included_severities`，正式结果保留 `coverage_incomplete`。其他工具错误、报告缺失和无效报告各有独立状态。DRC 当前覆盖 PCB 本身，原理图一致性检查在跳过记录中标明。
+原生退出码 5 表示报告有违规，报告的排除、忽略以及严重度覆盖以实际 JSON 和已读回条目为准。本机实测 KiCad 9.0.7 的报告缺少 `included_severities`，正式结果保留 `coverage_incomplete`。其他工具错误、报告缺失和无效报告各有独立状态。单文件 DRC 覆盖 PCB 本身，原理图一致性检查在跳过记录中标明。
+
+## 配对保存回读
+
+```powershell
+python -X utf8 -B ../hardware/scripts/hardware_tool.py kicad-native-check board.kicad_pcb --schematic board.kicad_sch --expected-readback intent.json --output-dir path/to/new-check
+```
+
+文件同目录同名根。预期 `kicad-saved-readback-v1` 清单含版次、变体、项目内相对文件名至 SHA-256 的明确映射、逐脚原理图 `schematic-connectivity-v1` 及 PCB 的位号／封装／全部编号焊盘数组。预期图由本次设计或经确认的 ECO 对照生成。固定输入副本后实际导出 KiCad XML、运行 ERC 和含原理图一致性的 DRC，留存原始输出与对账。正反例见仓库原生回归。回读过程本身只读，`mutation_outcome` 不替代前一写操作的结果。报告层有覆盖缺项时保留缺项。详见[保存态回读](../../hardware/references/saved-design-readback.md)。
 
 ## 确认自定义规则确实生效
 

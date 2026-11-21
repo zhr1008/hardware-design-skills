@@ -1,0 +1,355 @@
+{
+  "schema": "hardware-module-pack-v1",
+  "module_id": "sar-adc-input",
+  "revision": "0.1.0",
+  "variant": "single-ended",
+  "function": "adc-front-end",
+  "tags": [
+    "sar",
+    "adc",
+    "precision-sampling",
+    "模拟采样"
+  ],
+  "scope": "prototype",
+  "provenance": {
+    "kind": "original",
+    "sources": [
+      {
+        "locator": "https://item.szlcsc.com/116668.html",
+        "use": "R1 exact ordering code and component fields"
+      },
+      {
+        "locator": "https://item.szlcsc.com/521028.html",
+        "use": "C1 exact ordering code and component fields"
+      },
+      {
+        "locator": "https://www.ti.com/lit/ds/symlink/ads7042.pdf",
+        "revision": "SBAS608C",
+        "detail": "§8.5 and §8.3.2",
+        "use": "Example SAR input context, typical capacitance; project must check switched input and acquisition"
+      }
+    ],
+    "license": "MIT",
+    "distribution": "public-original"
+  },
+  "interfaces": [
+    {
+      "id": "source",
+      "role": "signal",
+      "direction": "input",
+      "reference_domain": "AGND",
+      "mapping": {
+        "pin": "R1.1",
+        "net": "SIGNAL_IN"
+      }
+    },
+    {
+      "id": "sample",
+      "role": "sar_input",
+      "direction": "output",
+      "reference_domain": "AGND",
+      "mapping": {
+        "pin": "C1.1",
+        "net": "/ADC_IN"
+      }
+    },
+    {
+      "id": "return",
+      "role": "analog_return",
+      "direction": "passive",
+      "reference_domain": "AGND",
+      "mapping": {
+        "pin": "C1.2",
+        "net": "AGND"
+      }
+    }
+  ],
+  "conditions": {
+    "source_ohm": {
+      "unit": "ohm",
+      "min": 0,
+      "max": 50,
+      "required": true
+    },
+    "acquisition_us": {
+      "unit": "us",
+      "min": 2,
+      "max": 10,
+      "required": true
+    },
+    "step_v": {
+      "unit": "V",
+      "min": 0,
+      "max": 2.5,
+      "required": true
+    },
+    "input_cap_pf": {
+      "unit": "pF",
+      "min": 0,
+      "max": 18,
+      "required": true
+    },
+    "input_mode": {
+      "enum": [
+        "single-ended"
+      ],
+      "required": true
+    }
+  },
+  "parts": [
+    {
+      "ref": "R1",
+      "role": "series-resistor",
+      "manufacturer": "FH(风华)",
+      "mpn": "RS-03K1000FT",
+      "package": "0603",
+      "pin_map": {
+        "1": "SIGNAL_IN",
+        "2": "/ADC_IN"
+      },
+      "dnp": false
+    },
+    {
+      "ref": "C1",
+      "role": "sample-reservoir",
+      "manufacturer": "FH(风华)",
+      "mpn": "0603CG102F500NT",
+      "package": "0603",
+      "pin_map": {
+        "1": "/ADC_IN",
+        "2": "AGND"
+      },
+      "dnp": false
+    }
+  ],
+  "files": {
+    "sch": {
+      "role": "native_schematic_fixture",
+      "relative_path": "circuit/sar-input.kicad_sch.fixture",
+      "sha256": "891dfca9db36a5c8884ba66e2e701c32ecfd25c7394f0d055195818775c4eac7",
+      "license": "MIT",
+      "materialize_as": "sar-input.kicad_sch"
+    },
+    "project": {
+      "role": "native_project_fixture",
+      "relative_path": "circuit/sar-input.kicad_pro.fixture",
+      "sha256": "e5b0252fc0d29f96cfaecc422d7de5f84ff525eb5c4b18ae922e9612c5b71c2f",
+      "license": "MIT",
+      "materialize_as": "sar-input.kicad_pro"
+    },
+    "symbols": {
+      "role": "native_symbol_fixture",
+      "relative_path": "circuit/SarMvp.kicad_sym.fixture",
+      "sha256": "4c85a7a66966594c9cd8284f7ba4d0dd4eaf711ab88e8ca35b9426a844d5580e",
+      "license": "MIT",
+      "materialize_as": "SarMvp.kicad_sym"
+    },
+    "sym_table": {
+      "role": "symbol_table",
+      "relative_path": "circuit/sym-lib-table",
+      "sha256": "b5add994c0c2c5bcb410a9ad4fcb3e7f4d0317b9131479dcb334c141aeba42df",
+      "license": "MIT"
+    },
+    "netlist": {
+      "role": "canonical_netlist",
+      "relative_path": "circuit/connectivity.json",
+      "sha256": "58176d30e3de1ba1020db8efecd52a1ad525c45d8ded83fbee5f8ca431b17583",
+      "license": "MIT"
+    },
+    "bom": {
+      "role": "bom",
+      "relative_path": "circuit/bom.csv",
+      "sha256": "53905291531a5d086e30f57f12b3632e45feb52eca49fa91ff747db27857938d",
+      "license": "MIT"
+    },
+    "layout": {
+      "role": "layout_constraints",
+      "relative_path": "constraints/layout.md",
+      "sha256": "e03618d298cdb01e37023d77b7f22e80cd019eae7f71787af4b2824b577213ba",
+      "license": "MIT"
+    },
+    "spice": {
+      "role": "model",
+      "relative_path": "verification/settling.cir",
+      "sha256": "0151e9ebdd408d3cc96d819859c4d93f081afb1db2c21cd5147008de19dc5b86",
+      "license": "MIT"
+    },
+    "spice_request": {
+      "role": "simulation_input",
+      "relative_path": "verification/settling.json",
+      "sha256": "2da2f308d34732d9af2b0226dc6bee45ae873b8d2b0e79f3beea6a17f32180fb",
+      "license": "MIT"
+    },
+    "receipt": {
+      "role": "scoped_checks",
+      "relative_path": "verification/scoped-checks.json",
+      "sha256": "a37744db461a295070bd76cf5a4e9051662aba1aa47c5aa81e3bd2d5c788828e",
+      "license": "MIT"
+    }
+  },
+  "evidence": {
+    "saved_eda": {
+      "status": "pass",
+      "receipt": "receipt",
+      "conditions": {},
+      "note": "Scoped to native XML connectivity; ERC checks have standalone port warnings and incomplete rule coverage."
+    },
+    "calculation": {
+      "status": "pass",
+      "receipt": "receipt",
+      "conditions": {
+        "source_ohm": {
+          "unit": "ohm",
+          "min": 0,
+          "max": 50
+        },
+        "acquisition_us": {
+          "unit": "us",
+          "min": 2,
+          "max": 10
+        },
+        "step_v": {
+          "unit": "V",
+          "min": 0,
+          "max": 2.5
+        },
+        "input_cap_pf": {
+          "unit": "pF",
+          "min": 0,
+          "max": 18
+        },
+        "input_mode": {
+          "enum": [
+            "single-ended"
+          ]
+        }
+      },
+      "note": "One-pole model only."
+    },
+    "simulation": {
+      "status": "pass",
+      "receipt": "receipt",
+      "conditions": {
+        "source_ohm": {
+          "unit": "ohm",
+          "min": 50,
+          "max": 50
+        },
+        "acquisition_us": {
+          "unit": "us",
+          "min": 2,
+          "max": 2
+        },
+        "step_v": {
+          "unit": "V",
+          "min": 2.5,
+          "max": 2.5
+        },
+        "input_cap_pf": {
+          "unit": "pF",
+          "min": 18,
+          "max": 18
+        },
+        "input_mode": {
+          "enum": [
+            "single-ended"
+          ]
+        }
+      },
+      "note": "One declared test point; equivalent capacitance, no switched sampling."
+    },
+    "bench": {
+      "status": "pending",
+      "receipt": null
+    }
+  },
+  "allowed_changes": [
+    {
+      "parameter": "source_ohm",
+      "change_kind": "filter",
+      "unit": "ohm",
+      "min": 0,
+      "max": 50
+    },
+    {
+      "parameter": "acquisition_us",
+      "change_kind": "firmware",
+      "unit": "us",
+      "min": 2,
+      "max": 10
+    }
+  ],
+  "forbidden_combinations": [
+    {
+      "id": "undersettled-high-impedance",
+      "when": {
+        "source_ohm": {
+          "unit": "ohm",
+          "min": 100,
+          "max": 1000000
+        },
+        "acquisition_us": {
+          "unit": "us",
+          "min": 0,
+          "max": 1
+        }
+      },
+      "reason": "Unqualified high source resistance with short acquisition; redesign or verify a different interface."
+    }
+  ],
+  "layout_constraints": [
+    {
+      "id": "adc-return",
+      "object": "C1 / ADC_IN",
+      "criterion": "Place C1 at receiving ADC and preserve its analog return.",
+      "evidence": [
+        "layout"
+      ]
+    }
+  ],
+  "change_impact": [
+    {
+      "parameter": "source_ohm",
+      "change_kind": "filter",
+      "checks": [
+        "adc-timing",
+        "filter-stability"
+      ],
+      "invalidates": [
+        "calculation",
+        "simulation",
+        "bench"
+      ],
+      "reason": "Changes the source/filter time constant and acquisition dynamics."
+    },
+    {
+      "parameter": "R1",
+      "change_kind": "part",
+      "checks": [
+        "adc-timing",
+        "wcca"
+      ],
+      "invalidates": [
+        "saved_eda",
+        "calculation",
+        "simulation",
+        "bench"
+      ],
+      "reason": "Reconfirm exact package/pin connection, tolerance and electrical model."
+    },
+    {
+      "parameter": "acquisition_us",
+      "change_kind": "firmware",
+      "checks": [
+        "adc-timing",
+        "firmware-interface"
+      ],
+      "invalidates": [
+        "calculation",
+        "simulation",
+        "bench"
+      ],
+      "reason": "Conversion timing changes the settling interval; saved PCB unchanged."
+    }
+  ]
+}

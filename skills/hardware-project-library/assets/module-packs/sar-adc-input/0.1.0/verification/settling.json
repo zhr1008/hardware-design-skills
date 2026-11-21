@@ -1,0 +1,12 @@
+{
+  "schema": "hardware-spice-input-v1",
+  "netlist": "settling.cir",
+  "model_files": [],
+  "measurements": {
+    "sampled_v": {
+      "unit": "V",
+      "min": 2.49969482421875,
+      "max": 2.5
+    }
+  }
+}

@@ -5,6 +5,8 @@ description: Build and verify a vendor-neutral PCB/PCBA manufacturing release fr
 
 # PCBA Fabrication Release
 
+涉及写入或派生制造工件时，按[保存态回读](../hardware/references/saved-design-readback.md)逐项核对同版真实工程及原生报告，记录回执、写入结果和实际覆盖。
+
 正式冻结前用 [工程决策](../hardware/references/design-workflow.md) 的 `assess --target fabrication` 核同版工件及证据。首件/量产用独立 `production` 目标，绑定批次、工装和实际测试。校验文件、项目签核、供应商动作分别处理。
 
 [CAM 工件合同与读回](references/cam-readback.md)

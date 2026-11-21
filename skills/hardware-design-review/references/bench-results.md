@@ -40,6 +40,12 @@ boot_time,497,ms,sample-board-01,A2,aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 ## 结果与交接
 
+### 接收已保存的采集文件
+
+保留仪器原始响应、采集批次、同次前导／缩放、探头与校准、带宽、测量时间窗口、板号和实际固件记录。PyVISA 的波形和 SCPI 响应先由已知仪器格式解码，明确窗口和聚合方法后形成单值记录。例如 DS1054Z 的 NORM 波形只能用于注明屏幕窗口的指标，详见 [VISA 波形证据](../../visa-debug/references/waveform-evidence.md)。
+
+使用 python-can 已保存日志时，记录版本、格式、采集通道、时钟、筛选和统计口径。固定通道与标准／扩展 ID，按测试计划明确远程、错误及 FD 帧。格式丢失关键标记、时戳倒退或样本不足时保留缺项。通用日志或缺通道的 CSV 不据此证明多路台架量测。六列 CSV 保持原样，旁证绑定原始及派生 SHA-256、工况和提取方式。只有具体采集已具备对应证据时才作为实测交接。 [PyVISA](https://pyvisa.readthedocs.io/en/stable/introduction/rvalues.html) · [python-can 文件格式](https://python-can.readthedocs.io/en/stable/file_io.html)
+
 | 状态 | 退出码 | 含义 |
 | --- | --- | --- |
 | `pass` | 0 | 声明的每个测试都有一条匹配身份和单位的记录，且全部位于限值内。 |

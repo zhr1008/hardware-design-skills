@@ -1,0 +1,50 @@
+{
+  "schema": "schematic-connectivity-v1",
+  "components": [
+    {
+      "ref": "R1",
+      "device": "SarMvp:RC_SERIES",
+      "value": "100R",
+      "footprint": "Resistor_SMD:R_0603_1608Metric"
+    },
+    {
+      "ref": "C1",
+      "device": "SarMvp:SAMPLE_RESERVOIR",
+      "value": "1nF",
+      "footprint": "Capacitor_SMD:C_0603_1608Metric"
+    }
+  ],
+  "nets": [
+    {
+      "name": "SIGNAL_IN",
+      "pins": [
+        {
+          "ref": "R1",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "/ADC_IN",
+      "pins": [
+        {
+          "ref": "R1",
+          "pin": "2"
+        },
+        {
+          "ref": "C1",
+          "pin": "1"
+        }
+      ]
+    },
+    {
+      "name": "AGND",
+      "pins": [
+        {
+          "ref": "C1",
+          "pin": "2"
+        }
+      ]
+    }
+  ]
+}

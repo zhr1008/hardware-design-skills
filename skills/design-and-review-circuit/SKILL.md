@@ -5,6 +5,8 @@ description: Design, audit, or correct an electronic circuit from a product brie
 
 # Circuit Design Reviewer
 
+涉及写入或派生制造工件时，按[保存态回读](../hardware/references/saved-design-readback.md)逐项核对同版真实工程及原生报告，记录回执、写入结果和实际覆盖。
+
 按 [工程决策](../hardware/references/design-workflow.md) 的原型风险，主动对照 WCCA、非理想动态与故障状态。方案反证后保留实用可测点和隔离/吸收预留。仿真交工况、步长、所测目标和模型未覆盖范围。
 
 工程设计、实质改版或审查先取得 [硬件设计流程](../hardware/references/design-workflow.md) 的要求、专项依据和判据。直接被点名且尚无这些输入时，按该流程主动补齐，再定器件和拓扑或下审查结论。复用已有同版证据。既定接线的制图和单点计算走各自短入口。

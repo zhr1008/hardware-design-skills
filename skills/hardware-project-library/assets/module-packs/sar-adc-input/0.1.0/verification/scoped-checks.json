@@ -1,0 +1,35 @@
+{
+  "description": "Actual native tool readback and idealized screening of the original synthetic module. No PCB or bench specimen.",
+  "native_eda": {
+    "tool": "KiCad CLI",
+    "version": "9.0.7",
+    "schematic_xml_sha256": "e17e2e18afac236a6599522d34b661cb588d3552182ec206799efa6a11113345",
+    "erc_sha256": "9f8f08bc373d5250914191030d984f46e549dcad58963b3853190efc8c6c4a8d",
+    "connectivity": {
+      "components": 2,
+      "nets": 3,
+      "pin_memberships": 4,
+      "status": "match"
+    },
+    "erc": {
+      "warnings": [
+        "global_label_dangling",
+        "global_label_dangling"
+      ],
+      "coverage": "coverage_incomplete",
+      "scope": "Standalone external port labels and reported checks; full ERC in host project pending."
+    }
+  },
+  "calculation": {
+    "model": "one_pole_linear_step",
+    "residual_v": 0.000007811539952231964,
+    "limit_v": 0.00030517578125
+  },
+  "simulation": {
+    "solver": "ngspice",
+    "version": "46",
+    "sampled_v": "2.49999",
+    "lower_limit_v": 2.49969482421875,
+    "scope": "Static input capacitance assumption, 25 C solver setting; switched sampling, charge kickback, PVT and PCB measurements pending."
+  }
+}

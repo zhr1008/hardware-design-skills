@@ -18,4 +18,6 @@ python -X utf8 skills/hardware/scripts/hardware_tool.py assembly-check BOM.csv -
 
 接着独立核验封装、引脚、原点、旋转方向、底面镜像和厂家贴装预览。发现方向差异时，先核对库和 PCB 放置，再检查导出坐标约定。修正源文件并重新生成对应的制造数据。表格核对只是其中一道检查。
 
+已有 KiBot 导出时，用同一变体配置产生显式位号的 UTF-8 CSV，导出全部所需贴装面，固定单位、原点和底面约定。可沿用 `References`、`PosX`、`PosY`、`Rot`、`Side`。KiBot 的通用 `Status` 可含 DNF 或 DNC。若该列承载不贴装信息，按源配置输出独立 DNP 列，或经确认将明确的 DNF 位号作为 `--exclude`。DNC 不按 DNF 处理。记录原始及派生 CSV 摘要，清单绑定实际交付的字节。 [KiBot 装配文件](https://kibot.readthedocs.io/en/latest/notes_position.html) · [KiBot Status 字段](https://kibot.readthedocs.io/en/latest/configuration/outputs.html)
+
 参见 [嘉立创 BOM/CPL 常见差异](https://jlcpcb.com/help/article/common-bom-and-cpl-matching-issues-and-explanations)、[贴装坐标约定](https://jlcpcb.com/help/article/pick-place-file-for-pcb-assembly)和 [KiCad CLI](https://docs.kicad.org/9.0/en/cli/cli.html)。

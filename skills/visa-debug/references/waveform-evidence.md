@@ -1,5 +1,7 @@
 # DS1054Z 屏幕波形证据
 
+向 [bench-check](../../hardware-design-review/references/bench-results.md) 提交单值前，保留原始响应及读回设置摘要，记录聚合窗口、板号、硬件版次、固件及测量链。缺少前导时保留原始响应与缺项。
+
 离线函数 `scripts/waveform_readback.py` 中的 `decode_screen_waveform` 接收原始 DATA 响应、同次采集的前导和实际读取设置。型号限定为 RIGOL DS1054Z，输入范围是 `CHAN1` 至 `CHAN4`、`NORM`、`MAIN`（YT 时间模式）、`VOLT`、`BYTE` 或 `ASC`。使用 `*IDN?` 和仪器读回确认这些值。原厂手册 PGA19108-1110 的 2-15、2-157、2-217 至 2-226 定义单位、模式、数据和前导。 [RIGOL 编程手册](https://www.rigol.com/dam/global/downloads/brochures/en/program-guide/oscilloscopes/DS1000Z_ProgrammingGuide_EN.pdf?t=1760982668513)
 
 - BYTE 按 TMC 数据头的长度读取无符号码值，用 `(code - YORigin - YREFerence) × YINCrement` 换算为 V。ASC 响应已经是物理电压，直接读取有限数值。

@@ -17,6 +17,7 @@ FIXTURES = ROOT / "tests" / "fixtures" / "native-eda"
 SPICE = SKILLS / "design-and-review-circuit"
 CAM = SKILLS / "release-pcba-fabrication"
 ROUTER = SKILLS / "hardware/scripts/hardware_tool.py"
+KICAD_CHECK = SKILLS / "pcb-layout-review/scripts/run_kicad_checks.py"
 KICAD_CLI = os.environ.get("HARDWARE_TEST_KICAD_CLI") or shutil.which("kicad-cli")
 KICAD_PYTHON = os.environ.get("HARDWARE_TEST_KICAD_PYTHON")
 NGSPICE_CLI = (os.environ.get("HARDWARE_TEST_NGSPICE_CLI") or
@@ -52,7 +53,7 @@ class NativeEdaContract(unittest.TestCase):
 
     @unittest.skipUnless(KICAD_CLI, "需要 KiCad CLI 或 HARDWARE_TEST_KICAD_CLI")
     def test_kicad_native_zero_finding_violation_and_erc_match_real_report(self):
-        script = SKILLS / "pcb-layout-review/scripts/run_kicad_checks.py"
+        script = KICAD_CHECK
         for fixture, kind, native_code in [
             ("outline.kicad_pcb", "drc", 0), ("no-outline.kicad_pcb", "drc", 5), ("empty.kicad_sch", "erc", 0),
         ]:
@@ -78,6 +79,149 @@ class NativeEdaContract(unittest.TestCase):
                     self.assertNotEqual(code, 0)
                 self.assertEqual(json.loads((dest / "evidence.json").read_bytes()), value)
                 self.assertEqual(self.invoke(script, source, "--kicad-cli", KICAD_CLI, "--output-dir", dest)[0], 2)
+
+    @unittest.skipUnless(KICAD_CLI, "需要 KiCad CLI 从同一保存态导出网表并运行 ERC/DRC")
+    def test_kicad_saved_readback_binds_native_rules_and_expected_graph(self):
+        board = self.fixture("readback.kicad_pcb")
+        schematic = self.fixture("readback.kicad_sch")
+        saved_board = board.read_text(encoding="utf-8")
+        saved_schematic = schematic.read_text(encoding="utf-8")
+        contract = {
+            "schema": "kicad-saved-readback-v1", "revision": "fixture-B", "variant": "default", "sources": {},
+            "schematic": {
+                "schema": "schematic-connectivity-v1",
+                "components": [
+                    {"ref": ref, "value": "Contact", "footprint": "Fixture:Contact",
+                     "device": "Fixture:Contact", "sheet_path": "/"} for ref in ("J1", "J2")
+                ],
+                "nets": [
+                    {"name": "/SENSE", "pins": [{"ref": ref, "pin": "1", "no_connect": False}
+                                               for ref in ("J1", "J2")]},
+                    *[{"name": f"unconnected-({ref}-NC-Pad2)",
+                       "pins": [{"ref": ref, "pin": "2", "no_connect": True}]} for ref in ("J1", "J2")],
+                ],
+            },
+            "pcb": {
+                "footprints": [
+                    {"ref": ref, "footprint": "Fixture:Contact",
+                     "pads": {"1": "/SENSE", "2": f"unconnected-({ref}-NC-Pad2)"}}
+                    for ref in ("J1", "J2")
+                ],
+            },
+        }
+        intent = self.work / "intent.json"
+
+        def bind():
+            contract["sources"] = {path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                                   for path in (board, schematic)}
+
+        def run(label, *, selected_board=board, selected_schematic=schematic):
+            intent.write_text(json.dumps(contract), encoding="utf-8")
+            destination = self.work / label
+            code, evidence = self.invoke(
+                ROUTER, "kicad-native-check", selected_board, "--schematic", selected_schematic,
+                "--expected-readback", intent, "--kicad-cli", KICAD_CLI, "--output-dir", destination,
+            )
+            self.assertEqual(json.loads((destination / "evidence.json").read_bytes()), evidence)
+            self.assertEqual(evidence["evidence_stage"], "native_eda")
+            self.assertEqual(evidence["mutation_outcome"], "unchanged")
+            return code, evidence
+
+        bind()
+        _, good = run("paired")
+        self.assertEqual(good["execution_status"], "completed", good)
+        native = good["native"]
+        self.assertEqual(native["identity"]["status"], "pass")
+        self.assertEqual(native["identity"]["revision"], "fixture-B")
+        self.assertEqual(native["identity"]["variant"], "default")
+        self.assertEqual(native["connectivity"]["schematic"]["status"], "pass")
+        self.assertEqual(native["connectivity"]["schematic"]["counts"]["pins"], {"expected": 4, "actual": 4})
+        self.assertEqual(native["connectivity"]["pcb"]["status"], "pass")
+        self.assertIn("native_schematic_parity", good["checks_executed"], good)
+        self.assertEqual(native["commands"]["drc"]["report"]["groups"]["unconnected_items"]["error"], 0)
+        self.assertEqual(sum(native["commands"]["drc"]["report"]["groups"]["schematic_parity"].values()), 0)
+        for filename in ("erc.json", "drc.json", "schematic.xml", "erc.log", "drc.log", "netlist.log"):
+            item = good["outputs"][filename]
+            self.assertEqual(hashlib.sha256(Path(item["path"]).read_bytes()).hexdigest(), item["sha256"])
+        for filename, digest in contract["sources"].items():
+            self.assertEqual(good["inputs"][f"saved:{filename}"]["sha256"], digest)
+            self.assertEqual(good["outputs"][f"snapshot:{filename}"]["sha256"], digest)
+            self.assertEqual(hashlib.sha256((self.work / filename).read_bytes()).hexdigest(), digest)
+        if any(good["coverage"][kind]["missing_severities"] for kind in ("erc", "drc")):
+            self.assertEqual(good["verification_status"], "coverage_incomplete")
+
+        with self.subTest("保存操作用了旧版，连通未变但摘要不同"):
+            board.write_text(saved_board.replace('(paper "A4")', '(paper "A3")'), encoding="utf-8")
+            code, stale = run("stale")
+            self.assertEqual(code, 1, stale)
+            self.assertEqual(stale["verification_status"], "fail")
+            self.assertIn(board.name, stale["native"]["identity"]["sha256_mismatches"])
+            self.assertEqual(stale["native"]["connectivity"]["pcb"]["status"], "pass")
+            self.assertIn("drc.json", stale["outputs"])
+
+        with self.subTest("PCB 和原理图接错了 1 脚，摘要已绑定这份保存文件"):
+            board.write_text(saved_board.replace('(layers "F.Cu" "F.Paste" "F.Mask") (net 1 "/SENSE")',
+                                                 '(layers "F.Cu" "F.Paste" "F.Mask") (net 2 "unconnected-(J1-NC-Pad2)")',
+                                                 1), encoding="utf-8")
+            schematic.write_text(saved_schematic.replace("(xy 27.94 40.64)", "(xy 27.94 43.18)"),
+                                 encoding="utf-8")
+            bind()
+            code, wrong_pin = run("wrong-pin")
+            self.assertEqual(code, 1, wrong_pin)
+            self.assertEqual(wrong_pin["native"]["identity"]["status"], "pass")
+            self.assertEqual(wrong_pin["native"]["connectivity"]["schematic"]["status"], "fail")
+            diff = wrong_pin["native"]["connectivity"]["pcb"]["differences"]["pads"]
+            self.assertEqual(diff["changed"][0], {"key": ["J1", "1"], "expected": {"net": "/SENSE"},
+                                                "actual": {"net": "unconnected-(J1-NC-Pad2)"}})
+            self.assertIn("schematic.xml", wrong_pin["outputs"])
+
+        board.write_text(saved_board, encoding="utf-8")
+        schematic.write_text(saved_schematic, encoding="utf-8")
+        bind()
+        with self.subTest("预期图谱漏列一个 PCB 焊盘"):
+            del contract["pcb"]["footprints"][0]["pads"]["2"]
+            code, partial = run("partial")
+            self.assertEqual(code, 2, partial)
+            self.assertEqual(partial["verification_status"], "coverage_incomplete")
+            diff = partial["native"]["connectivity"]["pcb"]["differences"]["pads"]
+            self.assertEqual(diff["not_declared"][0]["key"], ["J1", "2"])
+            self.assertIn("erc.json", partial["outputs"])
+
+        with self.subTest("工程规则禁用后保留覆盖缺项"):
+            contract["pcb"]["footprints"][0]["pads"]["2"] = "unconnected-(J1-NC-Pad2)"
+            project = board.with_suffix(".kicad_pro")
+            project.write_text(json.dumps({"board": {"design_settings": {
+                "meta": {"version": 2}, "rule_severities": {"lib_footprint_issues": "ignore"},
+            }}}), encoding="utf-8")
+            digest = hashlib.sha256(project.read_bytes()).hexdigest()
+            contract["sources"][project.name] = digest
+            code, disabled_rule = run("disabled-rule")
+            self.assertEqual(code, 2, disabled_rule)
+            self.assertEqual(disabled_rule["verification_status"], "coverage_incomplete")
+            self.assertEqual(disabled_rule["native"]["identity"]["status"], "pass")
+            self.assertEqual(disabled_rule["inputs"][f"saved:{project.name}"]["sha256"], digest)
+            self.assertEqual(disabled_rule["native"]["connectivity"]["pcb"]["status"], "pass")
+            self.assertIn("lib_footprint_issues", good["native"]["commands"]["drc"]["report"]["rules"])
+            self.assertNotIn("lib_footprint_issues", disabled_rule["native"]["commands"]["drc"]["report"]["rules"])
+            if disabled_rule["coverage"]["drc"]["ignored_checks"] is not None:
+                self.assertIn("lib_footprint_issues",
+                              [rule["key"] for rule in disabled_rule["coverage"]["drc"]["ignored_checks"]])
+
+        with self.subTest("输入来自错误板身份"):
+            unrelated = self.fixture("outline.kicad_pcb")
+            code, wrong_board = run("wrong-identity", selected_board=unrelated)
+            self.assertEqual(code, 1, wrong_board)
+            self.assertEqual(wrong_board["verification_status"], "fail")
+            self.assertEqual(wrong_board["checks_executed"], ["saved_identity"])
+            self.assertEqual(wrong_board["inputs"]["board"]["path"], str(unrelated))
+
+        with self.subTest("缺少根原理图，保留失败证据及已找到的工件"):
+            code, missing = run("missing", selected_schematic=self.work / "missing.kicad_sch")
+            self.assertEqual(code, 2, missing)
+            self.assertEqual(missing["verification_status"], "missing")
+            self.assertEqual(missing["execution_status"], "not_executed")
+            self.assertIn("schematic", missing["native"]["identity"]["errors"])
+            self.assertEqual(missing["inputs"]["board"]["sha256"], contract["sources"][board.name])
 
     @unittest.skipUnless(NGSPICE_CLI, "需要 ngspice CLI 或 HARDWARE_TEST_NGSPICE_CLI")
     def test_ngspice_rc_rlc_missing_measure_and_missing_model_use_real_solver(self):

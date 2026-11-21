@@ -1,4 +1,5 @@
 from hashlib import sha256
+from decimal import Decimal
 import json
 from pathlib import Path
 import subprocess
@@ -88,6 +89,22 @@ class BenchResultsTest(unittest.TestCase):
         for raw in (b'{"schema_version": 1, "schema_version": 1}', b'{"schema_version": NaN}'):
             status, report, _ = self.evaluate([], raw_spec=raw)
             self.assertEqual((status, report["status"]), (2, "invalid"))
+
+    def test_synthetic_waveform_and_can_log_metrics_feed_existing_contract(self):
+        # Fixture acquisition data already scaled and restricted to the test window.
+        voltage_samples = tuple(map(Decimal, ("-1.5", "-1", "0")))
+        can_seconds = tuple(map(Decimal, ("0", "0.010", "0.030")))
+        vpp = max(voltage_samples) - min(voltage_samples)
+        gap_ms = max(b - a for a, b in zip(can_seconds, can_seconds[1:])) * 1000
+        self.spec["tests"] = {"screen_vpp": {"unit": "V", "max": "1.5"},
+                              "can_max_gap": {"unit": "ms", "max": "20"}}
+        scope = self.row("screen_vpp", vpp, "V")
+        can = self.row("can_max_gap", gap_ms, "ms")
+        self.assertEqual(self.evaluate([scope, can])[0], 0)
+        self.assertEqual(self.evaluate([scope, self.row("can_max_gap", "20.001", "ms")])[0], 1)
+        self.assertEqual(self.evaluate([self.row("screen_vpp", "1500", "mV"), can])[0], 2)
+        self.assertEqual(self.evaluate([scope, self.row("can_max_gap", gap_ms, "ms", board="other")])[0], 2)
+        self.assertEqual(self.evaluate([scope])[0], 3)
 
 
 if __name__ == "__main__":

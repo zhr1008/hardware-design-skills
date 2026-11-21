@@ -24,3 +24,5 @@ Run the [BOM/CPL check](assembly-check.md) against the same assembly variant.
 If only derived fabrication files exist, audit and package them but mark native
 source traceability BLOCKED or USER_REVIEW. Never reconstruct a release revision
 from filenames alone.
+
+已有 KiBot 产物可以按实际角色提交给原有清单构建器。保留输出配置、源摘要、版本与变体，以及 Gerber、钻孔、BOM/CPL 的独立读回。DRC 使用同源且现有检查器支持的原生报告。旧文本日志或 preflight 成功提示作为旁证，原理图一致性与规则覆盖另行核实。 [KiBot DRC](https://kibot.readthedocs.io/en/latest/configuration/preflights/drc.html)

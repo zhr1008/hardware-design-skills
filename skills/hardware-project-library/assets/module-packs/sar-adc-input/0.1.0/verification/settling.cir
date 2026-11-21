@@ -1,0 +1,11 @@
+SAR input RC screening at R/C envelope, no ADC switching model
+VSTEP source 0 PULSE(0 2.5 100n 1n 1n 8u 16u)
+RSOURCE source signal 50
+RFILTER signal adc 102
+CFILTER adc 0 1.02n
+CINPUT adc 0 18p
+.temp 25
+.options reltol=0.00001
+.tran 1n 5u
+.measure tran sampled_v FIND v(adc) AT=2.101u
+.end

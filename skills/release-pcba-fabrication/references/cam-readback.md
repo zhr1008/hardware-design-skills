@@ -11,3 +11,4 @@ Gerbonara 读取显式映射的层，报告解析器版本、摘要、实测边�
 把读回结果与同版 [EDA 发布记录](eda-release-adapters.md)及[装配检查](assembly-check.md)一起引用。包络表示独立读回范围。发布清单仍冻结原始制包文件与相关审批记录。
 
 [Gerbonara 文件接口](https://gerbolyze.gitlab.io/gerbonara/file-api.html)
+从 KiBot 取得的制程文件同样按上述角色和摘要核验。保留实际导出配置、板源版次及变体。几何读回只覆盖所列图层、尺寸和孔槽。

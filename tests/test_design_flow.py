@@ -45,6 +45,19 @@ class DesignFlowTest(unittest.TestCase):
         self.assertEqual(page["status"], "unavailable")
         self.assertNotIn("text", page)
 
+    def test_topology_options_and_sampling_risk_are_scoped_to_forward_design(self):
+        for mode in ("plan", "design"):
+            with self.subTest(mode=mode):
+                result = self.command("start", mode, "--topic", "sampling")
+                self.assertEqual(result["prototypes"], ["adc-front-end"])
+                self.assertIn("adc-timing", {check["id"] for check in result["required_checks"]})
+                self.assertLess(result["phases"].index("knowledge"), result["phases"].index("topology-options"))
+                self.assertLess(result["phases"].index("topology-options"), result["phases"].index("decision"))
+                self.assertNotIn("module_catalogues", result)
+        review = self.command("start", "review", "--topic", "sampling")
+        self.assertNotIn("adc-front-end", review["prototypes"])
+        self.assertNotIn("topology-options", review["phases"])
+
     def test_reads_one_shared_page_only_from_matching_source_version(self):
         rules = json.loads((HARDWARE / "assets/review-knowledge/rules.json").read_text(encoding="utf-8"))
         citation = rules["sources"]["LIBEE21AAFB7FF12E57"]
@@ -77,3 +90,60 @@ class DesignFlowTest(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("absent-rule", result.stderr)
         self.assertEqual(result.stdout, "")
+
+    def test_sar_module_lookup_at_boundary_and_three_eco_handoffs(self):
+        base = {"project": "sar-fixture", "revision": "A", "variant": "lab-board"}
+        conditions = {
+            "source_ohm": {"value": 50, "unit": "ohm"},
+            "acquisition_us": {"value": 2, "unit": "us"},
+            "step_v": {"value": 2.5, "unit": "V"},
+            "input_cap_pf": {"value": 18, "unit": "pF"},
+            "input_mode": "single-ended",
+        }
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            request = root / "module-request.json"
+            case = root / "case.json"
+            changes = root / "change.json"
+            case.write_text(json.dumps({"schema": "hardware-engineering-case-v1", "mode": "eco",
+                                         "baseline": base, "prototypes": ["adc-front-end"],
+                                         "checks": {"adc-timing": {"status": "open"}}}), encoding="utf-8")
+
+            def module(mode, values, edits=()):
+                request.write_text(json.dumps({"conditions": values, "changes": list(edits)}), encoding="utf-8")
+                response = self.command("start", mode, "--prototype", "adc-front-end", "--module-query",
+                                        "adc-front-end", "--module-conditions", str(request))
+                catalogue, = response["module_catalogues"]
+                match, = catalogue["matches"]
+                return match["fit"]
+
+            for mode in ("plan", "design", "eco"):
+                fit = module(mode, conditions)
+                self.assertEqual(fit["status"], "fits", fit["issues"])
+                self.assertIn("simulation", fit["impact"]["reuse_candidates"])
+                self.assertEqual(fit["evidence"]["bench"]["status"], "pending")
+
+            variants = (
+                ("source_ohm", "filter", {"value": 20, "unit": "ohm"}, conditions["source_ohm"], "filter", True),
+                ("R1", "part", "original-resistor", "unqualified-resistor", "part", False),
+                ("acquisition_us", "firmware", {"value": 4, "unit": "us"}, conditions["acquisition_us"], "firmware", True),
+            )
+            for field, kind, before, after, effective_kind, reuse_eda in variants:
+                with self.subTest(field=field):
+                    fit = module("eco", conditions, [{"object": field, "kind": kind, "before": before,
+                                                      "after": after}])
+                    self.assertEqual(fit["status"], "recheck")
+                    self.assertIn("simulation", fit["impact"]["invalidated_evidence"])
+                    self.assertEqual("saved_eda" in fit["impact"]["reuse_candidates"], reuse_eda)
+                    proposal, = fit["impact"]["changes"]
+                    self.assertEqual(proposal["kind"], effective_kind)
+                    changes.write_text(json.dumps({"schema": "hardware-engineering-change-v1", "baseline": base,
+                                                    "changes": [{**proposal, "variant": base["variant"]}]}),
+                                       encoding="utf-8")
+                    affected = self.command("impact", "--case", str(case), "--change", str(changes))
+                    self.assertIn("adc-timing", affected["invalidated_baseline_checks"])
+                    self.assertTrue(all(item["object"] == field for item in affected["recheck"]))
+
+    def test_plain_start_does_not_trigger_module_lookup(self):
+        result = self.command("start", "design", "--intent", "GPIO LED 3.3V 单点限流电阻核算")
+        self.assertNotIn("module_catalogues", result)
