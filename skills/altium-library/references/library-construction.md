@@ -26,7 +26,7 @@
 python
 ```
 
-3.12 venv 다. `altium-monkey` 가 `Requires-Python <3.13` 이라 시스템 3.13 에는 안 깔린다.
+使用与工件及 `altium-monkey` 版本兼容的运行环境。本包的保存库核验用 Python 3.12 实跑，其他 Python 和平台组合看[对应版本的发布资料](https://pypi.org/project/altium-monkey/2026.8.11.post1/)。
 패키지 추가는 `uv pip install --python <위 경로> <패키지>` (venv 에 pip 가 없다).
 
 ## 작업 폴더 — 부품 하나 = 폴더 하나

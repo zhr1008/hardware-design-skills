@@ -6,6 +6,8 @@
 
 **v0.7.1** 明确架构取舍的硬约束与复杂度代价，按风险半径及可逆性决定查证深度，交付摘要按最终工件和工具回执说明覆盖与缺口。规则查询接受如 `热设计`、`THERMAL`、`PCB` 的领域名称；未知输入会提示合法领域。发布时校验 `VERSION` 与标签一致。 [工程流程](skills/hardware/references/design-workflow.md)
 
+**主分支**已加入模块包复用、正式系统契约、写后保存态回读，以及原理图风格与 Altium 库件批量核验。下载链接继续指向最近的标记版本。要试用这些更新，可检出主分支并用随仓安装器安装到独立目标。 [模块包](skills/hardware-project-library/references/module-packs.md) · [系统契约](skills/hardware/references/system-contract.md) · [原理图风格与验收](skills/hardware/references/schematic-style.md)
+
 ## 快速开始
 
 ### 安装
@@ -37,6 +39,7 @@ python -X utf8 skills/hardware/scripts/backend_doctor.py
 | 「按这些接口要求独立设计一个模拟前端，给原理图和验算。」 | 可测要求、本机原文、关键方案取舍、按指定格式实现的原理图和验证边界。 |
 | 「用 `$hardware` 画一张 RC 低通示意图，给 SVG。」 | Schemdraw 源码和 SVG。需要可编辑的工程原理图时，写明 Altium、EasyEDA Pro 或 KiCad。 |
 | 「只读核对这份保存的 Altium 工程，按页列出器件数。」 | 工程成员、保存态的器件明细和无法解析的文件。若还需要未保存的编辑内容，再申请现场读取。 |
+| 「按同系列图纸扩展弯针连接器，核对符号、封装和插合 STEP。」 | 复用同类符号与共用尺寸；读回保存的引脚、焊盘、模型关联和 STEP 字节；装配净空按模型与实物证据分别判定。 |
 | 「审这路 ADC 前端，把需要验证的条件和资料页写出来。」 | 与器件和工况对应的规则、文档版次、物理页或印刷页，以及待计算或待测的项目。 |
 | 「优先在我给的标准阻容索引里找料，缺项再查公开来源。」 | 符合规格的候选、缺证据的字段，以及适用的商品页或原厂资料。为工程确认选用时，可从已核对数据生成 AD 选型表。 |
 | 「这份 BOM 只转档案 CSV，已有料号原样保留。」 | 按指定模板生成 CSV，读回核对列、位号、数量和料号。 |
@@ -65,12 +68,12 @@ flowchart TD
   F -->|"发现反例"| D
   D -->|"需要补证"| C
   D -->|"仅规划"| G
-  F -->|"正式交接或放行"| S["assess 核对同版工件和检查范围"]
+  F -->|"正式交接或放行"| S["assess 核对契约、变体与证据"]
   S --> G
   S -. "ECO 或证据失效时按 impact 回流" .-> D
 ```
 
-日常设计用轻量 `design_flow.py start <mode> --intent …`，直接取得按原型展开的风险检查和阅读链；例如 ADC 前端从运放与滤波追到转换器，再补供电和回流证据。正式评审、跨阶段交接、正式 ECO 和制造放行使用 `case.json`、`impact` 和 `assess`。项目签核与 L0–L3 操作授权按原渠道处理。 [工程知识地图](skills/hardware/references/knowledge-map.md) · [详细流程与离线命令](skills/hardware/references/design-workflow.md)
+日常设计一次运行 `design_flow.py start <mode> --compact --intent …`，取得按原型展开的检查、触发分支和规则摘要。适用模块包按需同次检索。跨阶段交接、多变体正式 ECO 和放行使用系统契约与 case，绑定当前变体的工况、判据和测点。工件或条件变化时按 `impact` 重验受影响路径。项目签核与 L0–L3 操作授权按原渠道处理。 [工程流程](skills/hardware/references/design-workflow.md) · [契约与交接](skills/hardware/references/system-contract.md)
 
 对 3.3 V GPIO 指示灯改限流电阻这类局部可逆任务，算清电流、功耗和实际器件边界即可交付。涉及跨域影响、隐蔽失效或正式放行时展开原始证据。汇报中可直接给出已核对的对象数和总数，并注明仍待核实的字段或工况。 [风险与证据的停点](skills/hardware/references/design-workflow.md#低风险局部参数微调)
 
@@ -137,7 +140,7 @@ flowchart TD
 
 | 技能 | 核心职责 |
 | --- | --- |
-| [`altium-library`](skills/altium-library/SKILL.md) | 制作和核验 Altium `.SchLib` 与 `.PcbLib`，对照原厂资料检查引脚、焊盘及机械尺寸。 |
+| [`altium-library`](skills/altium-library/SKILL.md) | 制作、复用及核验 Altium 符号、封装、引脚与焊盘关联，按实际图纸扩展系列封装和插合模型。 |
 | [`altium-schematic-review`](skills/altium-schematic-review/SKILL.md) | 优先从保存的 `.PrjPcb` 与 `.SchDoc` 核对工程成员、引脚与网络、封装引用和器件适用性。 |
 | [`altium-pcb-review`](skills/altium-pcb-review/SKILL.md) | 只读审查 Altium `.PcbDoc` 的连通性、规则和可制造性，将发现定位到层、网络、器件或规则。 |
 | [`easyeda-agent`](skills/easyeda-agent/SKILL.md) | 通过嘉立创 EDA 专业版兼容 CLI 和连接器执行获准的原理图或 PCB 编辑，并读回保存结果及适用的 DRC 证据。 |
